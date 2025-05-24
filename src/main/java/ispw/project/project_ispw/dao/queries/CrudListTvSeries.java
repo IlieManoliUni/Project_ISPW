@@ -1,0 +1,100 @@
+package ispw.project.project_ispw.dao.queries;
+
+import ispw.project.project_ispw.bean.ListBean;
+import ispw.project.project_ispw.bean.TvSeriesBean;
+import ispw.project.project_ispw.exception.ExceptionDao; // Using your custom exception
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CrudListTvSeries {
+
+    private static final String INSERT_LIST_TVSERIES_SQL = "INSERT INTO list_tvseries (idList, idTvSeriesTmdb) VALUES (?, ?)";
+    private static final String DELETE_LIST_TVSERIES_SQL = "DELETE FROM list_tvseries WHERE idList = ? AND idTvSeriesTmdb = ?";
+    private static final String SELECT_TVSERIES_IDS_IN_LIST_SQL = "SELECT idTvSeriesTmdb FROM list_tvseries WHERE idList = ?";
+    private static final String SELECT_FULL_DETAILS_TVSERIES_IN_LIST_SQL =
+            "SELECT ts.idTvSeriesTmdb, ts.name, ts.episodeRuntime, ts.numberOfEpisodes " +
+                    "FROM list_tvseries lts " +
+                    "JOIN tv_series ts ON lts.idTvSeriesTmdb = ts.idTvSeriesTmdb " +
+                    "WHERE lts.idList = ?";
+
+    public static int addTvSeriesToList(Connection conn, ListBean list, TvSeriesBean tvSeries) throws ExceptionDao {
+        try (PreparedStatement ps = conn.prepareStatement(INSERT_LIST_TVSERIES_SQL)) {
+            ps.setInt(1, list.getId());
+            ps.setInt(2, tvSeries.getIdTvSeriesTmdb());
+            System.out.println("Executing INSERT: " + ps.toString()); // For debugging, remove in production
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new ExceptionDao("Failed to add TV Series ID " + tvSeries.getIdTvSeriesTmdb() + " to list ID " + list.getId() + ": " + e.getMessage(), e);
+        }
+    }
+
+    public static int removeTvSeriesFromList(Connection conn, ListBean list, TvSeriesBean tvSeries) throws ExceptionDao {
+        try (PreparedStatement ps = conn.prepareStatement(DELETE_LIST_TVSERIES_SQL)) {
+            ps.setInt(1, list.getId());
+            ps.setInt(2, tvSeries.getIdTvSeriesTmdb());
+            System.out.println("Executing DELETE: " + ps.toString()); // For debugging, remove in production
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new ExceptionDao("Failed to remove TV Series ID " + tvSeries.getIdTvSeriesTmdb() + " from list ID " + list.getId() + ": " + e.getMessage(), e);
+        }
+    }
+
+    // This method is primarily for debugging/logging, often not used in production logic directly
+    public static void printAllTvSeriesInList(Connection conn, ListBean list) throws ExceptionDao {
+        try (PreparedStatement ps = conn.prepareStatement(SELECT_TVSERIES_IDS_IN_LIST_SQL)) {
+            ps.setInt(1, list.getId());
+            System.out.println("Executing SELECT: " + ps.toString()); // For debugging, remove in production
+            try (ResultSet res = ps.executeQuery()) {
+                while (res.next()) {
+                    System.out.printf("List ID: %d, TV Series ID (TMDb): %d\n",
+                            list.getId(), res.getInt("idTvSeriesTmdb"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new ExceptionDao("Failed to print all TV Series in list ID " + list.getId() + ": " + e.getMessage(), e);
+        }
+    }
+
+    // Returns a list of TV Series IDs (integers) present in a given list
+    public static List<Integer> getTvSeriesIdsByList(Connection conn, ListBean list) throws ExceptionDao {
+        List<Integer> tvSeriesIds = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(SELECT_TVSERIES_IDS_IN_LIST_SQL)) {
+            ps.setInt(1, list.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    tvSeriesIds.add(rs.getInt("idTvSeriesTmdb"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new ExceptionDao("Failed to retrieve TV Series IDs for list ID " + list.getId() + ": " + e.getMessage(), e);
+        }
+        return tvSeriesIds;
+    }
+
+    // Returns a list of TvSeriesBean objects with full details for TV Series in a given list
+    public static List<TvSeriesBean> getTvSeriesFullDetailsByList(Connection conn, ListBean list) throws ExceptionDao {
+        List<TvSeriesBean> tvSeriesDetails = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(SELECT_FULL_DETAILS_TVSERIES_IN_LIST_SQL)) {
+            ps.setInt(1, list.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    // Using your TvSeriesBean constructor: TvSeriesBean(int episodeRuntime, int idTvSeriesTmdb, int numberOfEpisodes, String name)
+                    tvSeriesDetails.add(new TvSeriesBean(
+                            rs.getInt("episodeRuntime"),
+                            rs.getInt("idTvSeriesTmdb"),
+                            rs.getInt("numberOfEpisodes"),
+                            rs.getString("name")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            throw new ExceptionDao("Failed to retrieve full TV Series details for list ID " + list.getId() + ": " + e.getMessage(), e);
+        }
+        return tvSeriesDetails;
+    }
+}
