@@ -13,6 +13,7 @@ import com.google.gson.JsonSyntaxException;
 import ispw.project.project_ispw.exception.ExceptionAniListApi;
 import ispw.project.project_ispw.model.AnimeModel;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -22,16 +23,15 @@ public class AnimeAniList {
     private static final String ANILIST_API_URL = "https://graphql.anilist.co";
     private static final Gson gson = new Gson();
 
+    private static final String JSON_KEY_ERRORS = "errors";
+
     private static final OkHttpClient client = new OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build();
 
-    // Add a private constructor to prevent instantiation
     private AnimeAniList() {
-        // This constructor is intentionally empty.
-        // It prevents external classes from creating instances of AnimeAniList.
-        // If someone tries, they'll get a compile-time error.
+        // This constructor is intentionally empty to prevent instantiation.
     }
 
     private static String executeGraphQLRequest(String query, JsonObject variables) throws ExceptionAniListApi {
@@ -52,15 +52,10 @@ public class AnimeAniList {
         try (Response response = client.newCall(request).execute()) {
             String responseBody = response.body().string();
 
-            JsonObject jsonResponse;
-            try {
-                jsonResponse = JsonParser.parseString(responseBody).getAsJsonObject();
-            } catch (JsonSyntaxException e) {
-                throw new ExceptionAniListApi("Invalid JSON response from AniList API: " + responseBody, e);
-            }
+            JsonObject jsonResponse = parseResponseToJsonObject(responseBody);
 
-            if (jsonResponse.has("errors") && jsonResponse.getAsJsonArray("errors").size() > 0) {
-                JsonArray errors = jsonResponse.getAsJsonArray("errors");
+            if (jsonResponse.has(JSON_KEY_ERRORS) && jsonResponse.getAsJsonArray(JSON_KEY_ERRORS).size() > 0) {
+                JsonArray errors = jsonResponse.getAsJsonArray(JSON_KEY_ERRORS);
                 throw new ExceptionAniListApi("AniList API returned GraphQL errors: " + errors.toString());
             }
 
@@ -70,8 +65,12 @@ public class AnimeAniList {
             }
 
             return responseBody;
+        } catch (IOException e) {
+            throw new ExceptionAniListApi("Network or I/O error during GraphQL request: " + e.getMessage(), e);
+        } catch (ExceptionAniListApi e) {
+            throw e;
         } catch (Exception e) {
-            throw new ExceptionAniListApi("Failed to execute GraphQL request: " + e.getMessage(), e);
+            throw new ExceptionAniListApi("An unexpected error occurred during GraphQL request: " + e.getMessage(), e);
         }
     }
 
@@ -200,11 +199,30 @@ public class AnimeAniList {
         return animeList;
     }
 
+    private static JsonObject parseResponseToJsonObject(String responseBody) throws ExceptionAniListApi {
+        try {
+            return JsonParser.parseString(responseBody).getAsJsonObject();
+        } catch (JsonSyntaxException e) {
+            throw new ExceptionAniListApi("Invalid JSON response from AniList API: " + responseBody, e);
+        }
+    }
+
+    /**
+     * Strips HTML tags from a string and cleans up whitespace.
+     * Uses a possessive quantifier in the HTML tag regex to prevent ReDoS vulnerability.
+     * Uses explicit grouping for whitespace regex to clarify precedence.
+     * For more robust HTML parsing, consider using Jsoup library.
+     *
+     * @param html The input string potentially containing HTML tags.
+     * @return The string with HTML tags removed and HTML entities decoded, and trimmed whitespace.
+     */
     private static String stripHtmlTags(String html) {
         if (html == null || html.isEmpty()) {
             return html;
         }
-        String stripped = html.replaceAll("<[^>]*>", "");
+
+        String stripped = html.replaceAll("<[^>]*+>", "");
+
         stripped = stripped.replace("&quot;", "\"");
         stripped = stripped.replace("&amp;", "&");
         stripped = stripped.replace("&lt;", "<");
@@ -216,7 +234,11 @@ public class AnimeAniList {
         stripped = stripped.replace("&#x2B;", "+");
         stripped = stripped.replace("&apos;", "'");
         stripped = stripped.replace("&nbsp;", " ");
-        stripped = stripped.replaceAll("(?m)^[\\s&&[^\\n]]+|[\\s&&[^\\n]]+$", "");
+
+        // --- FIX: Grouping parts of the regex for explicit precedence ---
+        stripped = stripped.replaceAll("(?m)(^[\\s&&[^\\n]]+)|([\\s&&[^\\n]]+$)", "");
+        // --- End FIX ---
+
         stripped = stripped.replaceAll("\\n\\n+", "\n");
         return stripped.trim();
     }
