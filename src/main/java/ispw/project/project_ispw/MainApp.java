@@ -21,71 +21,37 @@ public class MainApp extends Application {
 
     private static final Logger LOGGER = Logger.getLogger(MainApp.class.getName());
 
-    private static final LaunchType DEFAULT_LAUNCH_TYPE = LaunchType.GUI;
+    // --- Configuration Settings (No longer read from args) ---
+    // Set your desired launch type here (GUI or CLI)
+    private static final LaunchType DESIRED_LAUNCH_TYPE = LaunchType.GUI; // Set to LaunchType.CLI for CLI
 
-    // Merged default settings for both GUI and CLI
-    private static final boolean DEFAULT_DEMO_MODE = true; // You can adjust this to false if "full" is preferred default
-    private static final DaoType DEFAULT_DAO_TYPE = DaoType.JDBC; // You can adjust this to another DaoType if preferred default
+    // Set your desired persistence mode here (true for Demo, false for Full)
+    private static final boolean RUN_IN_DEMO_MODE = true; // Set to false for Full Mode
+
+    // Set your desired DAO type here (only relevant if RUN_IN_DEMO_MODE is false)
+    private static final DaoType DESIRED_DAO_TYPE = DaoType.JDBC; // Example: DaoType.JDBC or DaoType.CSV
+    // --- End Configuration Settings ---
+
 
     private static LaunchType currentLaunchType;
     private static PersistenceModeState currentPersistenceModeState;
 
     public static void main(String[] args) {
-        LaunchType launchType = DEFAULT_LAUNCH_TYPE;
-        boolean runInDemoMode;
-        DaoType daoType;
-        String persistenceModeArg = null;
-        String daoTypeArg = null;
+        // No command-line argument parsing needed here anymore
+        // Values are directly assigned from the constants above
 
-        for (String arg : args) {
-            if (arg.startsWith("--launch=")) {
-                try {
-                    launchType = LaunchType.valueOf(arg.substring("--launch=".length()).toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    LOGGER.log(Level.WARNING, "Invalid launch type '{0}' specified. Falling back to default GUI.", arg.substring("--launch=".length()));
-                    launchType = DEFAULT_LAUNCH_TYPE;
-                }
-            } else if (arg.startsWith("--persistence=")) {
-                persistenceModeArg = arg.substring("--persistence=".length()).toLowerCase();
-            } else if (arg.startsWith("--daotype=")) {
-                daoTypeArg = arg.substring("--daotype=".length()).toLowerCase();
-            }
-        }
+        currentLaunchType = DESIRED_LAUNCH_TYPE;
 
-        currentLaunchType = launchType;
-
-        // Apply merged default settings
-        runInDemoMode = DEFAULT_DEMO_MODE;
-        daoType = DEFAULT_DAO_TYPE;
-
-        if (persistenceModeArg != null) {
-            if ("demo".equals(persistenceModeArg)) {
-                runInDemoMode = true;
-            } else if ("full".equals(persistenceModeArg)) {
-                runInDemoMode = false;
-                if (daoTypeArg != null) {
-                    try {
-                        daoType = DaoType.valueOf(daoTypeArg.toUpperCase());
-                    } catch (IllegalArgumentException e) {
-                        LOGGER.log(Level.WARNING, "Invalid DaoType '{0}' specified. Using default '{1}' for Full Mode.", new Object[]{daoTypeArg, daoType});
-                    }
-                } else {
-                    LOGGER.log(Level.INFO, "No DaoType specified for Full Mode. Using default '{0}'.", daoType);
-                }
-            } else {
-                LOGGER.log(Level.WARNING, "Invalid persistence mode '{0}' specified. Using default settings.", persistenceModeArg);
-            }
-        }
-
-        if (runInDemoMode) {
+        if (RUN_IN_DEMO_MODE) {
             currentPersistenceModeState = new DemoModeState();
             LOGGER.log(Level.INFO, "Application starting in DEMO MODE (in-memory persistence).");
         } else {
-            currentPersistenceModeState = new FullModeState(daoType);
-            LOGGER.log(Level.INFO, "Application starting in FULL MODE ({0} persistence).", daoType);
+            currentPersistenceModeState = new FullModeState(DESIRED_DAO_TYPE);
+            LOGGER.log(Level.INFO, "Application starting in FULL MODE ({0} persistence).", DESIRED_DAO_TYPE);
         }
 
-        Application.launch(MainApp.class, args);
+        // Call Application.launch with no additional args since they are not used
+        Application.launch(MainApp.class);
     }
 
     @Override
@@ -97,7 +63,6 @@ public class MainApp extends Application {
 
             if (currentLaunchType == LaunchType.GUI) {
                 GraphicControllerGui.getInstance(currentPersistenceModeState);
-                // FIX: Changed fxmlPath from "main.fxml" to "home.fxml"
                 fxmlPath = "/ispw/project/project_ispw/view/gui/home.fxml"; // Corrected FXML path
                 title = "Media Hub GUI";
                 LOGGER.log(Level.INFO, "Loading GUI FXML: {0}", fxmlPath);

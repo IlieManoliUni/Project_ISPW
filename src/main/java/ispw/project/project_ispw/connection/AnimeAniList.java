@@ -78,41 +78,45 @@ public class AnimeAniList {
     }
 
     public static AnimeModel getAnimeById(int animeId) throws ExceptionAniListApi {
-        String query = "query ($id: Int) {\n" +
-                "  Media(id: $id, type: ANIME) {\n" +
-                "    id\n" +
-                "    title {\n" +
-                "      romaji\n" +
-                "      english\n" +
-                "      native\n" +
-                "    }\n" +
-                "    description\n" +
-                "    coverImage {\n" +
-                "      medium\n" +
-                "    }\n" +
-                "    episodes\n" +
-                "    duration\n" +
-                "    genres\n" + // Genres is an array of strings
-                "    countryOfOrigin\n" +
-                "    startDate {\n" +
-                "      year\n" +
-                "      month\n" +
-                "      day\n" +
-                "    }\n" +
-                "    endDate {\n" +
-                "      year\n" +
-                "      month\n" +
-                "      day\n" +
-                "    }\n" +
-                "    averageScore\n" +
-                "    meanScore\n" +
-                "    status\n" +
-                "    nextAiringEpisode {\n" +
-                "      episode\n" +
-                "      airingAt\n" +
-                "    }\n" +
-                "  }\n" +
-                "}";
+        // --- Text Block for GraphQL Query ---
+        String query = """
+                query ($id: Int) {
+                  Media(id: $id, type: ANIME) {
+                    id
+                    title {
+                      romaji
+                      english
+                      native
+                    }
+                    description
+                    coverImage {
+                      medium
+                    }
+                    episodes
+                    duration
+                    genres
+                    countryOfOrigin
+                    startDate {
+                      year
+                      month
+                      day
+                    }
+                    endDate {
+                      year
+                      month
+                      day
+                    }
+                    averageScore
+                    meanScore
+                    status
+                    nextAiringEpisode {
+                      episode
+                      airingAt
+                    }
+                  }
+                }
+                """;
+        // --- End Text Block ---
 
         JsonObject variables = new JsonObject();
         variables.addProperty("id", animeId);
@@ -140,43 +144,47 @@ public class AnimeAniList {
     }
 
     public static List<AnimeModel> searchAnime(String searchString) throws ExceptionAniListApi {
-        String query = "query ($search: String) {\n" +
-                "  Page(perPage: 10) {\n" +
-                "    media(search: $search, type: ANIME) {\n" +
-                "      id\n" +
-                "      title {\n" +
-                "        romaji\n" +
-                "        english\n" +
-                "        native\n" +
-                "      }\n" +
-                "      coverImage {\n" +
-                "        medium\n" +
-                "      }\n" +
-                "      description\n" +
-                "      episodes\n" +
-                "      duration\n" +
-                "      genres\n" +
-                "      countryOfOrigin\n" +
-                "      startDate {\n" +
-                "        year\n" +
-                "        month\n" +
-                "        day\n" +
-                "      }\n" +
-                "      endDate {\n" +
-                "        year\n" +
-                "        month\n" +
-                "        day\n" +
-                "      }\n" +
-                "      averageScore\n" +
-                "      meanScore\n" +
-                "      status\n" +
-                "      nextAiringEpisode {\n" +
-                "        episode\n" +
-                "        airingAt\n" +
-                "      }\n" +
-                "    }\n" +
-                "  }\n" +
-                "}";
+        // --- Text Block for GraphQL Query ---
+        String query = """
+                query ($search: String) {
+                  Page(perPage: 10) {
+                    media(search: $search, type: ANIME) {
+                      id
+                      title {
+                        romaji
+                        english
+                        native
+                      }
+                      coverImage {
+                        medium
+                      }
+                      description
+                      episodes
+                      duration
+                      genres
+                      countryOfOrigin
+                      startDate {
+                        year
+                        month
+                        day
+                      }
+                      endDate {
+                        year
+                        month
+                        day
+                      }
+                      averageScore
+                      meanScore
+                      status
+                      nextAiringEpisode {
+                        episode
+                        airingAt
+                      }
+                    }
+                  }
+                }
+                """;
+        // --- End Text Block ---
 
         JsonObject variables = new JsonObject();
         variables.addProperty("search", searchString);
