@@ -235,9 +235,8 @@ public class AnimeAniList {
         stripped = stripped.replace("&apos;", "'");
         stripped = stripped.replace("&nbsp;", " ");
 
-        // --- FIX: Grouping parts of the regex for explicit precedence ---
-        stripped = stripped.replaceAll("(?m)(^[\\s&&[^\\n]]+)|([\\s&&[^\\n]]+$)", "");
-        // --- End FIX ---
+        stripped = stripped.replaceAll("(?m)^[\\s&&[^\\n]]+", "");
+        stripped = stripped.replaceAll("(?m)[\\s&&[^\\n]]+$", "");
 
         stripped = stripped.replaceAll("\\n\\n+", "\n");
         return stripped.trim();
