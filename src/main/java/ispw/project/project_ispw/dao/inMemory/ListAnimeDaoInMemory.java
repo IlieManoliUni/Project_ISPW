@@ -59,7 +59,7 @@ public class ListAnimeDaoInMemory implements ListAnime {
     }
 
     @Override
-    public List<AnimeBean> getAllAnimesInList(ListBean list) throws ExceptionDao {
+    public List<AnimeBean> getAllAnimeInList(ListBean list) throws ExceptionDao {
         if (list == null) {
             throw new IllegalArgumentException("List cannot be null.");
         }
@@ -76,5 +76,21 @@ public class ListAnimeDaoInMemory implements ListAnime {
         }
         // Return an unmodifiable list to prevent external modification of the internal state.
         return Collections.unmodifiableList(animeList);
+    }
+
+    @Override
+    public void removeAllAnimesFromList(ListBean list) throws ExceptionDao {
+        if (list == null) {
+            throw new IllegalArgumentException("List cannot be null.");
+        }
+
+        int listId = list.getId();
+
+        // Check if the list exists before attempting to remove it.
+        // If remove returns null, it means the key was not present.
+        if (animeByListId.remove(listId) == null) {
+            throw new ExceptionDao("List with ID " + listId + " not found, so no animes could be removed.");
+        }
+        // If it was found and removed, no further action is needed as the list is now empty.
     }
 }

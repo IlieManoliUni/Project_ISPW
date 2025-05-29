@@ -19,8 +19,10 @@ public class CrudListTvSeries {
     private static final String SELECT_FULL_DETAILS_TVSERIES_IN_LIST_SQL =
             "SELECT ts.idTvSeriesTmdb, ts.name, ts.episodeRuntime, ts.numberOfEpisodes " +
                     "FROM list_tvseries lts " +
-                    "JOIN tv_series ts ON lts.idTvSeriesTmdb = ts.idTvSeriesTmdb " +
+                    "JOIN tvseries ts ON lts.idTvSeriesTmdb = ts.idTvSeriesTmdb " +
                     "WHERE lts.idList = ?";
+    private static final String DELETE_ALL_TVSERIES_FROM_LIST_SQL = "DELETE FROM list_tvseries WHERE idList = ?";
+
 
     public static int addTvSeriesToList(Connection conn, ListBean list, TvSeriesBean tvSeries) throws ExceptionDao {
         try (PreparedStatement ps = conn.prepareStatement(INSERT_LIST_TVSERIES_SQL)) {
@@ -96,5 +98,15 @@ public class CrudListTvSeries {
             throw new ExceptionDao("Failed to retrieve full TV Series details for list ID " + list.getId() + ": " + e.getMessage(), e);
         }
         return tvSeriesDetails;
+    }
+
+    public static int removeAllTvSeriesFromList(Connection conn, ListBean list) throws ExceptionDao {
+        try (PreparedStatement ps = conn.prepareStatement(DELETE_ALL_TVSERIES_FROM_LIST_SQL)) {
+            ps.setInt(1, list.getId());
+            System.out.println("Executing DELETE ALL TV SERIES FROM LIST: " + ps.toString());
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new ExceptionDao("Failed to remove all TV series from list ID " + list.getId() + ": " + e.getMessage(), e);
+        }
     }
 }

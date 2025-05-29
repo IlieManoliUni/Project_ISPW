@@ -16,7 +16,7 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="ispw.project.project_ispw.controller.graphic.gui.HomeController">
 
-    <fx:include source="default.fxml" />
+    <fx:include fx:id="headerInclude" source="default.fxml" />
 
     <VBox alignment="TOP_CENTER" spacing="10" style="-fx-padding: 20;" VBox.vgrow="ALWAYS">
         <Label text="Your Lists" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #333;" />

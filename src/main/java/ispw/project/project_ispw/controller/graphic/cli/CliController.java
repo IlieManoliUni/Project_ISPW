@@ -1,4 +1,3 @@
-// File: src/main/java/ispw/project/project_ispw/controller/graphic/cli/CliController.java
 package ispw.project.project_ispw.controller.graphic.cli;
 
 // Necessary imports (Bean classes are not directly used in CliController now, as GraphicControllerCli handles them)
@@ -8,12 +7,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class CliController {
-
-    private static final Logger LOGGER = Logger.getLogger(CliController.class.getName());
 
     @FXML
     private TextArea cliTextArea;
@@ -149,7 +144,6 @@ public class CliController {
             String response = graphicControllerCli.processCliCommand(command);
             displayOutput(response);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error processing command: " + command, e);
             displayOutput("An internal error occurred: " + e.getMessage());
         }
 

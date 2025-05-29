@@ -4,34 +4,37 @@ package ispw.project.project_ispw.controller.graphic.cli;
 import ispw.project.project_ispw.controller.application.ApplicationController;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
 import ispw.project.project_ispw.bean.UserBean;
+import ispw.project.project_ispw.controller.graphic.GraphicController;
 import ispw.project.project_ispw.controller.graphic.cli.command.*;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
 import ispw.project.project_ispw.exception.ExceptionUser;
+import javafx.fxml.FXMLLoader; // Import for FXMLLoader
+import javafx.scene.Parent;   // Import for Parent
+import javafx.scene.Scene;    // Import for Scene
+import javafx.stage.Stage;    // Import for Stage
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Singleton controller for the JavaFX CLI window's backend logic,
  * refactored to use the Command design pattern.
  */
-public class GraphicControllerCli {
+public class GraphicControllerCli implements GraphicController {
 
-    private static final Logger LOGGER = Logger.getLogger(GraphicControllerCli.class.getName());
     private static GraphicControllerCli instance; // Singleton instance
 
     private final ApplicationController applicationController;
     private UserBean currentUserBean = null; // Store current user here, as this is the logic layer
     private final Map<String, CliCommand> commands; // Map to hold command instances
+    private Stage primaryStage; // Add a field to hold the primary stage
 
     // Private constructor for Singleton pattern
     private GraphicControllerCli(PersistenceModeState persistenceState) {
         this.applicationController = new ApplicationController(persistenceState);
         this.commands = new HashMap<>();
         initializeCommands(); // Populate the command map
-        LOGGER.log(Level.INFO, "GraphicControllerCli initialized with {0}", persistenceState.getClass().getSimpleName());
     }
 
     // --- Singleton Access Methods ---
@@ -39,14 +42,13 @@ public class GraphicControllerCli {
         if (instance == null) {
             instance = new GraphicControllerCli(persistenceState);
         } else {
-            LOGGER.log(Level.WARNING, "GraphicControllerCli.getInstance() called with PersistenceModeState, but already initialized.");
+            // "GraphicControllerCli.getInstance() called with PersistenceModeState, but already initialized."
         }
         return instance;
     }
 
     public static synchronized GraphicControllerCli getInstance() {
         if (instance == null) {
-            LOGGER.log(Level.SEVERE, "GraphicControllerCli accessed before proper initialization with PersistenceModeState.");
             throw new IllegalStateException("GraphicControllerCli not initialized. Call getInstance(PersistenceModeState) first.");
         }
         return instance;
@@ -61,21 +63,31 @@ public class GraphicControllerCli {
         commands.put("login", new LoginCommand());
         commands.put("signup", new SignUpCommand());
         commands.put("logout", new LogoutCommand());
-        commands.put("createlist", new CreateListCommand()); // You'd create this class
-        commands.put("deletelist", new DeleteListCommand()); // You'd create this class
-        commands.put("getalllists", new GetAllListsCommand()); // You'd create this class
-        commands.put("searchanime", new SearchAnimeCommand()); // You'd create this class
-        commands.put("searchmovie", new SearchMovieCommand()); // You'd create this class
-        commands.put("searchtvseries", new SearchTvSeriesCommand()); // You'd create this class
-        commands.put("saveanimetolist", new SaveAnimeToListCommand()); // You'd create this class
-        commands.put("deleteanimefromlist", new DeleteAnimeFromListCommand()); // You'd create this class
-        commands.put("savemovietolist", new SaveMovieToListCommand()); // You'd create this class
-        commands.put("deletemoviefromlist", new DeleteMovieFromListCommand()); // You'd create this class
-        commands.put("savetvseriestolist", new SaveTvSeriesToListCommand()); // You'd create this class
-        commands.put("deletetvseriesfromlist", new DeleteTvSeriesFromListCommand()); // You'd create this class
+        commands.put("createlist", new CreateListCommand());
+        commands.put("deletelist", new DeleteListCommand());
+        commands.put("getalllists", new GetAllListsCommand());
+        commands.put("searchanime", new SearchAnimeCommand());
+        commands.put("searchmovie", new SearchMovieCommand());
+        commands.put("searchtvseries", new SearchTvSeriesCommand());
+        commands.put("saveanimetolist", new SaveAnimeToListCommand());
+        commands.put("deleteanimefromlist", new DeleteAnimeFromListCommand());
+        commands.put("savemovietolist", new SaveMovieToListCommand());
+        commands.put("deletemoviefromlist", new DeleteMovieFromListCommand());
+        commands.put("savetvseriestolist", new SaveTvSeriesToListCommand());
+        commands.put("deletetvseriesfromlist", new DeleteTvSeriesFromListCommand());
+        commands.put("seeanimedetails", new SeeAnimeDetailsCommand());
+        commands.put("seemoviedetails", new SeeMovieDetailsCommand());
+        commands.put("seetvseriesdetails", new SeeTvSeriesDetailsCommand());
         // Add all other concrete command implementations here
     }
 
+    /**
+     * Sets the primary stage for the application. This must be called early in the application lifecycle.
+     * @param primaryStage The main JavaFX Stage.
+     */
+    public void setPrimaryStage(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+    }
 
     /**
      * Provides access to the ApplicationController for the CLI-like GUI.
@@ -130,16 +142,12 @@ public class GraphicControllerCli {
                 // Execute the command, passing this GraphicControllerCli instance as context
                 return command.execute(this, args);
             } catch (NumberFormatException e) {
-                LOGGER.log(Level.WARNING, "Number format error in command '{0}': {1}", new Object[]{cmdName, e.getMessage()});
                 return "Error: Invalid number format for ID. Please provide a valid number.";
             } catch (ExceptionUser e) {
-                LOGGER.log(Level.WARNING, "User error executing command '{0}': {1}", new Object[]{cmdName, e.getMessage()});
                 return "User error: " + e.getMessage();
             } catch (ExceptionApplicationController e) {
-                LOGGER.log(Level.SEVERE, "ApplicationController error executing command '{0}': {1}", new Object[]{cmdName, e.getMessage()});
                 return "Application error: " + e.getMessage();
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "An unexpected error occurred while executing command '{0}'", e); // Pass exception object for full stack trace
                 return "An unexpected error occurred: " + e.getMessage();
             }
         } else {
@@ -147,7 +155,24 @@ public class GraphicControllerCli {
         }
     }
 
-    // The individual handle*Command methods are now replaced by separate CliCommand classes.
-    // E.g., handleLoginCommand is now LoginCommand.execute()
-    // You would remove all the handle*Command methods from this class.
+    @Override
+    public void startView() throws IOException {
+        // This method now takes responsibility for loading the CLI FXML and setting up the stage.
+        if (primaryStage == null) {
+            // In a real application, you might throw a RuntimeException or log a severe error
+            // as the primaryStage should always be set before calling startView.
+            System.err.println("Error: Primary Stage not set for GraphicControllerCli.");
+            return;
+        }
+
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ispw/project/project_ispw/view/cli/cli.fxml"));
+        Parent root = fxmlLoader.load();
+        Scene scene = new Scene(root, 800, 600);
+
+        primaryStage.setTitle("Media Hub CLI");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+
+        System.out.println("CLI Graphic Controller initialized and ready to receive commands.");
+    }
 }

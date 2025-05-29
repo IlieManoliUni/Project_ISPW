@@ -15,12 +15,9 @@ import java.util.Collections; // For unmodifiable list
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class AnimeDaoCsv implements AnimeDao {
 
-    private static final Logger LOGGER = Logger.getLogger(AnimeDaoCsv.class.getName());
     private static final String CSV_FILE_NAME;
 
     // Use a robust, non-static cache if multiple instances of AnimeDaoCsv are possible
@@ -36,11 +33,9 @@ public class AnimeDaoCsv implements AnimeDao {
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
-                LOGGER.log(Level.INFO, "CSV file created: {0}", CSV_FILE_NAME);
             }
         } catch (IOException e) {
             // If file creation fails, this is a critical error for the DAO
-            LOGGER.log(Level.SEVERE, "Failed to create CSV file: " + CSV_FILE_NAME, e);
             throw new RuntimeException("Initialization failed: Could not create CSV file.", e);
         }
     }
@@ -64,12 +59,10 @@ public class AnimeDaoCsv implements AnimeDao {
             // Provide a sensible default if property is missing, but log it.
             String filename = properties.getProperty("anime.csv.filename");
             if (filename == null || filename.trim().isEmpty()) {
-                LOGGER.log(Level.WARNING, "Property 'anime.csv.filename' not found or is empty in csv.properties. Using default: anime.csv");
                 filename = "anime.csv";
             }
             return filename;
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error loading csv.properties", e);
             throw new RuntimeException("Initialization failed: Error loading csv.properties.", e);
         }
     }
@@ -88,7 +81,6 @@ public class AnimeDaoCsv implements AnimeDao {
         try {
             anime = retrieveByIdFromFile(id);
         } catch (IOException | NumberFormatException e) {
-            LOGGER.log(Level.SEVERE, "Error reading CSV file or parsing data for ID: " + id, e);
             throw new ExceptionDao("Failed to retrieve anime from CSV for ID: " + id + ". Data corruption or I/O error.", e);
         }
 
@@ -112,7 +104,6 @@ public class AnimeDaoCsv implements AnimeDao {
             String[] record;
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 4) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed CSV record: {0}", String.join(",", record));
                     continue; // Skip invalid records
                 }
                 int currentId = Integer.parseInt(record[0]); // Throws NumberFormatException
@@ -143,7 +134,6 @@ public class AnimeDaoCsv implements AnimeDao {
         try {
             existingAnime = retrieveByIdFromFile(animeId);
         } catch (IOException | NumberFormatException e) {
-            LOGGER.log(Level.SEVERE, "Error checking existing anime in CSV for ID: " + animeId, e);
             throw new ExceptionDao("Failed to check existing anime for ID: " + animeId + ". Data corruption or I/O error.", e);
         }
 
@@ -155,7 +145,6 @@ public class AnimeDaoCsv implements AnimeDao {
         try {
             saveAnimeToFile(anime);
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error saving anime to CSV file: " + animeId, e);
             throw new ExceptionDao("Failed to save anime to CSV for ID: " + animeId + ". I/O error.", e);
         }
 
@@ -186,10 +175,8 @@ public class AnimeDaoCsv implements AnimeDao {
         try {
             animeList = retrieveAllAnimeFromFile();
         } catch (IOException | NumberFormatException e) {
-            LOGGER.log(Level.SEVERE, "Error reading all animes from CSV file", e);
             throw new ExceptionDao("Failed to retrieve all animes from CSV. Data corruption or I/O error.", e);
         }
-
 
         // Load into cache if successful
         synchronized (localCache) {
@@ -217,7 +204,6 @@ public class AnimeDaoCsv implements AnimeDao {
             String[] record;
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 4) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed CSV record: {0}", String.join(",", record));
                     continue; // Skip invalid records
                 }
                 // id, duration, episodes, title -> record[0], record[2], record[1], record[3] (based on your original mapping)

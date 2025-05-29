@@ -9,9 +9,8 @@
 <VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="ispw.project.project_ispw.controller.graphic.cli.CliController"
       spacing="10" style="-fx-padding: 20;">
-    <TextArea fx:id="cliTextArea" promptText="Enter your command here..." VBox.vgrow="ALWAYS" onKeyPressed="#handleKeyPressed" />
+    <TextArea fx:id="cliTextArea" promptText="Enter your command here..." VBox.vgrow="ALWAYS" />
 
     <HBox alignment="CENTER">
-        <Button fx:id="submitButton" text="Submit" onAction="#handleSubmitButtonClick" />
-    </HBox>
+        <Button fx:id="submitButton" text="Submit" /> </HBox>
 </VBox>

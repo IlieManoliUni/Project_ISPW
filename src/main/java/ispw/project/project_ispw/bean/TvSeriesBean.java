@@ -1,7 +1,7 @@
 package ispw.project.project_ispw.bean;
 
 import java.io.Serializable;
-import java.util.Collections; // For empty lists
+import java.util.Collections;
 import java.util.List;
 
 public class TvSeriesBean implements Serializable {
@@ -11,7 +11,7 @@ public class TvSeriesBean implements Serializable {
     private int idTvSeriesTmdb;
     private int episodeRuntime;
     private int numberOfEpisodes;
-    private String name; // Used as 'title' in ShowController
+    private String name;
     private String overview;
     private String originalName;
     private String originalLanguage;
@@ -29,9 +29,6 @@ public class TvSeriesBean implements Serializable {
         // Default constructor
     }
 
-    /**
-     * Full constructor for TvSeriesBean.
-     */
     public TvSeriesBean(int idTvSeriesTmdb, int episodeRuntime, int numberOfEpisodes,
                         String name, String overview, String originalName,
                         String originalLanguage, String firstAirDate, String lastAirDate,
@@ -56,15 +53,6 @@ public class TvSeriesBean implements Serializable {
         this.posterPath = posterPath;
     }
 
-    /**
-     * New constructor for TvSeriesBean with a subset of common fields.
-     * Other fields are initialized to default values.
-     *
-     * @param episodeRuntime The average runtime of an episode in minutes.
-     * @param idTvSeriesTmdb The unique ID of the TV series from TMDB.
-     * @param numberOfEpisodes The total number of episodes in the series.
-     * @param name The main title/name of the TV series.
-     */
     public TvSeriesBean(int episodeRuntime, int idTvSeriesTmdb, int numberOfEpisodes, String name) {
         this.episodeRuntime = episodeRuntime;
         this.idTvSeriesTmdb = idTvSeriesTmdb;
@@ -84,9 +72,6 @@ public class TvSeriesBean implements Serializable {
         this.productionCompanies = Collections.emptyList(); // Initialize with an empty, immutable list
         this.posterPath = null;
     }
-
-
-    // Getters and Setters for all fields
 
     public int getNumberOfEpisodes() {
         return numberOfEpisodes;

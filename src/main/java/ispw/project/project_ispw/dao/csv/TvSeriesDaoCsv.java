@@ -17,12 +17,9 @@ import java.util.Collections; // For unmodifiable list
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class TvSeriesDaoCsv implements TvSeriesDao {
 
-    private static final Logger LOGGER = Logger.getLogger(TvSeriesDaoCsv.class.getName());
     private static final String CSV_FILE_NAME;
 
     // Using an instance cache for thread safety and consistency.
@@ -38,10 +35,9 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
                 properties.load(input);
                 fileName = properties.getProperty("tvseries.csv.filename", fileName);
             } else {
-                LOGGER.log(Level.WARNING, "csv.properties file not found. Using default CSV filename for TV series: {0}", fileName);
+                // csv.properties file not found, using default CSV filename.
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error loading csv.properties for TvSeriesDaoCsv. Using default filename: {0}");
             throw new RuntimeException("Initialization failed: Error loading csv.properties.", e); // Critical startup error
         }
         CSV_FILE_NAME = fileName;
@@ -50,11 +46,9 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
-                LOGGER.log(Level.INFO, "TV Series CSV file created: {0}", CSV_FILE_NAME);
             }
         } catch (IOException e) {
             // If file creation fails, this is a critical error for the DAO
-            LOGGER.log(Level.SEVERE, "Initialization failed: Could not create TV series CSV file: " + CSV_FILE_NAME, e);
             throw new RuntimeException("Initialization failed: Could not create CSV file for TV series.", e);
         }
     }
@@ -79,7 +73,6 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
         try {
             tvSeries = retrieveByIdFromFile(id);
         } catch (IOException | CsvValidationException | NumberFormatException e) {
-            LOGGER.log(Level.SEVERE, "Error reading CSV file or parsing data for TV Series ID: " + id, e);
             throw new ExceptionDao("Failed to retrieve TV Series from CSV for ID: " + id + ". Data corruption or I/O error.", e);
         }
 
@@ -100,7 +93,6 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
             String[] record;
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 4) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed CSV record for retrieveByIdFromFile: {0}", String.join(",", record));
                     continue; // Skip invalid records
                 }
                 int currentId = Integer.parseInt(record[0]);
@@ -128,7 +120,6 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
         try {
             existingTvSeries = retrieveByIdFromFile(tvSeriesId);
         } catch (IOException | CsvValidationException | NumberFormatException e) {
-            LOGGER.log(Level.SEVERE, "Error checking existing TV Series in CSV for ID: " + tvSeriesId, e);
             throw new ExceptionDao("Failed to check existing TV Series for ID: " + tvSeriesId + ". Data corruption or I/O error.", e);
         }
 
@@ -140,7 +131,6 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
         try {
             saveTvSeriesToFile(tvSeries);
         } catch (IOException | CsvValidationException e) {
-            LOGGER.log(Level.SEVERE, "Error saving TV Series to CSV file: " + tvSeriesId, e);
             throw new ExceptionDao("Failed to save TV Series to CSV for ID: " + tvSeriesId + ". I/O or data error.", e);
         }
 
@@ -169,8 +159,8 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
         List<TvSeriesBean> tvSeriesList = null;
         try {
             tvSeriesList = retrieveAllTvSeriesFromFile();
-        } catch (IOException | CsvValidationException | NumberFormatException e) {
-            LOGGER.log(Level.SEVERE, "Error reading all TV Series from CSV file", e);
+        }
+        catch (IOException | CsvValidationException | NumberFormatException e) {
             throw new ExceptionDao("Failed to retrieve all TV Series from CSV. Data corruption or I/O error.", e);
         }
 
@@ -199,7 +189,6 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
             String[] record;
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 4) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed CSV record for retrieveAllTvSeriesFromFile: {0}", String.join(",", record));
                     continue; // Skip invalid records
                 }
                 // Assuming TvSeriesBean constructor: public TvSeriesBean(int id, int episodeRuntime, int numberOfEpisodes, String name)

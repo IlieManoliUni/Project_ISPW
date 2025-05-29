@@ -74,4 +74,20 @@ public class ListMovieDaoInMemory implements ListMovie {
         // Return an unmodifiable list to prevent external modification of the internal state.
         return Collections.unmodifiableList(movieList);
     }
+
+    @Override
+    public void removeAllMoviesFromList(ListBean list) throws ExceptionDao {
+        if (list == null) {
+            throw new IllegalArgumentException("List cannot be null.");
+        }
+
+        int listId = list.getId();
+
+        // Check if the list exists before attempting to remove it.
+        // If remove returns null, it means the key was not present.
+        if (movieByListId.remove(listId) == null) {
+            throw new ExceptionDao("List with ID " + listId + " not found, so no movies could be removed.");
+        }
+        // If it was found and removed, no further action is needed as the list is now empty.
+    }
 }

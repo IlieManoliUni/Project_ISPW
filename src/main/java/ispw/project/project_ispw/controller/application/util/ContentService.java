@@ -3,152 +3,288 @@ package ispw.project.project_ispw.controller.application.util;
 import ispw.project.project_ispw.bean.AnimeBean;
 import ispw.project.project_ispw.bean.MovieBean;
 import ispw.project.project_ispw.bean.TvSeriesBean;
-import ispw.project.project_ispw.dao.AnimeDao;
-import ispw.project.project_ispw.dao.MovieDao;
-import ispw.project.project_ispw.dao.TvSeriesDao;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
-import ispw.project.project_ispw.exception.ExceptionDao;
+import ispw.project.project_ispw.connection.AnimeAniList;
+import ispw.project.project_ispw.connection.MovieTmdb;
+import ispw.project.project_ispw.connection.TvSeriesTmdb;
+import ispw.project.project_ispw.exception.ExceptionAniListApi;
+import ispw.project.project_ispw.exception.ExceptionTmdbApi;
+import ispw.project.project_ispw.model.AnimeModel;
+import ispw.project.project_ispw.model.MovieModel;
+import ispw.project.project_ispw.model.TvSeriesModel;
+
 
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Arrays;
 
 public class ContentService {
 
-    private static final Logger LOGGER = Logger.getLogger(ContentService.class.getName());
+    private static final String DATE_FORMAT_PATTERN = "%d-%02d-%02d";
 
-    private final MovieDao movieDao;
-    private final TvSeriesDao tvSeriesDao;
-    private final AnimeDao animeDao;
-
-    public ContentService(MovieDao movieDao, TvSeriesDao tvSeriesDao, AnimeDao animeDao) {
-        this.movieDao = movieDao;
-        this.tvSeriesDao = tvSeriesDao;
-        this.animeDao = animeDao;
+    public ContentService() {
+        // No logging needed in constructor
     }
 
-    public List<?> searchContent(String category, String query) throws ExceptionApplicationController {
+    public List<MovieBean> searchAndMapMovies(String query) throws ExceptionApplicationController {
         try {
-            LOGGER.log(Level.INFO, "Performing search for category: {0}, query: {1}", new Object[]{category, query});
-            switch (category) {
-                case "Movie":
-                    // This would ideally interact with movieDao or an external API client
-                    return Collections.emptyList(); // Replace with actual results
-                case "TV Series":
-                    // This would ideally interact with tvSeriesDao or an external API client
-                    return Collections.emptyList(); // Replace with actual results
-                case "Anime":
-                    // This would ideally interact with animeDao or an external API client
-                    return Collections.emptyList(); // Replace with actual results
-                default:
-                    LOGGER.log(Level.WARNING, "Invalid search category: {0}", category);
-                    return Collections.emptyList();
+            List<MovieModel> movieModels = MovieTmdb.searchMovies(query);
+            List<MovieBean> movieBeans = new java.util.ArrayList<>();
+            for (MovieModel model : movieModels) {
+                List<String> genres = new java.util.ArrayList<>();
+                if (model.getGenres() != null) {
+                    for (MovieModel.Genre genre : model.getGenres()) {
+                        genres.add(genre.getName());
+                    }
+                }
+                List<String> productionCompanies = new java.util.ArrayList<>();
+                if (model.getProductionCompanies() != null) {
+                    for (MovieModel.ProductionCompany company : model.getProductionCompanies()) {
+                        productionCompanies.add(company.getName());
+                    }
+                }
+
+                movieBeans.add(new MovieBean(
+                        model.getId(),
+                        model.getTitle(),
+                        model.getOverview(),
+                        model.getOriginalTitle(),
+                        model.getOriginalLanguage(),
+                        model.getReleaseDate(),
+                        model.getRuntime(),
+                        genres,
+                        model.getVoteAverage(),
+                        model.getBudget(),
+                        model.getRevenue(),
+                        productionCompanies,
+                        model.getPosterPath()
+                ));
             }
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error during content search for category {0}, query {1}: {2}", new Object[]{category, query, e.getMessage()});
-            throw new ExceptionApplicationController("Failed to perform search: " + e.getMessage(), e);
+            return movieBeans;
+        } catch (ExceptionTmdbApi tmdbE) {
+            throw new ExceptionApplicationController("Failed to search movies from TMDb API: " + tmdbE.getMessage(), tmdbE);
+        }
+    }
+
+    public List<TvSeriesBean> searchAndMapTvSeries(String query) throws ExceptionApplicationController {
+        try {
+            List<TvSeriesModel> tvSeriesModels = TvSeriesTmdb.searchTvSeries(query);
+            List<TvSeriesBean> tvSeriesBeans = new java.util.ArrayList<>();
+            for (TvSeriesModel model : tvSeriesModels) {
+                List<String> genres = new java.util.ArrayList<>();
+                if (model.getGenres() != null) {
+                    for (TvSeriesModel.Genre genre : model.getGenres()) {
+                        genres.add(genre.getName());
+                    }
+                }
+                List<String> productionCompanies = new java.util.ArrayList<>();
+                if (model.getProductionCompanies() != null) {
+                    for (TvSeriesModel.ProductionCompany company : model.getProductionCompanies()) {
+                        productionCompanies.add(company.getName());
+                    }
+                }
+                List<String> createdBy = new java.util.ArrayList<>();
+                if (model.getCreatedBy() != null) {
+                    for (TvSeriesModel.Creator creator : model.getCreatedBy()) {
+                        createdBy.add(creator.getName());
+                    }
+                }
+                int episodeRuntime = (model.getEpisodeRunTime() != null && !model.getEpisodeRunTime().isEmpty()) ? model.getEpisodeRunTime().get(0) : 0;
+
+                tvSeriesBeans.add(new TvSeriesBean(
+                        model.getId(),
+                        episodeRuntime,
+                        model.getNumberOfEpisodes(),
+                        model.getName(),
+                        model.getOverview(),
+                        model.getOriginalName(),
+                        model.getOriginalLanguage(),
+                        model.getFirstAirDate(),
+                        model.getLastAirDate(),
+                        model.getNumberOfSeasons(),
+                        model.getInProduction(),
+                        model.getStatus(),
+                        model.getVoteAverage(),
+                        createdBy,
+                        productionCompanies,
+                        model.getPosterPath()
+                ));
+            }
+            return tvSeriesBeans;
+        } catch (ExceptionTmdbApi tmdbE) {
+            throw new ExceptionApplicationController("Failed to search TV Series from TMDb API: " + tmdbE.getMessage(), tmdbE);
+        }
+    }
+
+    public List<AnimeBean> searchAndMapAnime(String query) throws ExceptionApplicationController {
+        try {
+            List<AnimeModel> animeModels = AnimeAniList.searchAnime(query);
+            List<AnimeBean> animeBeans = new java.util.ArrayList<>();
+            for (AnimeModel model : animeModels) {
+                animeBeans.add(new AnimeBean(
+                        model.getId(),
+                        model.getTitle() != null ? model.getTitle().getRomaji() : null,
+                        model.getDescription(),
+                        model.getCoverImage() != null ? model.getCoverImage().getMedium() : null,
+                        model.getEpisodes(),
+                        model.getDuration(),
+                        model.getCountryOfOrigin(),
+                        model.getStartDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getStartDate().getYear(), model.getStartDate().getMonth(), model.getStartDate().getDay()) : null,
+                        model.getEndDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getEndDate().getYear(), model.getEndDate().getMonth(), model.getEndDate().getDay()) : null,
+                        model.getAverageScore(),
+                        model.getMeanScore(),
+                        model.getStatus(),
+                        model.getNextAiringEpisode() != null ? "Episode " + model.getNextAiringEpisode().getEpisode() + " airing at " + model.getNextAiringEpisode().getAiringAt() : null,
+                        model.getGenres() != null ? Arrays.asList(model.getGenres()) : Collections.emptyList()
+                ));
+            }
+            return animeBeans;
+        } catch (ExceptionAniListApi aniListE) {
+            throw new ExceptionApplicationController("Failed to search Anime from AniList API: " + aniListE.getMessage(), aniListE);
         }
     }
 
     public MovieBean retrieveMovieById(int id) throws ExceptionApplicationController {
         try {
-            if (movieDao == null) {
-                LOGGER.log(Level.SEVERE, "MovieDao is not initialized. Cannot retrieve movie by ID.");
-                throw new ExceptionApplicationController("Functionality not available (Movie DAO missing).");
-            }
-            MovieBean movie = movieDao.retrieveById(id);
-            if (movie != null) {
-                LOGGER.log(Level.INFO, "Movie '{0}' (ID: {1}) retrieved successfully.", new Object[]{movie.getTitle(), id});
-                return movie;
-            }
-
-            // --- TEMPORARY MOCK MOVIE (fallback if not found in DAO) ---
-            if (id == 100) {
-                LOGGER.log(Level.INFO, "Returning mock movie for ID: {0}", id);
-                return new MovieBean(id, "Mock Movie Title", "A very exciting mock movie overview.",
-                        "Original Mock Title", "en", "2023-01-01", 120,
-                        List.of("Action", "Adventure"), 7.5, 100000000, 500000000,
-                        List.of("Mock Productions"), "/path/to/mock/poster.jpg");
-            }
-            // --- END TEMPORARY MOCK MOVIE ---
-
-            throw new ExceptionApplicationController("Movie with ID " + id + " not found.");
-
+            return fetchAndMapMovieModel(id);
         } catch (ExceptionApplicationController e) {
             throw e;
-        } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "DAO error retrieving movie by ID {0}: {1}", new Object[]{id, e.getMessage()});
-            throw new ExceptionApplicationController("Failed to retrieve movie details: " + e.getMessage(), e);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error retrieving movie by ID {0}: {1}", new Object[]{id, e.getMessage()});
-            throw new ExceptionApplicationController("Failed to retrieve movie details: " + e.getMessage(), e);
+            throw new ExceptionApplicationController("Failed to retrieve Movie details: " + e.getMessage(), e);
+        }
+    }
+
+    private MovieBean fetchAndMapMovieModel(int id) throws ExceptionApplicationController {
+        try {
+            MovieModel model = MovieTmdb.getMovieById(id);
+
+            if (model == null) {
+                throw new ExceptionApplicationController("Movie with ID " + id + " not found or returned null model from TMDb API.");
+            }
+
+            List<String> genres = new java.util.ArrayList<>();
+            if (model.getGenres() != null) {
+                for (MovieModel.Genre genre : model.getGenres()) {
+                    genres.add(genre.getName());
+                }
+            }
+
+            List<String> productionCompanies = new java.util.ArrayList<>();
+            if (model.getProductionCompanies() != null) {
+                for (MovieModel.ProductionCompany company : model.getProductionCompanies()) {
+                    productionCompanies.add(company.getName());
+                }
+            }
+
+            return new MovieBean(
+                    model.getId(),
+                    model.getTitle(),
+                    model.getOverview(),
+                    model.getOriginalTitle(),
+                    model.getOriginalLanguage(),
+                    model.getReleaseDate(),
+                    model.getRuntime(),
+                    genres,
+                    model.getVoteAverage(),
+                    model.getBudget(),
+                    model.getRevenue(),
+                    productionCompanies,
+                    model.getPosterPath()
+            );
+        } catch (ExceptionTmdbApi tmdbE) {
+            throw new ExceptionApplicationController("Movie with ID " + id + " not found from TMDb API: " + tmdbE.getMessage(), tmdbE);
         }
     }
 
     public TvSeriesBean retrieveTvSeriesById(int id) throws ExceptionApplicationController {
         try {
-            if (tvSeriesDao == null) {
-                LOGGER.log(Level.SEVERE, "TvSeriesDao is not initialized. Cannot retrieve TV series by ID.");
-                throw new ExceptionApplicationController("Functionality not available (TV Series DAO missing).");
-            }
-            TvSeriesBean tvSeries = tvSeriesDao.retrieveById(id);
-            if (tvSeries != null) {
-                LOGGER.log(Level.INFO, "TV Series '{0}' (ID: {1}) retrieved successfully.", new Object[]{tvSeries.getName(), id});
-                return tvSeries;
-            }
-
-            // --- TEMPORARY MOCK TV SERIES ---
-            if (id == 200) {
-                LOGGER.log(Level.INFO, "Returning mock TV Series for ID: {0}", id);
-                return new TvSeriesBean(id, 45, 10, "Mock Series Name",
-                        "An engaging mock TV series overview.", "Original Mock Series", "en",
-                        "2022-03-01", "2022-05-10", 1, false, "Ended",
-                        8.2, List.of("Creator A", "Creator B"), List.of("Mock TV Inc."), "/path/to/mock/tv_poster.jpg");
-            }
-            // --- END TEMPORARY MOCK TV SERIES ---
-            throw new ExceptionApplicationController("TV Series with ID " + id + " not found.");
+            return fetchAndMapTvSeriesModel(id);
         } catch (ExceptionApplicationController e) {
             throw e;
-        } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "DAO error retrieving TV Series by ID {0}: {1}", new Object[]{id, e.getMessage()});
-            throw new ExceptionApplicationController("Failed to retrieve TV Series details: " + e.getMessage(), e);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error retrieving TV Series by ID {0}: {1}", new Object[]{id, e.getMessage()});
             throw new ExceptionApplicationController("Failed to retrieve TV Series details: " + e.getMessage(), e);
         }
     }
 
-    public AnimeBean retrieveAnimeById(int id) throws ExceptionApplicationController {
+    private TvSeriesBean fetchAndMapTvSeriesModel(int id) throws ExceptionApplicationController {
         try {
-            if (animeDao == null) {
-                LOGGER.log(Level.SEVERE, "AnimeDao is not initialized. Cannot retrieve anime by ID.");
-                throw new ExceptionApplicationController("Functionality not available (Anime DAO missing).");
-            }
-            AnimeBean anime = animeDao.retrieveById(id);
-            if (anime != null) {
-                LOGGER.log(Level.INFO, "Anime '{0}' (ID: {1}) retrieved successfully.", new Object[]{anime.getTitle(), id});
-                return anime;
+            TvSeriesModel model = TvSeriesTmdb.getTvSeriesById(id);
+
+            if (model == null) {
+                throw new ExceptionApplicationController("TV Series with ID " + id + " not found or returned null model from TMDb API.");
             }
 
-            // --- TEMPORARY MOCK ANIME ---
-            if (id == 300) {
-                LOGGER.log(Level.INFO, "Returning mock Anime for ID: {0}", id);
-                return new AnimeBean(id, "Mock Anime Title", "A fantastical journey in a mock anime world.",
-                        "https://example.com/mock_anime_cover.jpg", 24, 23, "JP",
-                        "2021-07-01", "2021-12-16", 85, 80, "Finished",
-                        "Episode 25 airing on 2022-01-01", List.of("Fantasy", "Action"));
+            List<String> genres = new java.util.ArrayList<>();
+            if (model.getGenres() != null) {
+                for (TvSeriesModel.Genre genre : model.getGenres()) {
+                    genres.add(genre.getName());
+                }
             }
-            // --- END TEMPORARY MOCK ANIME ---
-            throw new ExceptionApplicationController("Anime with ID " + id + " not found.");
-        } catch (ExceptionApplicationController e) {
-            throw e;
-        } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "DAO error retrieving Anime by ID {0}: {1}", new Object[]{id, e.getMessage()});
-            throw new ExceptionApplicationController("Failed to retrieve Anime details: " + e.getMessage(), e);
+
+            List<String> productionCompanies = new java.util.ArrayList<>();
+            if (model.getProductionCompanies() != null) {
+                for (TvSeriesModel.ProductionCompany company : model.getProductionCompanies()) {
+                    productionCompanies.add(company.getName());
+                }
+            }
+
+            List<String> createdBy = new java.util.ArrayList<>();
+            if (model.getCreatedBy() != null) {
+                for (TvSeriesModel.Creator creator : model.getCreatedBy()) {
+                    createdBy.add(creator.getName());
+                }
+            }
+
+            int episodeRuntime = (model.getEpisodeRunTime() != null && !model.getEpisodeRunTime().isEmpty()) ? model.getEpisodeRunTime().get(0) : 0;
+
+            return new TvSeriesBean(
+                    model.getId(),
+                    episodeRuntime,
+                    model.getNumberOfEpisodes(),
+                    model.getName(),
+                    model.getOverview(),
+                    model.getOriginalName(),
+                    model.getOriginalLanguage(),
+                    model.getFirstAirDate(),
+                    model.getLastAirDate(),
+                    model.getNumberOfSeasons(),
+                    model.getInProduction(),
+                    model.getStatus(),
+                    model.getVoteAverage(),
+                    createdBy,
+                    productionCompanies,
+                    model.getPosterPath()
+            );
+        } catch (ExceptionTmdbApi tmdbE) {
+            throw new ExceptionApplicationController("TV Series with ID " + id + " not found from TMDb API: " + tmdbE.getMessage(), tmdbE);
+        }
+    }
+
+
+    public AnimeBean retrieveAnimeById(int id) throws ExceptionApplicationController {
+        try {
+            AnimeModel model = AnimeAniList.getAnimeById(id);
+
+            return new AnimeBean(
+                    model.getId(),
+                    model.getTitle() != null ? model.getTitle().getRomaji() : null,
+                    model.getDescription(),
+                    model.getCoverImage() != null ? model.getCoverImage().getMedium() : null,
+                    model.getEpisodes(),
+                    model.getDuration(),
+                    model.getCountryOfOrigin(),
+                    model.getStartDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getStartDate().getYear(), model.getStartDate().getMonth(), model.getStartDate().getDay()) : null,
+                    model.getEndDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getEndDate().getYear(), model.getEndDate().getMonth(), model.getEndDate().getDay()) : null,
+                    model.getAverageScore(),
+                    model.getMeanScore(),
+                    model.getStatus(),
+                    model.getNextAiringEpisode() != null ? "Episode " + model.getNextAiringEpisode().getEpisode() + " airing at " + model.getNextAiringEpisode().getAiringAt() : null,
+                    model.getGenres() != null ? Arrays.asList(model.getGenres()) : Collections.emptyList()
+            );
+        } catch (ExceptionAniListApi aniListE) {
+            throw new ExceptionApplicationController("Failed to retrieve Anime details: " + aniListE.getMessage(), aniListE);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error retrieving Anime by ID {0}: {1}", new Object[]{id, e.getMessage()});
-            throw new ExceptionApplicationController("Failed to retrieve Anime details: " + e.getMessage(), e);
+            throw new ExceptionApplicationController("An unexpected error occurred while retrieving Anime details: " + e.getMessage(), e);
         }
     }
 }

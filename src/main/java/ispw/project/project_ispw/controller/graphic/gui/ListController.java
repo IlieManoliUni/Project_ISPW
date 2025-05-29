@@ -21,12 +21,8 @@ import javafx.scene.text.Text;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ListController implements NavigableController {
-
-    private static final Logger LOGGER = Logger.getLogger(ListController.class.getName());
 
     @FXML
     private ListView<String> listView;
@@ -40,20 +36,43 @@ public class ListController implements NavigableController {
     private GraphicControllerGui graphicControllerGui;
     private ListBean selectedList;
 
+    // --- NEW: FXML injection for the included DefaultBackHomeController ---
+    // This field will be automatically populated by FXMLLoader
+    // if 'list.fxml' has <fx:include fx:id="headerBar" .../>
+    @FXML
+    private DefaultBackHomeController headerBarController; // Assuming fx:id="headerBar" in list.fxml
+    // --- END NEW ---
+
     public ListController() {
         // Constructor is empty as dependencies are injected via setGraphicController
+    }
+
+    @FXML
+    private void initialize() {
+        // FXML initialization. This runs BEFORE setGraphicController.
+        // So, no logic dependent on graphicControllerGui or headerBarController here.
     }
 
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
+
+        // --- NEW: Manually inject GraphicControllerGui into the DefaultBackHomeController ---
+        // This is crucial because DefaultBackHomeController is embedded via fx:include
+        if (headerBarController != null) {
+            headerBarController.setGraphicController(this.graphicControllerGui);
+        } else {
+            // This case should ideally be caught by proper FXML setup or initialization
+            // For production, you might want more robust error handling or a visual indicator
+        }
+        // --- END NEW ---
+
         this.selectedList = graphicControllerGui.getApplicationController().getSelectedList();
 
         if (this.selectedList != null) {
             listNameLabel.setText(selectedList.getName());
             loadListItems();
         } else {
-            LOGGER.log(Level.WARNING, "No list selected when ListController was initialized. Redirecting to home.");
             showAlert(Alert.AlertType.WARNING, "No List Selected", "Please select a list to view its items.");
             graphicControllerGui.setScreen("home");
         }
@@ -62,10 +81,6 @@ public class ListController implements NavigableController {
         listView.setCellFactory(param -> new CustomListCell());
     }
 
-    @FXML
-    private void initialize() {
-        // FXML initialization.
-    }
 
     /**
      * Loads the items (movies, TV series, anime) for the currently selected list
@@ -97,13 +112,10 @@ public class ListController implements NavigableController {
                 items.add(key);
                 itemBeanMap.put(key, a);
             }
-            LOGGER.log(Level.INFO, "Loaded items for list: {0}", selectedList.getName());
 
         } catch (ExceptionApplicationController e) {
-            LOGGER.log(Level.SEVERE, "Application error loading list items for ''{0}'': {1}", new Object[]{selectedList.getName(), e.getMessage()});
             showAlert(Alert.AlertType.ERROR, "Error Loading List Items", e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error loading list items for ''{0}''.", e);
             showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while loading list items.");
         }
     }
@@ -155,12 +167,9 @@ public class ListController implements NavigableController {
         private void handleSeeAction(String itemString) {
             if (itemString == null || selectedList == null) return;
 
-            LOGGER.log(Level.INFO, "See Details button clicked for: {0} in list {1}", new Object[]{itemString, selectedList.getName()});
-
             try {
                 Object itemBean = itemBeanMap.get(itemString);
                 if (itemBean == null) {
-                    LOGGER.log(Level.WARNING, "Item not found in map for details: {0}", itemString);
                     showAlert(Alert.AlertType.ERROR, "Item Not Found", "Selected item details could not be retrieved.");
                     return;
                 }
@@ -172,13 +181,12 @@ public class ListController implements NavigableController {
                     category = "Movie";
                     id = movie.getIdMovieTmdb();
                 } else if (itemBean instanceof TvSeriesBean tvSeries) {
-                    category = "TV Series";
+                    category = "TvSeries";
                     id = tvSeries.getIdTvSeriesTmdb();
                 } else if (itemBean instanceof AnimeBean anime) {
                     category = "Anime";
                     id = anime.getIdAnimeTmdb();
                 } else {
-                    LOGGER.log(Level.WARNING, "Unknown item type for details: {0}", itemBean.getClass().getName());
                     showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot show details for this item type.");
                     return;
                 }
@@ -186,10 +194,8 @@ public class ListController implements NavigableController {
                 graphicControllerGui.navigateToItemDetails(category, id);
 
             } catch (ExceptionApplicationController e) {
-                LOGGER.log(Level.SEVERE, "Application error showing item details for ''{0}'': {1}", new Object[]{itemString, e.getMessage()});
                 showAlert(Alert.AlertType.ERROR, "Error Showing Details", e.getMessage());
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Unexpected error showing item details for ''{0}''.", e);
                 showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while showing details.");
             }
         }
@@ -202,12 +208,9 @@ public class ListController implements NavigableController {
         private void handleDeleteAction(String itemString) {
             if (itemString == null || selectedList == null) return;
 
-            LOGGER.log(Level.INFO, "Remove button clicked for: {0} in list {1}", new Object[]{itemString, selectedList.getName()});
-
             try {
                 Object itemBean = itemBeanMap.get(itemString);
                 if (itemBean == null) {
-                    LOGGER.log(Level.WARNING, "Item not found in map for deletion: {0}", itemString);
                     showAlert(Alert.AlertType.ERROR, "Item Not Found", "Selected item could not be removed.");
                     return;
                 }
@@ -220,7 +223,6 @@ public class ListController implements NavigableController {
                 } else if (itemBean instanceof AnimeBean anime) {
                     graphicControllerGui.getApplicationController().removeAnimeFromList(selectedList, anime.getIdAnimeTmdb());
                 } else {
-                    LOGGER.log(Level.WARNING, "Unknown item type for deletion: {0}", itemBean.getClass().getName());
                     showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot remove this item type.");
                     return;
                 }
@@ -231,10 +233,8 @@ public class ListController implements NavigableController {
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Item removed from list.");
 
             } catch (ExceptionApplicationController e) {
-                LOGGER.log(Level.SEVERE, "Application error removing item ''{0}'' from list ''{1}'': {2}", new Object[]{itemString, selectedList.getName(), e.getMessage()});
                 showAlert(Alert.AlertType.ERROR, "Removal Failed", e.getMessage());
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Unexpected error removing item ''{0}'' from list ''{1}''.", new Object[]{itemString, selectedList.getName(), e});
                 showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred during removal.");
             }
         }

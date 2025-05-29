@@ -15,12 +15,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ListAnimeDaoCsv implements ListAnime {
 
-    private static final Logger LOGGER = Logger.getLogger(ListAnimeDaoCsv.class.getName());
     private static final String CSV_FILE_NAME;
     private static final String ANIME_CSV_FILE_NAME; // To get anime details
 
@@ -36,10 +33,10 @@ public class ListAnimeDaoCsv implements ListAnime {
                 listAnimeFileName = properties.getProperty("list_anime.csv.filename", listAnimeFileName);
                 animeFileName = properties.getProperty("anime.csv.filename", animeFileName);
             } else {
-                LOGGER.log(Level.WARNING, "csv.properties file not found. Using default CSV filenames.");
+                // Property file not found, use defaults
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error loading csv.properties for ListAnimeDaoCsv. Using default filenames.", e);
+            // Error loading properties, use defaults
         }
 
         CSV_FILE_NAME = listAnimeFileName;
@@ -49,14 +46,11 @@ public class ListAnimeDaoCsv implements ListAnime {
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
-                LOGGER.log(Level.INFO, "List-Anime CSV file created: {0}", CSV_FILE_NAME);
             }
             if (!Files.exists(Paths.get(ANIME_CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(ANIME_CSV_FILE_NAME));
-                LOGGER.log(Level.INFO, "Anime CSV file created for lookup: {0}", ANIME_CSV_FILE_NAME);
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to create CSV files for ListAnimeDaoCsv.", e);
             throw new RuntimeException("Initialization failed: Could not create CSV files.", e);
         }
     }
@@ -80,7 +74,6 @@ public class ListAnimeDaoCsv implements ListAnime {
                 csvWriter.writeNext(record);
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error adding anime ID " + anime.getIdAnimeTmdb() + " to list ID " + list.getId() + " in CSV file.", e);
             throw new ExceptionDao("Failed to add anime to list in CSV. I/O or data error.", e);
         }
     }
@@ -99,8 +92,7 @@ public class ListAnimeDaoCsv implements ListAnime {
                 String[] record;
                 while ((record = csvReader.readNext()) != null) {
                     if (record.length < 2) {
-                        LOGGER.log(Level.WARNING, "Skipping malformed CSV record during removal: {0}", String.join(",", record));
-                        continue;
+                        continue; // Skip malformed records
                     }
                     if (!(record[0].equals(String.valueOf(list.getId())) && record[1].equals(String.valueOf(anime.getIdAnimeTmdb())))) {
                         allRecords.add(record);
@@ -113,20 +105,18 @@ public class ListAnimeDaoCsv implements ListAnime {
                 csvWriter.writeAll(allRecords);
             }
         } catch (IOException | CsvValidationException e) {
-            LOGGER.log(Level.SEVERE, "Error removing anime ID " + anime.getIdAnimeTmdb() + " from list ID " + list.getId() + " in CSV file.", e);
             throw new ExceptionDao("Failed to remove anime from list in CSV. I/O or data error.", e);
         }
     }
 
     @Override
-    public List<AnimeBean> getAllAnimesInList(ListBean list) throws ExceptionDao {
+    public List<AnimeBean> getAllAnimeInList(ListBean list) throws ExceptionDao {
         List<AnimeBean> animeList = new ArrayList<>();
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             String[] record;
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 2) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed CSV record while getting all animes in list: {0}", String.join(",", record));
-                    continue;
+                    continue; // Skip malformed records
                 }
                 if (record[0].equals(String.valueOf(list.getId()))) {
                     int animeId = Integer.parseInt(record[1]);
@@ -135,26 +125,64 @@ public class ListAnimeDaoCsv implements ListAnime {
                     if (anime != null) {
                         animeList.add(anime);
                     } else {
-                        LOGGER.log(Level.WARNING, "Anime with ID {0} found in list {1} but not in {2}.",
-                                new Object[]{animeId, list.getId(), ANIME_CSV_FILE_NAME});
+                        // Anime found in list_anime.csv but not in anime.csv
                     }
                 }
             }
         } catch (IOException | CsvValidationException | NumberFormatException e) {
-            LOGGER.log(Level.SEVERE, "Error retrieving all animes for list ID " + list.getId() + " from CSV file.", e);
             throw new ExceptionDao("Failed to retrieve all animes for list from CSV. Data corruption or I/O error.", e);
         }
 
         if (animeList.isEmpty()) {
-            LOGGER.log(Level.INFO, "No Anime Found in list ID: {0}", list.getId());
             // It might be valid for a list to be empty; throwing an exception here is optional.
             // Depending on business logic, an empty list might be preferred over an exception.
-            // For now, mirroring previous behavior:
             throw new ExceptionDao("No Anime Found in the List (ID: " + list.getId() + ").");
         }
 
         return animeList;
     }
+
+    @Override
+    public void removeAllAnimesFromList(ListBean list) throws ExceptionDao {
+        if (list == null) {
+            throw new IllegalArgumentException("List cannot be null.");
+        }
+
+        try {
+            List<String[]> allRecords = new ArrayList<>();
+            boolean listHadEntries = false; // Flag to check if the list actually contained entries
+
+            // Read all records, excluding those for the specified list ID
+            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
+                String[] record;
+                while ((record = csvReader.readNext()) != null) {
+                    if (record.length < 2) {
+                        continue; // Skip malformed records
+                    }
+                    // Keep records that do NOT match the list ID
+                    if (!record[0].equals(String.valueOf(list.getId()))) {
+                        allRecords.add(record);
+                    } else {
+                        listHadEntries = true; // Mark that we found entries for this list ID
+                    }
+                }
+            }
+
+            // Write the filtered records back to the file (overwriting it)
+            try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) {
+                csvWriter.writeAll(allRecords);
+            }
+
+            if (!listHadEntries) {
+                // If the list ID was not found in the CSV, throw an exception
+                throw new ExceptionDao("List with ID " + list.getId() + " not found or already empty.");
+            }
+
+        } catch (IOException | CsvValidationException e) {
+            throw new ExceptionDao("Failed to remove all anime from list in CSV. I/O or data error.", e);
+        }
+    }
+
 
     // Helper method to check if an Anime is already in the List
     private boolean animeExistsInList(ListBean list, AnimeBean anime) throws ExceptionDao {
@@ -162,15 +190,13 @@ public class ListAnimeDaoCsv implements ListAnime {
             String[] record;
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 2) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed CSV record during existence check: {0}", String.join(",", record));
-                    continue;
+                    continue; // Skip malformed records
                 }
                 if (record[0].equals(String.valueOf(list.getId())) && record[1].equals(String.valueOf(anime.getIdAnimeTmdb()))) {
                     return true;
                 }
             }
         } catch (IOException | CsvValidationException e) {
-            LOGGER.log(Level.SEVERE, "Error checking anime existence in list ID " + list.getId() + " for anime ID " + anime.getIdAnimeTmdb(), e);
             throw new ExceptionDao("Failed to check anime existence in list from CSV. I/O or data error.", e);
         }
         return false;
@@ -181,21 +207,20 @@ public class ListAnimeDaoCsv implements ListAnime {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(ANIME_CSV_FILE_NAME)))) {
             String[] record;
             while ((record = csvReader.readNext()) != null) {
-                if (record.length < 4) { // Assuming ID, duration, episodes, title
-                    LOGGER.log(Level.WARNING, "Skipping malformed Anime CSV record: {0}", String.join(",", record));
-                    continue;
+                if (record.length < 4) { // Assuming ID, episodes, duration, title (order in AnimeBean constructor is id, duration, episodes, title)
+                    continue; // Skip malformed Anime CSV records
                 }
                 try {
                     if (Integer.parseInt(record[0]) == id) {
                         // Assuming AnimeBean constructor: public AnimeBean(int id, int duration, int episodes, String title)
+                        // Make sure the indices match the CSV columns: record[0]=ID, record[1]=Episodes, record[2]=Duration, record[3]=Title
                         return new AnimeBean(Integer.parseInt(record[0]), Integer.parseInt(record[2]), Integer.parseInt(record[1]), record[3]);
                     }
                 } catch (NumberFormatException e) {
-                    LOGGER.log(Level.WARNING, "Skipping CSV record with invalid number format: {0}", String.join(",", record));
+                    // Skipping CSV record with invalid number format
                 }
             }
         } catch (IOException | CsvValidationException e) {
-            LOGGER.log(Level.SEVERE, "Error fetching anime ID " + id + " from " + ANIME_CSV_FILE_NAME, e);
             throw new ExceptionDao("Failed to fetch anime details from main anime CSV file. I/O or data error.", e);
         }
         return null;

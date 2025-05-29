@@ -47,6 +47,10 @@ public class MovieModel {
     @SerializedName("imdb_id")
     private String imdbId; // IMDb ID for the movie
 
+    // Added budget and revenue fields
+    private long budget;
+    private long revenue;
+
     private List<Genre> genres; // List of nested Genre objects
 
     @SerializedName("production_companies")
@@ -57,6 +61,9 @@ public class MovieModel {
 
     @SerializedName("spoken_languages")
     private List<SpokenLanguage> spokenLanguages; // List of nested SpokenLanguage objects
+
+    // --- Constant for common string literal in toString methods ---
+    private static final String NAME_FIELD_PREFIX = ", name='";
 
     // --- Getters ---
     public int getId() {
@@ -117,6 +124,15 @@ public class MovieModel {
 
     public String getImdbId() {
         return imdbId;
+    }
+
+    // Added getters for budget and revenue
+    public long getBudget() {
+        return budget;
+    }
+
+    public long getRevenue() {
+        return revenue;
     }
 
     public List<Genre> getGenres() {
@@ -196,6 +212,15 @@ public class MovieModel {
         this.imdbId = imdbId;
     }
 
+    // Added setters for budget and revenue
+    public void setBudget(long budget) {
+        this.budget = budget;
+    }
+
+    public void setRevenue(long revenue) {
+        this.revenue = revenue;
+    }
+
     public void setGenres(List<Genre> genres) {
         this.genres = genres;
     }
@@ -212,6 +237,12 @@ public class MovieModel {
         this.spokenLanguages = spokenLanguages;
     }
 
+    // An empty constructor is typically needed for deserialization by libraries like Gson.
+    public MovieModel() {
+        // This empty constructor is required by Gson for deserialization.
+        // It allows Gson to create an instance of MovieModel before populating its fields from JSON.
+    }
+
     @Override
     public String toString() {
         return "Movie{" +
@@ -223,6 +254,8 @@ public class MovieModel {
                 ", releaseDate='" + releaseDate + '\'' +
                 ", runtime=" + runtime +
                 ", voteAverage=" + voteAverage +
+                ", budget=" + budget + // Added to toString
+                ", revenue=" + revenue + // Added to toString
                 '}';
     }
 
@@ -235,13 +268,19 @@ public class MovieModel {
         private int id;
         private String name;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public Genre() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of Genre before populating its fields.
+        }
+
         public int getId() { return id; }
         public String getName() { return name; }
         public void setId(int id) { this.id = id; }
         public void setName(String name) { this.name = name; }
 
         @Override
-        public String toString() { return "Genre{" + "id=" + id + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "Genre{" + "id=" + id + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
     /**
@@ -255,6 +294,12 @@ public class MovieModel {
         @SerializedName("origin_country")
         private String originCountry;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public ProductionCompany() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of ProductionCompany before populating its fields.
+        }
+
         public int getId() { return id; }
         public String getLogoPath() { return logoPath; }
         public String getName() { return name; }
@@ -265,7 +310,7 @@ public class MovieModel {
         public void setOriginCountry(String originCountry) { this.originCountry = originCountry; }
 
         @Override
-        public String toString() { return "ProductionCompany{" + "id=" + id + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "ProductionCompany{" + "id=" + id + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
     /**
@@ -276,13 +321,19 @@ public class MovieModel {
         private String iso31661; // e.g., "US", "GB"
         private String name;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public ProductionCountry() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of ProductionCountry before populating its fields.
+        }
+
         public String getIso31661() { return iso31661; }
         public String getName() { return name; }
         public void setIso31661(String iso31661) { this.iso31661 = iso31661; }
         public void setName(String name) { this.name = name; }
 
         @Override
-        public String toString() { return "ProductionCountry{" + "iso31661='" + iso31661 + '\'' + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "ProductionCountry{" + "iso31661='" + iso31661 + '\'' + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
     /**
@@ -295,6 +346,12 @@ public class MovieModel {
         private String iso6391; // e.g., "en", "es"
         private String name;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public SpokenLanguage() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of SpokenLanguage before populating its fields.
+        }
+
         public String getEnglishName() { return englishName; }
         public String getIso6391() { return iso6391; }
         public String getName() { return name; }
@@ -303,6 +360,6 @@ public class MovieModel {
         public void setName(String name) { this.name = name; }
 
         @Override
-        public String toString() { return "SpokenLanguage{" + "iso6391='" + iso6391 + '\'' + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "SpokenLanguage{" + "iso6391='" + iso6391 + '\'' + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 }

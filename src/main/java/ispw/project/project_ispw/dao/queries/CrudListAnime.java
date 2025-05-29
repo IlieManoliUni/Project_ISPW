@@ -21,6 +21,7 @@ public class CrudListAnime {
                     "FROM list_anime la " +
                     "JOIN anime a ON la.idAniList = a.idAniList " +
                     "WHERE la.idList = ?";
+    private static final String DELETE_ALL_ANIME_FROM_LIST_SQL = "DELETE FROM list_anime WHERE idList = ?";
 
     public static int addAnimeToList(Connection conn, ListBean list, AnimeBean anime) throws ExceptionDao {
         try (PreparedStatement ps = conn.prepareStatement(INSERT_LIST_ANIME_SQL)) {
@@ -97,5 +98,16 @@ public class CrudListAnime {
             throw new ExceptionDao("Failed to retrieve full anime details for list ID " + list.getId() + ": " + e.getMessage(), e);
         }
         return animeDetails;
+    }
+
+    // NEW METHOD to remove all anime for a given list ID
+    public static int removeAllAnimesFromList(Connection conn, ListBean list) throws ExceptionDao {
+        try (PreparedStatement ps = conn.prepareStatement(DELETE_ALL_ANIME_FROM_LIST_SQL)) {
+            ps.setInt(1, list.getId());
+            System.out.println("Executing DELETE ALL ANIME FROM LIST: " + ps.toString());
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new ExceptionDao("Failed to remove all anime from list ID " + list.getId() + ": " + e.getMessage(), e);
+        }
     }
 }

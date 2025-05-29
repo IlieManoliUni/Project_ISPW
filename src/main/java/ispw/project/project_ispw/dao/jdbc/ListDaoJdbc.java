@@ -10,12 +10,8 @@ import ispw.project.project_ispw.exception.ExceptionDao;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ListDaoJdbc implements ListDao {
-
-    private static final Logger LOGGER = Logger.getLogger(ListDaoJdbc.class.getName());
 
     @Override
     public ListBean retrieveById(int id) throws ExceptionDao {
@@ -32,14 +28,13 @@ public class ListDaoJdbc implements ListDao {
                 throw new ExceptionDao("No List Found with ID: " + id);
             }
         } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "Error retrieving list by ID: " + id, e);
             throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after retrieveById", e);
+                    // Error closing connection after retrieveById
                 }
             }
         }
@@ -54,14 +49,13 @@ public class ListDaoJdbc implements ListDao {
             // CrudList.addList now takes Connection
             CrudList.addList(conn, list, user);
         } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "Error saving list: " + list.getName(), e);
             throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after saveList", e);
+                    // Error closing connection after saveList
                 }
             }
         }
@@ -75,14 +69,13 @@ public class ListDaoJdbc implements ListDao {
             // CrudList.deleteList now takes Connection and list ID directly
             CrudList.deleteList(conn, list.getId());
         } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "Error deleting list ID " + list.getId(), e);
             throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after deleteList", e);
+                    // Error closing connection after deleteList
                 }
             }
         }
@@ -97,14 +90,13 @@ public class ListDaoJdbc implements ListDao {
             // CrudList.getListsByUsername now returns List<ListBean> directly
             lists = CrudList.getListsByUsername(conn, username);
         } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "Error retrieving all lists for username: " + username, e);
             throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after retrieveAllListsOfUsername", e);
+                    // Error closing connection after retrieveAllListsOfUsername
                 }
             }
         }

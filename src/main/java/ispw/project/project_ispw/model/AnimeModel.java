@@ -25,7 +25,10 @@ public class AnimeModel {
         private String english;
         private String nativeTitle; // Corresponds to 'native' in your query
 
-        public Title() {}
+        public Title() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of Title before populating its fields.
+        }
 
         // Getters and Setters
         public String getRomaji() { return romaji; }
@@ -48,7 +51,9 @@ public class AnimeModel {
     public static class CoverImage {
         private String medium; // Only 'medium' is requested in your query
 
-        public CoverImage() {}
+        public CoverImage() {
+            // This empty constructor is required by Gson for deserialization.
+        }
 
         // Getter and Setter
         public String getMedium() { return medium; }
@@ -67,7 +72,9 @@ public class AnimeModel {
         private Integer month;
         private Integer day;
 
-        public FuzzyDate() {}
+        public FuzzyDate() {
+            // This empty constructor is required by Gson for deserialization.
+        }
 
         // Getters and Setters
         public Integer getYear() { return year; }
@@ -99,7 +106,9 @@ public class AnimeModel {
         private Integer episode; // Integer to allow for null
         private Long airingAt; // Unix timestamp, use Long to allow for null
 
-        public AiringSchedule() {}
+        public AiringSchedule() {
+            // This empty constructor is required by Gson for deserialization.
+        }
 
         // Getters and Setters
         public Integer getEpisode() { return episode; }
@@ -119,6 +128,8 @@ public class AnimeModel {
     // --- Main Anime Class Getters and Setters ---
 
     public AnimeModel() {
+        // This empty constructor is required by Gson for deserialization.
+        // It allows Gson to create an instance of AnimeModel before populating its fields from JSON.
     }
 
     public int getId() { return id; }

@@ -8,12 +8,8 @@ import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom D
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class UserDaoJdbc implements UserDao {
-
-    private static final Logger LOGGER = Logger.getLogger(UserDaoJdbc.class.getName());
 
     @Override
     public UserBean retrieveByUsername(String username) throws ExceptionDao {
@@ -25,23 +21,23 @@ public class UserDaoJdbc implements UserDao {
             // CrudUser.getUserByUsername now returns UserBean directly
             user = CrudUser.getUserByUsername(conn, username);
 
-            if (user == null) {
-                // If CrudUser returns null, it means no record was found.
-                throw new ExceptionDao("No User Found matching username: " + username);
-            }
+            // Removed the problematic block:
+            // if (user == null) {
+            //     throw new ExceptionDao("No User Found matching username: " + username);
+            // }
+
         } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            LOGGER.log(Level.SEVERE, "Error retrieving user by username: " + username, e);
             throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after retrieveByUsername", e);
+                    // Error closing connection after retrieveByUsername
                 }
             }
         }
-        return user;
+        return user; // Will return null if no user is found, allowing AuthService to handle it
     }
 
     @Override
@@ -60,14 +56,13 @@ public class UserDaoJdbc implements UserDao {
             // If not, add the new user
             CrudUser.addUser(conn, user);
         } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            LOGGER.log(Level.SEVERE, "Error saving user '" + user.getUsername() + "': " + e.getMessage(), e);
             throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after saveUser", e);
+                    // Error closing connection after saveUser
                 }
             }
         }

@@ -1,6 +1,6 @@
 package ispw.project.project_ispw.exception;
 
-public class ExceptionTmdbApi extends Exception {
+public class ExceptionTmdbApi extends RuntimeException {
 
     public ExceptionTmdbApi(String message) {
         super(message);

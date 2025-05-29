@@ -9,11 +9,13 @@
 <?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.text.Text?>
-<?import ispw.project.project_ispw.controller.graphic.gui.ListController?> <VBox xmlns="http://javafx.com/javafx/8"
+<?import ispw.project.project_ispw.controller.graphic.gui.ListController?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="ispw.project.project_ispw.controller.graphic.gui.ListController">
 
-    <fx:include source="defaultBackHome.fxml" />
+    <fx:include fx:id="headerBar" source="defaultBackHome.fxml" />
 
     <VBox alignment="TOP_CENTER" spacing="10" style="-fx-padding: 20;" VBox.vgrow="ALWAYS">
         <Label fx:id="listNameLabel" text="List Name" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #333;" />

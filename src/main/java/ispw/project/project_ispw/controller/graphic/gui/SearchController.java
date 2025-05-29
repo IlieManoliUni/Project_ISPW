@@ -20,12 +20,8 @@ import javafx.scene.text.Text;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SearchController implements NavigableController {
-
-    private static final Logger LOGGER = Logger.getLogger(SearchController.class.getName());
 
     @FXML
     private ListView<String> listView;
@@ -41,9 +37,25 @@ public class SearchController implements NavigableController {
     private String currentSearchCategory;
     private String currentSearchQuery;
 
+    // --- NEW: FXML injection for the included DefaultBackHomeController ---
+    // This field will be automatically populated by FXMLLoader
+    // if 'search.fxml' has <fx:include fx:id="headerBar" .../>
+    @FXML
+    private DefaultBackHomeController headerBarController; // Assuming fx:id="headerBar" in search.fxml
+    // --- END NEW ---
+
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
+
+        // --- NEW: Manually inject GraphicControllerGui into the DefaultBackHomeController ---
+        // This is crucial because DefaultBackHomeController is embedded via fx:include
+        if (headerBarController != null) {
+            headerBarController.setGraphicController(this.graphicControllerGui);
+        } else {
+            // Error handling for when the included controller is null
+        }
+        // --- END NEW ---
 
         this.currentSearchCategory = graphicControllerGui.getApplicationController().getSelectedSearchCategory();
         this.currentSearchQuery = graphicControllerGui.getApplicationController().getSearchQuery();
@@ -52,7 +64,6 @@ public class SearchController implements NavigableController {
             searchResultsLabel.setText(String.format("Search Results for '%s' in %s:", currentSearchQuery, currentSearchCategory));
             performSearch();
         } else {
-            LOGGER.log(Level.WARNING, "No search category or query found. Redirecting to home.");
             showAlert(Alert.AlertType.WARNING, "No Search Performed", "Please provide a search category and query.");
             graphicControllerGui.setScreen("home");
         }
@@ -63,7 +74,7 @@ public class SearchController implements NavigableController {
 
     @FXML
     private void initialize() {
-        // Initialization logic, if any.
+        // Initialization logic, if any. This runs BEFORE setGraphicController.
     }
 
     /**
@@ -75,7 +86,6 @@ public class SearchController implements NavigableController {
         searchResultBeanMap.clear();
 
         if (graphicControllerGui == null) {
-            LOGGER.log(Level.SEVERE, "GraphicControllerGui not injected in SearchController.");
             showAlert(Alert.AlertType.ERROR, "System Error", "Application setup issue. Please restart.");
             return;
         }
@@ -85,13 +95,9 @@ public class SearchController implements NavigableController {
             List<?> results = graphicControllerGui.getApplicationController().searchContent(currentSearchCategory, currentSearchQuery);
             processSearchResults(results); // Process the list of beans directly
 
-            LOGGER.log(Level.INFO, "Search completed for category: {0}, query: {1}", new Object[]{currentSearchCategory, currentSearchQuery});
-
         } catch (ExceptionApplicationController e) {
-            LOGGER.log(Level.SEVERE, "Application error during search for {0} - {1}: {2}", new Object[]{currentSearchCategory, currentSearchQuery, e.getMessage()});
             showAlert(Alert.AlertType.ERROR, "Search Error", e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error during search for {0} - {1}: {2}", new Object[]{currentSearchCategory, currentSearchQuery, e});
             showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred during search.");
         }
 
@@ -106,7 +112,6 @@ public class SearchController implements NavigableController {
      */
     private void processSearchResults(List<?> results) {
         if (results == null || results.isEmpty()) {
-            LOGGER.log(Level.INFO, "No results to process.");
             return;
         }
 
@@ -124,7 +129,6 @@ public class SearchController implements NavigableController {
                 itemString = "Anime: " + anime.getTitle();
                 itemId = anime.getIdAnimeTmdb();
             } else {
-                LOGGER.log(Level.WARNING, "Unknown bean type encountered: {0}", bean.getClass().getName());
                 continue;
             }
 
@@ -163,7 +167,7 @@ public class SearchController implements NavigableController {
             } else {
                 text.setText(item);
                 setGraphic(hbox);
-                seeButton.setVisible(!item.startsWith("No results found"));
+                seeButton.setVisible(!item.startsWith("No results found")); // Hide button for "No results" message
             }
         }
 
@@ -178,16 +182,12 @@ public class SearchController implements NavigableController {
          */
         private void handleSeeDetailsAction(String itemString) {
             if (itemString == null || graphicControllerGui == null) {
-                LOGGER.log(Level.WARNING, "Cannot show details: itemString or graphicControllerGui is null.");
                 return;
             }
-
-            LOGGER.log(Level.INFO, "See Details button clicked for: {0}", itemString);
 
             try {
                 Object itemBean = searchResultBeanMap.get(itemString);
                 if (itemBean == null) {
-                    LOGGER.log(Level.WARNING, "Item not found in map for details: {0}", itemString);
                     showAlert(Alert.AlertType.ERROR, "Item Not Found", "Selected item details could not be retrieved.");
                     return;
                 }
@@ -199,13 +199,12 @@ public class SearchController implements NavigableController {
                     category = "Movie";
                     id = movie.getIdMovieTmdb();
                 } else if (itemBean instanceof TvSeriesBean tvSeries) {
-                    category = "TV Series";
+                    category = "TvSeries";
                     id = tvSeries.getIdTvSeriesTmdb();
                 } else if (itemBean instanceof AnimeBean anime) {
                     category = "Anime";
                     id = anime.getIdAnimeTmdb();
                 } else {
-                    LOGGER.log(Level.WARNING, "Unknown item type for details: {0}", itemBean.getClass().getName());
                     showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot show details for this item type.");
                     return;
                 }
@@ -213,10 +212,8 @@ public class SearchController implements NavigableController {
                 graphicControllerGui.navigateToItemDetails(category, id);
 
             } catch (ExceptionApplicationController e) {
-                LOGGER.log(Level.SEVERE, "Application error showing item details for ''{0}'': {1}", new Object[]{itemString, e.getMessage()});
                 showAlert(Alert.AlertType.ERROR, "Error Showing Details", e.getMessage());
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Unexpected error showing item details for ''{0}''.");
                 showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while showing details.");
             }
         }

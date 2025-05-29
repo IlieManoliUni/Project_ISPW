@@ -9,12 +9,8 @@ import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom D
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class TvSeriesDaoJdbc implements TvSeriesDao {
-
-    private static final Logger LOGGER = Logger.getLogger(TvSeriesDaoJdbc.class.getName());
 
     @Override
     public TvSeriesBean retrieveById(int id) throws ExceptionDao { // Changed return type to throw ExceptionDao
@@ -31,14 +27,13 @@ public class TvSeriesDaoJdbc implements TvSeriesDao {
                 throw new ExceptionDao("No TV Series Found with ID: " + id);
             }
         } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            LOGGER.log(Level.SEVERE, "Error retrieving TV Series by ID: " + id, e);
             throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after retrieveById", e);
+                    // Error closing connection after retrieveById
                 }
             }
         }
@@ -58,14 +53,13 @@ public class TvSeriesDaoJdbc implements TvSeriesDao {
             // If at least one row was affected, the insert was successful
             success = rowsAffected > 0;
         } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            LOGGER.log(Level.SEVERE, "Error saving TV Series: " + tvSeries.getName(), e);
             throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after saveTvSeries", e);
+                    // Error closing connection after saveTvSeries
                 }
             }
         }
@@ -82,14 +76,13 @@ public class TvSeriesDaoJdbc implements TvSeriesDao {
             // CrudTvSeries.getAllTvSeries now returns List<TvSeriesBean> directly
             tvSeriesList = CrudTvSeries.getAllTvSeries(conn);
         } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            LOGGER.log(Level.SEVERE, "Error retrieving all TV Series", e);
             throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after retrieveAllTvSeries", e);
+                    // Error closing connection after retrieveAllTvSeries
                 }
             }
         }

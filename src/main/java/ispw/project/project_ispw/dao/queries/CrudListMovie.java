@@ -2,7 +2,7 @@ package ispw.project.project_ispw.dao.queries;
 
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.bean.MovieBean;
-import ispw.project.project_ispw.exception.ExceptionDao; // Using your custom exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,16 +17,19 @@ public class CrudListMovie {
     private static final String DELETE_LIST_MOVIE_SQL = "DELETE FROM list_movie WHERE idList = ? AND idMovieTmdb = ?";
     private static final String SELECT_MOVIE_IDS_IN_LIST_SQL = "SELECT idMovieTmdb FROM list_movie WHERE idList = ?";
     private static final String SELECT_FULL_DETAILS_MOVIES_IN_LIST_SQL =
-            "SELECT m.idMovieTmdb, m.title, m.runtime, m.releaseDate " + // Assuming these are columns in your 'movie' table
+            "SELECT m.idMovieTmdb, m.runtime, m.name " +
                     "FROM list_movie lm " +
                     "JOIN movie m ON lm.idMovieTmdb = m.idMovieTmdb " +
                     "WHERE lm.idList = ?";
+    // NEW SQL for deleting all entries for a list
+    private static final String DELETE_ALL_MOVIES_FROM_LIST_SQL = "DELETE FROM list_movie WHERE idList = ?";
+
 
     public static int addMovieToList(Connection conn, ListBean list, MovieBean movie) throws ExceptionDao {
         try (PreparedStatement ps = conn.prepareStatement(INSERT_LIST_MOVIE_SQL)) {
             ps.setInt(1, list.getId());
             ps.setInt(2, movie.getIdMovieTmdb());
-            System.out.println("Executing INSERT: " + ps.toString()); // For debugging, remove in production
+            System.out.println("Executing INSERT: " + ps.toString());
             return ps.executeUpdate();
         } catch (SQLException e) {
             throw new ExceptionDao("Failed to add movie ID " + movie.getIdMovieTmdb() + " to list ID " + list.getId() + ": " + e.getMessage(), e);
@@ -37,7 +40,7 @@ public class CrudListMovie {
         try (PreparedStatement ps = conn.prepareStatement(DELETE_LIST_MOVIE_SQL)) {
             ps.setInt(1, list.getId());
             ps.setInt(2, movie.getIdMovieTmdb());
-            System.out.println("Executing DELETE: " + ps.toString()); // For debugging, remove in production
+            System.out.println("Executing DELETE: " + ps.toString());
             return ps.executeUpdate();
         } catch (SQLException e) {
             throw new ExceptionDao("Failed to remove movie ID " + movie.getIdMovieTmdb() + " from list ID " + list.getId() + ": " + e.getMessage(), e);
@@ -48,7 +51,7 @@ public class CrudListMovie {
     public static void printAllMoviesInList(Connection conn, ListBean list) throws ExceptionDao {
         try (PreparedStatement ps = conn.prepareStatement(SELECT_MOVIE_IDS_IN_LIST_SQL)) {
             ps.setInt(1, list.getId());
-            System.out.println("Executing SELECT: " + ps.toString()); // For debugging, remove in production
+            System.out.println("Executing SELECT: " + ps.toString());
             try (ResultSet res = ps.executeQuery()) {
                 while (res.next()) {
                     System.out.printf("List ID: %d, Movie ID (TMDb): %d\n",
@@ -83,12 +86,10 @@ public class CrudListMovie {
             ps.setInt(1, list.getId());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    // Assuming MovieBean constructor: public MovieBean(int id, String title, int runtime, String releaseDate)
-                    // Please adjust this constructor call to match your actual MovieBean constructor
                     movieDetails.add(new MovieBean(
                             rs.getInt("idMovieTmdb"),
                             rs.getInt("runtime"),
-                            rs.getString("title")
+                            rs.getString("name") // Corrected to "name"
                     ));
                 }
             }
@@ -96,5 +97,16 @@ public class CrudListMovie {
             throw new ExceptionDao("Failed to retrieve full movie details for list ID " + list.getId() + ": " + e.getMessage(), e);
         }
         return movieDetails;
+    }
+
+    // NEW METHOD to remove all movies for a given list ID
+    public static int removeAllMoviesFromList(Connection conn, ListBean list) throws ExceptionDao {
+        try (PreparedStatement ps = conn.prepareStatement(DELETE_ALL_MOVIES_FROM_LIST_SQL)) {
+            ps.setInt(1, list.getId());
+            System.out.println("Executing DELETE ALL MOVIES FROM LIST: " + ps.toString());
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new ExceptionDao("Failed to remove all movies from list ID " + list.getId() + ": " + e.getMessage(), e);
+        }
     }
 }

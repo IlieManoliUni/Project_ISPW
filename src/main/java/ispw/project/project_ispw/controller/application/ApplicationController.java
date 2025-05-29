@@ -8,24 +8,15 @@ import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.controller.application.state.DemoModeState;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
-import ispw.project.project_ispw.dao.UserDao; // Still needed for internal state init if passed directly
 
-import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-// Import the new services
 import ispw.project.project_ispw.controller.application.util.AuthService;
 import ispw.project.project_ispw.controller.application.util.ContentService;
 import ispw.project.project_ispw.controller.application.util.ListManagementService;
 
-
 public class ApplicationController {
 
-    private static final Logger LOGGER = Logger.getLogger(ApplicationController.class.getName());
-
-    // --- Application State ---
     private UserBean currentUser;
     private String selectedItemCategory;
     private int selectedItemId;
@@ -33,10 +24,8 @@ public class ApplicationController {
     private String searchQuery;
     private ListBean selectedList;
 
-    // --- Persistence Mode State (the Context in State Pattern) ---
-    private final PersistenceModeState persistenceState; // Still holds the DAOs
+    private final PersistenceModeState persistenceState;
 
-    // --- New Service Instances ---
     private final AuthService authService;
     private final ContentService contentService;
     private final ListManagementService listManagementService;
@@ -45,49 +34,40 @@ public class ApplicationController {
     public ApplicationController(PersistenceModeState persistenceState) {
         this.persistenceState = persistenceState;
 
-        // Initialize DAOs indirectly via persistenceState for services
         this.authService = new AuthService(persistenceState.getUserDao());
-        this.contentService = new ContentService(
-                persistenceState.getMovieDao(),
-                persistenceState.getTvSeriesDao(),
-                persistenceState.getAnimeDao()
-        );
+
+        this.contentService = new ContentService();
+
         this.listManagementService = new ListManagementService(
                 persistenceState.getListDao(),
                 persistenceState.getListMovieDao(),
                 persistenceState.getListTvSeriesDao(),
                 persistenceState.getListAnimeDao(),
-                this.contentService // List service might need to retrieve content details
+                this.contentService,
+                persistenceState.getAnimeDao(),
+                persistenceState.getMovieDao(),
+                persistenceState.getTvSeriesDao()
         );
-
-        LOGGER.log(Level.INFO, "ApplicationController initialized with persistence mode: {0}", persistenceState.getClass().getSimpleName());
     }
 
-    /**
-     * Default constructor, uses DemoModeState (in-memory persistence).
-     */
     public ApplicationController() {
         this(new DemoModeState());
     }
 
-    // --- Current User Session Management (remains in ApplicationController) ---
     public UserBean getCurrentUserBean() {
         return currentUser;
     }
 
     public void setCurrentUserBean(UserBean currentUser) {
         this.currentUser = currentUser;
-        LOGGER.log(Level.INFO, "Current user set to: {0}", (currentUser != null ? currentUser.getUsername() : "null"));
     }
 
-    // --- Selected Item for Display (for ShowController) ---
     public String getSelectedItemCategory() {
         return selectedItemCategory;
     }
 
     public void setSelectedItemCategory(String selectedItemCategory) {
         this.selectedItemCategory = selectedItemCategory;
-        LOGGER.log(Level.FINE, "Selected item category set to: {0}", selectedItemCategory);
     }
 
     public int getSelectedItemId() {
@@ -96,10 +76,8 @@ public class ApplicationController {
 
     public void setSelectedItemId(int selectedItemId) {
         this.selectedItemId = selectedItemId;
-        LOGGER.log(Level.FINE, "Selected item ID set to: {0}", selectedItemId);
     }
 
-    // --- Search Parameters ---
     public String getSelectedSearchCategory() {
         return selectedSearchCategory;
     }
@@ -116,22 +94,18 @@ public class ApplicationController {
         this.searchQuery = searchQuery;
     }
 
-    // --- Selected List ---
     public ListBean getSelectedList() {
         return selectedList;
     }
 
     public void setSelectedList(ListBean selectedList) {
         this.selectedList = selectedList;
-        LOGGER.log(Level.INFO, "Selected list set to: {0}", (selectedList != null ? selectedList.getName() : "null"));
     }
-
-    // --- Business Logic Methods (now delegated to services) ---
 
     public boolean login(String username, String password) throws ExceptionApplicationController {
         boolean success = authService.login(username, password);
         if (success) {
-            setCurrentUserBean(authService.getCurrentUser()); // Auth service sets its internal user
+            setCurrentUserBean(authService.getCurrentUser());
         }
         return success;
     }
@@ -141,7 +115,24 @@ public class ApplicationController {
     }
 
     public List<?> searchContent(String category, String query) throws ExceptionApplicationController {
-        return contentService.searchContent(category, query);
+        try {
+            switch (category) {
+                case "Movie":
+                    return contentService.searchAndMapMovies(query);
+                case "TvSeries":
+                    return contentService.searchAndMapTvSeries(query);
+                case "Anime":
+                    return contentService.searchAndMapAnime(query);
+                default:
+                    throw new ExceptionApplicationController("Invalid content category: " + category);
+            }
+        } catch (ExceptionApplicationController e) {
+            // Re-throw specific application exceptions already wrapped by helper methods
+            throw e;
+        } catch (Exception e) {
+            // Catch any other unexpected generic exceptions
+            throw new ExceptionApplicationController("An unexpected error occurred during content search.", e);
+        }
     }
 
     public MovieBean retrieveMovieById(int id) throws ExceptionApplicationController {
@@ -220,9 +211,7 @@ public class ApplicationController {
             this.searchQuery = null;
             this.selectedItemCategory = null;
             this.selectedItemId = 0;
-            LOGGER.log(Level.INFO, "User logged out successfully.");
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "An unexpected error occurred during logout.", e);
             throw new ExceptionApplicationController("An unexpected error occurred during logout.", e);
         }
     }

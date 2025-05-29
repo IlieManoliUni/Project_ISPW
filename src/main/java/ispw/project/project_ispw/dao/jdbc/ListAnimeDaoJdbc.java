@@ -11,29 +11,23 @@ import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom D
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ListAnimeDaoJdbc implements ListAnime {
-
-    private static final Logger LOGGER = Logger.getLogger(ListAnimeDaoJdbc.class.getName());
 
     @Override
     public void addAnimeToList(ListBean list, AnimeBean anime) throws ExceptionDao {
         Connection conn = null;
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudListAnime.addAnimeToList now takes Connection directly
             CrudListAnime.addAnimeToList(conn, list, anime);
         } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "Error adding anime ID " + anime.getIdAnimeTmdb() + " to list ID " + list.getId(), e);
             throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after addAnimeToList", e);
+                    // Error closing connection after addAnimeToList
                 }
             }
         }
@@ -44,42 +38,59 @@ public class ListAnimeDaoJdbc implements ListAnime {
         Connection conn = null;
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudListAnime.removeAnimeFromList now takes Connection directly
             CrudListAnime.removeAnimeFromList(conn, list, anime);
         } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "Error removing anime ID " + anime.getIdAnimeTmdb() + " from list ID " + list.getId(), e);
             throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after removeAnimeFromList", e);
+                    // Error closing connection after removeAnimeFromList
                 }
             }
         }
     }
 
     @Override
-    public List<AnimeBean> getAllAnimesInList(ListBean list) throws ExceptionDao {
+    public List<AnimeBean> getAllAnimeInList(ListBean list) throws ExceptionDao {
         Connection conn = null;
         List<AnimeBean> animes;
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudListAnime.getAnimesFullDetailsByList now returns List<AnimeBean> directly
             animes = CrudListAnime.getAnimesFullDetailsByList(conn, list);
         } catch (ExceptionDao e) {
-            LOGGER.log(Level.SEVERE, "Error retrieving all animes for list ID " + list.getId(), e);
             throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after getAllAnimesInList", e);
+                    // Error closing connection after getAllAnimeInList
                 }
             }
         }
         return animes;
+    }
+
+    @Override
+    public void removeAllAnimesFromList(ListBean list) throws ExceptionDao {
+        Connection conn = null;
+        try {
+            conn = SingletonDatabase.getInstance().getConnection();
+            // You'll need to implement this method in your CrudListAnime class.
+            // This method should delete all anime entries associated with the given list ID in the database.
+            CrudListAnime.removeAllAnimesFromList(conn, list);
+        } catch (ExceptionDao e) {
+            throw e;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    // Error closing connection after removeAllAnimesFromList
+                }
+            }
+        }
     }
 }

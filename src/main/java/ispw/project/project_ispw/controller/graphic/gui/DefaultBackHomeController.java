@@ -8,12 +8,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class DefaultBackHomeController implements NavigableController {
-
-    private static final Logger LOGGER = Logger.getLogger(DefaultBackHomeController.class.getName());
 
     @FXML
     private Button backButton;
@@ -55,7 +51,7 @@ public class DefaultBackHomeController implements NavigableController {
 
     // Set up the category combo box
     private void setupCategoryComboBox() {
-        categoryComboBox.setItems(FXCollections.observableArrayList("Anime", "Movie", "TV Series"));
+        categoryComboBox.setItems(FXCollections.observableArrayList("Anime", "Movie", "TvSeries"));
         categoryComboBox.getSelectionModel().selectFirst(); // Select a default category
     }
 
@@ -74,13 +70,11 @@ public class DefaultBackHomeController implements NavigableController {
 
     @FXML // Linked directly in FXML: onAction="#handleBackButtonAction"
     private void handleBackButtonAction() {
-        LOGGER.log(Level.INFO, "Back button clicked!");
         graphicControllerGui.goBack(); // Delegate to GraphicControllerGui
     }
 
     @FXML // Linked directly in FXML: onAction="#handleHomeButtonAction"
     private void handleHomeButtonAction() {
-        LOGGER.log(Level.INFO, "Home button clicked!");
         graphicControllerGui.setScreen("home"); // Delegate to GraphicControllerGui
     }
 
@@ -88,20 +82,17 @@ public class DefaultBackHomeController implements NavigableController {
     private void handleSearchButtonAction() throws ExceptionApplicationController {
         String searchText = searchBar.getText().trim();
         String selectedCategory = categoryComboBox.getValue();
-        LOGGER.log(Level.INFO, "Search button clicked! Search text: {0}, Category: {1}", new Object[]{searchText, selectedCategory});
 
         if (selectedCategory != null && !searchText.isEmpty()) {
             // Delegate the search action to GraphicControllerGui, which handles navigation and data passing
             graphicControllerGui.performSearchAndNavigate(selectedCategory, searchText);
         } else {
-            LOGGER.log(Level.WARNING, "Search text or category is missing for search.");
             showAlert(Alert.AlertType.WARNING, "Search Input", "Please enter search text and select a category.");
         }
     }
 
     @FXML // Linked directly in FXML: onAction="#handleUserButtonAction"
     private void handleUserButtonAction() {
-        LOGGER.log(Level.INFO, "User button clicked!");
         try {
             // Corrected: Use getCurrentUserBean() as per the refactored ApplicationController
             if (graphicControllerGui.getApplicationController().getCurrentUserBean() != null) {
@@ -110,7 +101,6 @@ public class DefaultBackHomeController implements NavigableController {
                 handleLogin();   // If user is not logged in, redirect to login screen
             }
         } catch (Exception e) { // Catching generic exception for UI interaction
-            LOGGER.log(Level.SEVERE, "Error handling user button click.", e);
             showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred.");
         }
     }
@@ -119,7 +109,6 @@ public class DefaultBackHomeController implements NavigableController {
 
     // Handle login action (user is not logged in)
     private void handleLogin() {
-        LOGGER.log(Level.INFO, "User not logged in, redirecting to Log In.");
         graphicControllerGui.setScreen("logIn");
     }
 
@@ -131,13 +120,10 @@ public class DefaultBackHomeController implements NavigableController {
 
             // Update the user button text to "Log In" and redirect to login screen
             setupUserButtonText(); // Re-evaluate button text based on new user status (null)
-            LOGGER.log(Level.INFO, "User logged out, redirecting to Log In.");
             graphicControllerGui.setScreen("logIn");
         } catch (ExceptionApplicationController e) {
-            LOGGER.log(Level.SEVERE, "Application error during logout.", e);
             showAlert(Alert.AlertType.ERROR, "Logout Error", e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error during logout.", e);
             showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred during logout.");
         }
     }

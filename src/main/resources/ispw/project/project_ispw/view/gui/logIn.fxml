@@ -12,10 +12,11 @@
 <?import javafx.scene.layout.Priority?>
 <?import javafx.scene.text.Font?>
 
-<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ispw.project.ispw_project.controller.graphic.gui.LogInController">
-    <fx:include source="defaultBackHome.fxml" />
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ispw.project.project_ispw.controller.graphic.gui.LogInController">
 
-    <VBox alignment="CENTER" spacing="10" style="-fx-padding: 20;">
+    <fx:include fx:id="headerBar" source="defaultBackHome.fxml" />
+
+    <VBox alignment="CENTER" spacing="10" style="-fx-padding: 20;" VBox.vgrow="ALWAYS">
         <Label text="Log In" style="-fx-font-size: 24; -fx-font-weight: bold;" />
 
         <TextField fx:id="usernameField" promptText="Username" style="-fx-pref-width: 200;" />

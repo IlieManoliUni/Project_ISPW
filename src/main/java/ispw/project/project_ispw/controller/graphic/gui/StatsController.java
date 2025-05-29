@@ -11,8 +11,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Controller for the Stats GUI screen. Displays runtime statistics for a selected list.
@@ -20,22 +18,37 @@ import java.util.logging.Logger;
  */
 public class StatsController implements NavigableController {
 
-    private static final Logger LOGGER = Logger.getLogger(StatsController.class.getName());
-
     @FXML
     private TextArea statsTextArea;
 
     @FXML
-    private Label listNameLabel; // To display the name of the list whose stats are shown
+    private Label listNameLabel;
 
     private GraphicControllerGui graphicControllerGui;
-    private ListBean selectedList; // The list for which to display stats
+    private ListBean selectedList;
+
+    // --- NEW: FXML injection for the included DefaultBackHomeController ---
+    // This field will be automatically populated by FXMLLoader
+    // if 'stats.fxml' has <fx:include fx:id="headerBar" .../>
+    @FXML
+    private DefaultBackHomeController headerBarController; // Assuming fx:id="headerBar" in stats.fxml
+    // --- END NEW ---
 
     /**
      * Default constructor required for JavaFX FXML loading.
      */
     public StatsController() {
         // No initialization here, dependencies are injected via setGraphicController
+    }
+
+    /**
+     * Initializes JavaFX components after they have been loaded from the FXML file.
+     * This method is automatically called by FXMLLoader.
+     */
+    @FXML
+    private void initialize() {
+        // This method runs BEFORE setGraphicController.
+        statsTextArea.setEditable(false);
     }
 
     /**
@@ -47,6 +60,16 @@ public class StatsController implements NavigableController {
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
+
+        // --- NEW: Manually inject GraphicControllerGui into the DefaultBackHomeController ---
+        // This is crucial because DefaultBackHomeController is embedded via fx:include
+        if (headerBarController != null) {
+            headerBarController.setGraphicController(this.graphicControllerGui);
+        } else {
+            // Consider more robust error handling or a visual cue if headerBarController is null
+        }
+        // --- END NEW ---
+
         // Retrieve the selected list bean from the ApplicationController's state
         this.selectedList = graphicControllerGui.getApplicationController().getSelectedList();
 
@@ -56,19 +79,9 @@ public class StatsController implements NavigableController {
             calculateAndDisplayTotalMinutes();
         } else {
             // If no list is selected (e.g., direct navigation or error), log and redirect
-            LOGGER.log(Level.WARNING, "No list selected for StatsController. Redirecting to home.");
             showAlert(Alert.AlertType.WARNING, "No List Selected", "Please select a list to view its statistics.");
             graphicControllerGui.setScreen("home"); // Redirect to the home screen
         }
-    }
-
-    /**
-     * Initializes JavaFX components after they have been loaded from the FXML file.
-     * This method is automatically called by FXMLLoader.
-     */
-    @FXML
-    private void initialize() {
-        statsTextArea.setEditable(false); // Make the TextArea read-only as it's for display
     }
 
     /**
@@ -79,7 +92,7 @@ public class StatsController implements NavigableController {
     private void calculateAndDisplayTotalMinutes() {
         // Basic check for essential dependencies before proceeding
         if (graphicControllerGui == null || selectedList == null) {
-            LOGGER.log(Level.SEVERE, "Dependencies (graphicControllerGui or selectedList) not set in StatsController. Cannot calculate stats.");
+            statsTextArea.setText("Error: Application initialization issue."); // Update UI to reflect error
             showAlert(Alert.AlertType.ERROR, "System Error", "Application is not initialized correctly. Please restart.");
             return;
         }
@@ -114,13 +127,10 @@ public class StatsController implements NavigableController {
                 int tvSeriesRuntime = 0;
                 details.append("--- TV Series ---\n");
                 for (TvSeriesBean tvSeries : tvSeriesList) {
-                    // Directly use tvSeries.getEpisodeRuntime() as it's an int based on your TvSeriesBean
                     int episodeDuration = tvSeries.getEpisodeRuntime();
-
-                    // Calculate total runtime for the specific TV series
                     int seriesTotalRuntime = episodeDuration * tvSeries.getNumberOfEpisodes();
 
-                    details.append("- ").append(tvSeries.getName()).append(" (") // Use getName() as per your TvSeriesBean
+                    details.append("- ").append(tvSeries.getName()).append(" (")
                             .append(episodeDuration).append(" min/ep, ")
                             .append(tvSeries.getNumberOfEpisodes()).append(" episodes, total ")
                             .append(seriesTotalRuntime).append(" minutes)\n");
@@ -137,7 +147,6 @@ public class StatsController implements NavigableController {
                 int animeRuntime = 0;
                 details.append("--- Anime ---\n");
                 for (AnimeBean anime : animeList) {
-                    // Calculate total runtime for the specific anime
                     int totalAnimeRuntime = anime.getDuration() * anime.getEpisodes();
 
                     details.append("- ").append(anime.getTitle()).append(" (")
@@ -155,16 +164,11 @@ public class StatsController implements NavigableController {
             // --- Display Overall Total ---
             details.append("\nOverall Total Runtime for list '").append(selectedList.getName()).append("': ").append(totalMinutes).append(" minutes.");
             statsTextArea.setText(details.toString());
-            LOGGER.log(Level.INFO, "Stats calculated for list ''{0}''. Total: {1} minutes.", new Object[]{selectedList.getName(), totalMinutes});
 
         } catch (ExceptionApplicationController e) {
-            // Handle application-specific business logic exceptions from ApplicationController
-            LOGGER.log(Level.SEVERE, "Application error calculating stats for list ''{0}'': {1}", new Object[]{selectedList.getName(), e.getMessage()});
             statsTextArea.setText("Error calculating stats: " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Stats Error", "Could not calculate statistics for this list: " + e.getMessage());
         } catch (Exception e) {
-            // Catch any unexpected runtime exceptions
-            LOGGER.log(Level.SEVERE, "Unexpected error calculating stats for list ''{0}'': {1}");
             statsTextArea.setText("An unexpected error occurred: " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while calculating statistics.");
         }
@@ -180,8 +184,8 @@ public class StatsController implements NavigableController {
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
-        alert.setHeaderText(null); // No header text for simplicity
+        alert.setHeaderText(null);
         alert.setContentText(message);
-        alert.showAndWait(); // Show the alert and wait for user to close it
+        alert.showAndWait();
     }
 }

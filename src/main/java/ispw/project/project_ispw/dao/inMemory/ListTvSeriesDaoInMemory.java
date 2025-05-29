@@ -74,4 +74,20 @@ public class ListTvSeriesDaoInMemory implements ListTvSeries {
         // Return an unmodifiable list to prevent external modification of the internal state.
         return Collections.unmodifiableList(tvSeriesList);
     }
+
+    @Override
+    public void removeAllTvSeriesFromList(ListBean list) throws ExceptionDao {
+        if (list == null) {
+            throw new IllegalArgumentException("List cannot be null.");
+        }
+
+        int listId = list.getId();
+
+        // Attempt to remove the entry for the given list ID.
+        // If remove returns null, it means the key (listId) was not present in the map.
+        if (tvSeriesByListId.remove(listId) == null) {
+            throw new ExceptionDao("List with ID " + listId + " not found, so no TV Series could be removed.");
+        }
+        // If the entry was found and removed, the list is now conceptually empty.
+    }
 }

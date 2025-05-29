@@ -73,6 +73,18 @@ public class TvSeriesModel {
     @SerializedName("created_by")
     private List<Creator> createdBy; // List of creators
 
+    @SerializedName("in_production") // Added this field as it is in the TVSeriesBean
+    private boolean inProduction;
+
+    // --- Constant for common string literal in toString methods ---
+    private static final String NAME_FIELD_PREFIX = ", name='";
+
+    // An empty constructor is typically needed for deserialization by libraries like Gson.
+    public TvSeriesModel() {
+        // This empty constructor is required by Gson for deserialization.
+        // It allows Gson to create an instance of TvSeriesModel before populating its fields from JSON.
+    }
+
     // --- Getters ---
     public int getId() {
         return id;
@@ -165,6 +177,12 @@ public class TvSeriesModel {
     public List<Creator> getCreatedBy() {
         return createdBy;
     }
+
+    // New getter for inProduction
+    public boolean getInProduction() {
+        return inProduction;
+    }
+
 
     // --- Setters (Often not strictly necessary if deserialized directly, but useful for mapping/testing) ---
     public void setId(int id) {
@@ -259,12 +277,17 @@ public class TvSeriesModel {
         this.createdBy = createdBy;
     }
 
+    // New setter for inProduction
+    public void setInProduction(boolean inProduction) {
+        this.inProduction = inProduction;
+    }
+
     @Override
     public String toString() {
         return "TvSeries{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
-                ", originalName='" + originalName + '\'' +
+                NAME_FIELD_PREFIX + name + '\'' +
+                NAME_FIELD_PREFIX + originalName + '\'' +
                 ", overview='" + (overview != null && overview.length() > 50 ? overview.substring(0, 50) + "..." : overview) + '\'' +
                 ", firstAirDate='" + firstAirDate + '\'' +
                 ", numberOfSeasons=" + numberOfSeasons +
@@ -283,13 +306,19 @@ public class TvSeriesModel {
         private int id;
         private String name;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public Genre() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of Genre before populating its fields.
+        }
+
         public int getId() { return id; }
         public String getName() { return name; }
         public void setId(int id) { this.id = id; }
         public void setName(String name) { this.name = name; }
 
         @Override
-        public String toString() { return "Genre{" + "id=" + id + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "Genre{" + "id=" + id + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
     /**
@@ -303,6 +332,12 @@ public class TvSeriesModel {
         @SerializedName("origin_country")
         private String originCountry;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public Network() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of Network before populating its fields.
+        }
+
         public int getId() { return id; }
         public String getLogoPath() { return logoPath; }
         public String getName() { return name; }
@@ -313,7 +348,7 @@ public class TvSeriesModel {
         public void setOriginCountry(String originCountry) { this.originCountry = originCountry; }
 
         @Override
-        public String toString() { return "Network{" + "id=" + id + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "Network{" + "id=" + id + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
     /**
@@ -328,6 +363,12 @@ public class TvSeriesModel {
         @SerializedName("origin_country")
         private String originCountry;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public ProductionCompany() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of ProductionCompany before populating its fields.
+        }
+
         public int getId() { return id; }
         public String getLogoPath() { return logoPath; }
         public String getName() { return name; }
@@ -338,7 +379,7 @@ public class TvSeriesModel {
         public void setOriginCountry(String originCountry) { this.originCountry = originCountry; }
 
         @Override
-        public String toString() { return "ProductionCompany{" + "id=" + id + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "ProductionCompany{" + "id=" + id + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
     /**
@@ -352,6 +393,12 @@ public class TvSeriesModel {
         private String iso6391; // e.g., "en", "es"
         private String name;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public SpokenLanguage() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of SpokenLanguage before populating its fields.
+        }
+
         public String getEnglishName() { return englishName; }
         public String getIso6391() { return iso6391; }
         public String getName() { return name; }
@@ -360,7 +407,7 @@ public class TvSeriesModel {
         public void setName(String name) { this.name = name; }
 
         @Override
-        public String toString() { return "SpokenLanguage{" + "iso6391='" + iso6391 + '\'' + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "SpokenLanguage{" + "iso6391='" + iso6391 + '\'' + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
     /**
@@ -375,6 +422,12 @@ public class TvSeriesModel {
         @SerializedName("profile_path")
         private String profilePath;
 
+        // An empty constructor is typically needed for deserialization by libraries like Gson.
+        public Creator() {
+            // This empty constructor is required by Gson for deserialization.
+            // It allows Gson to create an instance of Creator before populating its fields.
+        }
+
         public int getId() { return id; }
         public String getCreditId() { return creditId; }
         public String getName() { return name; }
@@ -387,6 +440,6 @@ public class TvSeriesModel {
         public void setProfilePath(String profilePath) { this.profilePath = profilePath; }
 
         @Override
-        public String toString() { return "Creator{" + "id=" + id + ", name='" + name + '\'' + '}'; }
+        public String toString() { return "Creator{" + "id=" + id + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 }

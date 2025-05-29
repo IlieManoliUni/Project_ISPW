@@ -17,12 +17,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ListTvSeriesDaoCsv implements ListTvSeries {
 
-    private static final Logger LOGGER = Logger.getLogger(ListTvSeriesDaoCsv.class.getName());
     private static final String CSV_FILE_NAME;
     private static final String TVSERIES_CSV_FILE_NAME; // To get TV series details
 
@@ -38,10 +35,10 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
                 listTvSeriesFileName = properties.getProperty("list_tvseries.csv.filename", listTvSeriesFileName);
                 tvSeriesFileName = properties.getProperty("tvseries.csv.filename", tvSeriesFileName);
             } else {
-                LOGGER.log(Level.WARNING, "csv.properties file not found. Using default CSV filenames.");
+                // csv.properties file not found, using default CSV filenames.
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error loading csv.properties for ListTvSeriesDaoCsv. Using default filenames.", e);
+            // Error loading properties, using default filenames.
         }
 
         CSV_FILE_NAME = listTvSeriesFileName;
@@ -51,14 +48,11 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
-                LOGGER.log(Level.INFO, "List-TVSeries CSV file created: {0}", CSV_FILE_NAME);
             }
             if (!Files.exists(Paths.get(TVSERIES_CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(TVSERIES_CSV_FILE_NAME));
-                LOGGER.log(Level.INFO, "TVSeries CSV file created for lookup: {0}", TVSERIES_CSV_FILE_NAME);
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Initialization failed: Could not create CSV files for ListTvSeriesDaoCsv.", e);
             throw new RuntimeException("Initialization failed: Could not create CSV files.", e);
         }
     }
@@ -84,7 +78,6 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
                 writer.writeNext(record);
             }
         } catch (IOException e) { // Added CsvValidationException
-            LOGGER.log(Level.SEVERE, "Error adding TV Series ID " + tvSeries.getIdTvSeriesTmdb() + " to list ID " + list.getId() + " in CSV file.", e);
             throw new ExceptionDao("Failed to add TV Series to list in CSV. I/O or data error.", e);
         }
     }
@@ -105,23 +98,18 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
             try (CSVReader reader = new CSVReader(Files.newBufferedReader(originalPath))) {
                 while ((record = reader.readNext()) != null) {
                     if (record.length < 2) {
-                        LOGGER.log(Level.WARNING, "Skipping malformed CSV record during removal: {0}", String.join(",", record));
-                        continue;
+                        continue; // Skip malformed records
                     }
                     try {
                         if (!(Integer.parseInt(record[0]) == list.getId() && Integer.parseInt(record[1]) == tvSeries.getIdTvSeriesTmdb())) {
                             allRecords.add(record);
                         }
                     } catch (NumberFormatException e) {
-                        // Log the problematic record if it caused NumberFormatException
-                        LOGGER.log(Level.WARNING, "Skipping CSV record with invalid ID format during removal: {0}. Error: {1}",
-                                new Object[]{record != null ? String.join(",", record) : "null record", e.getMessage()});
                         // Decide whether to keep or discard malformed records. For removal, safer to keep.
                         allRecords.add(record);
                     }
                 }
             } catch (CsvValidationException e) { // Added CsvValidationException
-                LOGGER.log(Level.SEVERE, "CSV validation error during removal of TV Series ID " + tvSeries.getIdTvSeriesTmdb() + " from list ID " + list.getId(), e);
                 throw new IOException("CSV validation error.", e);
             }
 
@@ -132,7 +120,6 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
             Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
 
         } catch (IOException e) { // Catch IOException for file operations
-            LOGGER.log(Level.SEVERE, "Error removing TV Series ID " + tvSeries.getIdTvSeriesTmdb() + " from list ID " + list.getId() + " in CSV file.", e);
             throw new ExceptionDao("Failed to remove TV Series from list in CSV. I/O or data error.", e);
         }
     }
@@ -145,8 +132,7 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 2) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed CSV record while getting all TV Series in list: {0}", String.join(",", record));
-                    continue;
+                    continue; // Skip malformed records
                 }
                 try {
                     if (Integer.parseInt(record[0]) == list.getId()) {
@@ -156,27 +142,70 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
                         if (tvSeries != null) {
                             tvSeriesList.add(tvSeries);
                         } else {
-                            LOGGER.log(Level.WARNING, "TV Series with ID {0} found in list {1} but not in {2}.",
-                                    new Object[]{tvSeriesId, list.getId(), TVSERIES_CSV_FILE_NAME});
+                            // TV Series with ID found in list but not in tvseries.csv.
                         }
                     }
                 } catch (NumberFormatException e) {
-                    LOGGER.log(Level.WARNING, "Skipping CSV record with invalid ID format: {0}. Error: {1}",
-                            new Object[]{record != null ? String.join(",", record) : "null record", e.getMessage()});
+                    // Skipping CSV record with invalid ID format.
                 }
             }
         } catch (IOException | CsvValidationException e) { // Added CsvValidationException
-            LOGGER.log(Level.SEVERE, "Error retrieving all TV Series for list ID " + list.getId() + " from CSV file.", e);
             throw new ExceptionDao("Failed to retrieve all TV Series for list from CSV. Data corruption or I/O error.", e);
         }
 
         if (tvSeriesList.isEmpty()) {
-            LOGGER.log(Level.INFO, "No TV Series Found in list ID: {0}", list.getId());
             throw new ExceptionDao("No TV Series Found in the List (ID: " + list.getId() + ").");
         }
 
         return tvSeriesList;
     }
+
+    @Override
+    public void removeAllTvSeriesFromList(ListBean list) throws ExceptionDao {
+        if (list == null) {
+            throw new IllegalArgumentException("List cannot be null.");
+        }
+
+        java.nio.file.Path originalPath = Paths.get(CSV_FILE_NAME);
+        java.nio.file.Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
+        List<String[]> allRecordsToKeep = new ArrayList<>();
+        boolean listHadEntries = false; // Flag to check if the list actually contained entries
+
+        try {
+            // Read all records, excluding those for the specified list ID
+            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath))) {
+                String[] record;
+                while ((record = csvReader.readNext()) != null) {
+                    if (record.length < 2) {
+                        continue; // Skip malformed records
+                    }
+                    // Keep records that do NOT match the list ID
+                    if (!record[0].equals(String.valueOf(list.getId()))) {
+                        allRecordsToKeep.add(record);
+                    } else {
+                        listHadEntries = true; // Mark that we found entries for this list ID
+                    }
+                }
+            }
+
+            // Write the filtered records back to a temporary file
+            try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
+                csvWriter.writeAll(allRecordsToKeep);
+            }
+
+            // Atomically replace the original file with the temporary one
+            Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
+
+            if (!listHadEntries) {
+                // If the list ID was not found in the CSV, throw an exception
+                throw new ExceptionDao("List with ID " + list.getId() + " not found or already empty.");
+            }
+
+        } catch (IOException | CsvValidationException e) {
+            throw new ExceptionDao("Failed to remove all TV series from list in CSV. I/O or data error.", e);
+        }
+    }
+
 
     // Helper method to check if a TV Series is already in the List
     private boolean tvSeriesExistsInList(ListBean list, TvSeriesBean tvSeries) throws ExceptionDao {
@@ -184,20 +213,17 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 2) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed CSV record during existence check: {0}", String.join(",", record));
-                    continue;
+                    continue; // Skip malformed records
                 }
                 try {
                     if (Integer.parseInt(record[0]) == list.getId() && Integer.parseInt(record[1]) == tvSeries.getIdTvSeriesTmdb()) {
                         return true;
                     }
                 } catch (NumberFormatException e) {
-                    LOGGER.log(Level.WARNING, "Skipping CSV record with invalid ID format: {0}. Error: {1}",
-                            new Object[]{record != null ? String.join(",", record) : "null record", e.getMessage()});
+                    // Skipping CSV record with invalid ID format.
                 }
             }
         } catch (IOException | CsvValidationException e) { // Added CsvValidationException
-            LOGGER.log(Level.SEVERE, "Error checking TV Series existence in list ID " + list.getId() + " for TV Series ID " + tvSeries.getIdTvSeriesTmdb(), e);
             throw new ExceptionDao("Failed to check TV Series existence in list from CSV. I/O or data error.", e);
         }
         return false;
@@ -209,23 +235,19 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(TVSERIES_CSV_FILE_NAME)))) {
             while ((record = csvReader.readNext()) != null) {
                 if (record.length < 4) { // Assuming ID, episodeRuntime, numberOfEpisodes, name
-                    LOGGER.log(Level.WARNING, "Skipping malformed TV Series CSV record: {0}", String.join(",", record));
-                    continue;
+                    continue; // Skip malformed TV Series CSV records
                 }
                 try {
                     if (Integer.parseInt(record[0]) == id) {
-                        // Assuming TvSeriesBean constructor: public TvSeriesBean(int id, int episodeRuntime, int numberOfEpisodes, String name)
-                        // Note: Your TvSeriesBean constructor is (episodeRuntime, idTvSeriesTmdb, numberOfEpisodes, name)
-                        // So, the order should be: record[1] (episodeRuntime), record[0] (id), record[2] (numberOfEpisodes), record[3] (name)
+                        // Assuming TvSeriesBean constructor: public TvSeriesBean(int episodeRuntime, int idTvSeriesTmdb, int numberOfEpisodes, String name)
+                        // Make sure the indices match your TVSeries CSV file structure and TvSeriesBean constructor
                         return new TvSeriesBean(Integer.parseInt(record[1]), Integer.parseInt(record[0]), Integer.parseInt(record[2]), record[3]);
                     }
                 } catch (NumberFormatException e) {
-                    LOGGER.log(Level.WARNING, "Skipping CSV record with invalid number format: {0}. Error: {1}",
-                            new Object[]{record != null ? String.join(",", record) : "null record", e.getMessage()});
+                    // Skipping CSV record with invalid number format.
                 }
             }
         } catch (IOException | CsvValidationException e) { // Added CsvValidationException
-            LOGGER.log(Level.SEVERE, "Error fetching TV Series ID " + id + " from " + TVSERIES_CSV_FILE_NAME, e);
             throw new ExceptionDao("Failed to fetch TV Series details from main TV Series CSV file. I/O or data error.", e);
         }
         return null; // TV Series not found

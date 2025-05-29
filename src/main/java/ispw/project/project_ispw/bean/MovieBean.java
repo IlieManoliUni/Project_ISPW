@@ -1,34 +1,31 @@
 package ispw.project.project_ispw.bean;
 
 import java.io.Serializable;
-import java.util.Collections; // For Collections.emptyList()
+import java.util.Collections;
 import java.util.List;
 
 public class MovieBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private int idMovieTmdb; // Unique ID for the movie (e.g., from TMDB)
+    private int idMovieTmdb;
     private String title;
     private String overview;
     private String originalTitle;
     private String originalLanguage;
     private String releaseDate;
-    private int runtime; // in minutes
-    private List<String> genres; // List of genre names
+    private int runtime;
+    private List<String> genres;
     private double voteAverage;
     private long budget;
     private long revenue;
-    private List<String> productionCompanies; // List of production company names
-    private String posterPath; // Path to the movie poster image
+    private List<String> productionCompanies;
+    private String posterPath;
 
     public MovieBean() {
         // Default constructor
     }
 
-    /**
-     * Full constructor for MovieBean.
-     */
     public MovieBean(int idMovieTmdb, String title, String overview,
                      String originalTitle, String originalLanguage, String releaseDate,
                      int runtime, List<String> genres, double voteAverage,
@@ -49,16 +46,6 @@ public class MovieBean implements Serializable {
         this.posterPath = posterPath;
     }
 
-    /**
-     * New constructor for MovieBean with common essential fields (ID, Runtime, Title).
-     * This constructor is likely intended for use cases where only these basic details are available,
-     * such as when constructing a MovieBean from a simplified database record or CSV entry.
-     * All other fields are initialized to default values.
-     *
-     * @param idMovieTmdb The unique ID of the movie (e.g., from TMDB).
-     * @param runtime The runtime of the movie in minutes.
-     * @param title The main title of the movie.
-     */
     public MovieBean(int idMovieTmdb, int runtime, String title) {
         this.idMovieTmdb = idMovieTmdb;
         this.runtime = runtime;
@@ -75,9 +62,6 @@ public class MovieBean implements Serializable {
         this.productionCompanies = Collections.emptyList(); // Use an empty, immutable list
         this.posterPath = null;
     }
-
-
-    // Getters and Setters for all fields
 
     public int getIdMovieTmdb() {
         return idMovieTmdb;

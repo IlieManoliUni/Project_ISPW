@@ -15,13 +15,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 public class ShowController implements NavigableController {
 
-    private static final Logger LOGGER = Logger.getLogger(ShowController.class.getName());
     private static final String TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
     @FXML
@@ -42,33 +37,50 @@ public class ShowController implements NavigableController {
     private int currentId;
     private Object currentItemBean;
 
+    // --- NEW: FXML injection for the included DefaultBackHomeController ---
+    // This field will be automatically populated by FXMLLoader
+    // if 'show.fxml' has <fx:include fx:id="headerBar" .../>
+    @FXML
+    private DefaultBackHomeController headerBarController; // Assuming fx:id="headerBar" in show.fxml
+    // --- END NEW ---
+
     public ShowController() {
+        // Constructor is empty as dependencies are injected via setGraphicController
+    }
+
+    @FXML
+    private void initialize() {
+        // FXML initialization. This runs BEFORE setGraphicController.
+        // So, no logic dependent on graphicControllerGui or headerBarController here.
+        descriptionArea.setWrapText(true);
     }
 
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
+
+        // --- NEW: Manually inject GraphicControllerGui into the DefaultBackHomeController ---
+        // This is crucial because DefaultBackHomeController is embedded via fx:include
+        if (headerBarController != null) {
+            headerBarController.setGraphicController(this.graphicControllerGui);
+        } else {
+            // This case should ideally be handled by proper FXML setup or visual feedback
+        }
+        // --- END NEW ---
+
         this.currentCategory = graphicControllerGui.getApplicationController().getSelectedItemCategory();
         this.currentId = graphicControllerGui.getApplicationController().getSelectedItemId();
 
         if (currentCategory != null && currentId != 0) {
             displayDetails();
         } else {
-            LOGGER.log(Level.WARNING, "No item selected for ShowController. Redirecting to home.");
             showAlert(Alert.AlertType.WARNING, "No Item Selected", "Please select an item to view its details.");
             graphicControllerGui.setScreen("home");
         }
     }
 
-    @FXML
-    private void initialize() {
-        descriptionArea.setWrapText(true);
-        addToListButton.setOnAction(event -> addToUserList());
-    }
-
     private void displayDetails() {
         if (graphicControllerGui == null) {
-            LOGGER.log(Level.SEVERE, "GraphicControllerGui not injected in ShowController.");
             showAlert(Alert.AlertType.ERROR, "System Error", "Application setup issue. Please restart.");
             return;
         }
@@ -78,32 +90,27 @@ public class ShowController implements NavigableController {
                 case "Movie":
                     this.currentItemBean = graphicControllerGui.getApplicationController().retrieveMovieById(currentId);
                     break;
-                case "TV Series":
+                case "TvSeries":
                     this.currentItemBean = graphicControllerGui.getApplicationController().retrieveTvSeriesById(currentId);
                     break;
                 case "Anime":
                     this.currentItemBean = graphicControllerGui.getApplicationController().retrieveAnimeById(currentId);
                     break;
                 default:
-                    LOGGER.log(Level.WARNING, "Invalid category for display: {0}", currentCategory);
                     showAlert(Alert.AlertType.ERROR, "Invalid Category", "Cannot display details for this type.");
                     return;
             }
 
             if (currentItemBean == null) {
-                LOGGER.log(Level.WARNING, "Item with ID {0} not found for category {1}.", new Object[]{currentId, currentCategory});
                 showAlert(Alert.AlertType.ERROR, "Item Not Found", "Details for the selected item could not be retrieved.");
                 return;
             }
 
             populateDetailsInUI();
-            LOGGER.log(Level.INFO, "Displayed details for {0}: {1} (ID: {2})", new Object[]{currentCategory, getTitleFromBean(currentItemBean), currentId});
 
         } catch (ExceptionApplicationController e) {
-            LOGGER.log(Level.SEVERE, "Application error displaying details for {0} (ID: {1}): {2}", new Object[]{currentCategory, currentId, e.getMessage()});
             showAlert(Alert.AlertType.ERROR, "Display Error", e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error displaying details for {0} (ID: {1}): {2}", new Object[]{currentCategory, currentId, e.getMessage()});
             showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while displaying details.");
         }
     }
@@ -192,7 +199,6 @@ public class ShowController implements NavigableController {
                 Image image = new Image(fullImageUrl);
                 photoView.setImage(image);
             } catch (IllegalArgumentException e) {
-                LOGGER.log(Level.WARNING, "Invalid image URL: {0}", fullImageUrl);
                 photoView.setImage(null);
             }
         } else {
@@ -200,6 +206,7 @@ public class ShowController implements NavigableController {
         }
     }
 
+    @FXML // Make this an FXML action method
     private void addToUserList() {
         if (graphicControllerGui == null) {
             showAlert(Alert.AlertType.ERROR, "System Error", "Application is not initialized correctly.");
@@ -230,13 +237,10 @@ public class ShowController implements NavigableController {
 
             boolean success = false;
             if (currentItemBean instanceof MovieBean movie) {
-                // Corrected: Pass the movie ID (getIdMovieTmdb()) as per ApplicationController's signature
                 success = graphicControllerGui.getApplicationController().addMovieToList(targetList, movie.getIdMovieTmdb());
             } else if (currentItemBean instanceof TvSeriesBean tvSeries) {
-                // Corrected: Pass the TV Series ID (getIdTvSeriesTmdb()) as per ApplicationController's signature
                 success = graphicControllerGui.getApplicationController().addTvSeriesToList(targetList, tvSeries.getIdTvSeriesTmdb());
             } else if (currentItemBean instanceof AnimeBean anime) {
-                // Corrected: Pass the anime ID (getIdAnimeTmdb()) as per ApplicationController's signature
                 success = graphicControllerGui.getApplicationController().addAnimeToList(targetList, anime.getIdAnimeTmdb());
             } else {
                 showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot add this type of item to a list.");
@@ -246,17 +250,13 @@ public class ShowController implements NavigableController {
             if (success) {
                 showAlert(Alert.AlertType.INFORMATION, "Success", currentCategory + " added to list '" + listName + "'.");
                 listNameField.clear();
-                LOGGER.log(Level.INFO, "{0} (ID: {1}) added to list ''{2}'' by user ''{3}''.",
-                        new Object[]{currentCategory, currentId, listName, currentUser.getUsername()});
             } else {
                 showAlert(Alert.AlertType.WARNING, "Add Failed", "Could not add " + currentCategory + " to list. It might already be there.");
             }
 
         } catch (ExceptionApplicationController e) {
-            LOGGER.log(Level.SEVERE, "Application error adding item to list: {0}", e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Error Adding to List", e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error adding item to list.", e);
             showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while adding to list.");
         }
     }

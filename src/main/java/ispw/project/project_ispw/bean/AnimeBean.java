@@ -1,36 +1,33 @@
 package ispw.project.project_ispw.bean;
 
 import java.io.Serializable;
-import java.util.Collections; // Added for Collections.emptyList()
+import java.util.Collections;
 import java.util.List;
 
 public class AnimeBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private int idAnimeTmdb; // Assuming a unique ID for TMDB or AniList
-    private String title; // Simplified from AnimeModel.Title to String
-    private String description; // Renamed from 'overview' to match AnimeModel
-    private String coverImageUrl; // Simplified from AnimeModel.CoverImage to String URL
+    private int idAnimeTmdb;
+    private String title;
+    private String description;
+    private String coverImageUrl;
     private Integer episodes;
-    private Integer duration; // In minutes per episode
-    private String countryOfOrigin; // Added
-    private String startDate; // Simplified from AnimeModel.FuzzyDate to String
-    private String endDate;   // Simplified from AnimeModel.FuzzyDate to String
-    private Integer averageScore; // Added
-    private Integer meanScore;    // Added
-    private String status; // Added
-    private String nextAiringEpisodeDetails; // Simplified from AiringSchedule to String for display
-    private List<String> genres; // Added, simplified for display
+    private Integer duration;
+    private String countryOfOrigin;
+    private String startDate;
+    private String endDate;
+    private Integer averageScore;
+    private Integer meanScore;
+    private String status;
+    private String nextAiringEpisodeDetails;
+    private List<String> genres;
 
 
     public AnimeBean() {
         // Default constructor
     }
 
-    /**
-     * Full constructor for AnimeBean.
-     */
     public AnimeBean(int idAnimeTmdb, String title, String description,
                      String coverImageUrl, Integer episodes, Integer duration,
                      String countryOfOrigin, String startDate, String endDate,
@@ -52,16 +49,6 @@ public class AnimeBean implements Serializable {
         this.genres = genres;
     }
 
-    /**
-     * Constructor for AnimeBean used when retrieving basic details from the database
-     * (e.g., from CrudListAnime.getAnimesFullDetailsByList).
-     * Initializes core fields and sets others to default values.
-     *
-     * @param idAnimeTmdb The unique ID of the anime from TMDB/AniList.
-     * @param duration The duration in minutes per episode.
-     * @param episodes The total number of episodes.
-     * @param title The main title of the anime.
-     */
     public AnimeBean(int idAnimeTmdb, Integer duration, Integer episodes, String title) {
         this.idAnimeTmdb = idAnimeTmdb;
         this.duration = duration;
@@ -77,10 +64,8 @@ public class AnimeBean implements Serializable {
         this.meanScore = null;
         this.status = null;
         this.nextAiringEpisodeDetails = null;
-        this.genres = Collections.emptyList(); // Initialize with an empty, immutable list
+        this.genres = Collections.emptyList();
     }
-
-    // Getters and Setters for all fields
 
     public int getIdAnimeTmdb() {
         return idAnimeTmdb;

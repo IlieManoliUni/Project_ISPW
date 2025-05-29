@@ -9,12 +9,8 @@ import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom D
 import java.sql.Connection;
 import java.sql.SQLException; // Still needed for conn.close() in finally block
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class AnimeDaoJdbc implements AnimeDao {
-
-    private static final Logger LOGGER = Logger.getLogger(AnimeDaoJdbc.class.getName());
 
     @Override
     public AnimeBean retrieveById(int id) throws ExceptionDao {
@@ -31,14 +27,12 @@ public class AnimeDaoJdbc implements AnimeDao {
                 throw new ExceptionDao("No Anime Found with ID: " + id);
             }
         } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            LOGGER.log(Level.SEVERE, "Error retrieving anime by ID: " + id, e);
             throw e; // Re-throw the ExceptionDao caught from CrudAnime or SingletonDatabase
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) { // SQLException can still happen during close()
-                    LOGGER.log(Level.SEVERE, "Error closing connection after retrieveById", e);
                     // For close() errors, often just logging is sufficient as the main operation's success/failure is already determined.
                 }
             }
@@ -55,14 +49,13 @@ public class AnimeDaoJdbc implements AnimeDao {
             // CrudAnime.addAnime now takes Connection
             CrudAnime.addAnime(conn, anime);
         } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            LOGGER.log(Level.SEVERE, "Error saving anime: " + anime.getIdAnimeTmdb(), e);
             throw e; // Re-throw the ExceptionDao caught from CrudAnime or SingletonDatabase
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after saveAnime", e);
+                    // Error closing connection after saveAnime
                 }
             }
         }
@@ -78,14 +71,13 @@ public class AnimeDaoJdbc implements AnimeDao {
             // CrudAnime.getAllAnimes now returns List<AnimeBean> directly
             animes = CrudAnime.getAllAnimes(conn);
         } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            LOGGER.log(Level.SEVERE, "Error retrieving all animes", e);
             throw e; // Re-throw the ExceptionDao caught from CrudAnime or SingletonDatabase
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    LOGGER.log(Level.SEVERE, "Error closing connection after retrieveAllAnime", e);
+                    // Error closing connection after retrieveAllAnime
                 }
             }
         }

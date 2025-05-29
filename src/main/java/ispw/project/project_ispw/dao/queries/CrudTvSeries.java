@@ -12,11 +12,11 @@ import java.util.List;
 
 public class CrudTvSeries {
 
-    private static final String INSERT_TVSERIES_SQL = "INSERT INTO tv_series (idTvSeriesTmdb, numberOfEpisodes, episodeRuntime, name) VALUES (?, ?, ?, ?)";
-    private static final String UPDATE_TVSERIES_SQL = "UPDATE tv_series SET name=?, episodeRuntime=?, numberOfEpisodes=? WHERE idTvSeriesTmdb = ?";
-    private static final String DELETE_TVSERIES_SQL = "DELETE FROM tv_series WHERE idTvSeriesTmdb = ?";
-    private static final String SELECT_ALL_TVSERIES_SQL = "SELECT idTvSeriesTmdb, numberOfEpisodes, episodeRuntime, name FROM tv_series";
-    private static final String SELECT_TVSERIES_BY_ID_SQL = "SELECT idTvSeriesTmdb, numberOfEpisodes, episodeRuntime, name FROM tv_series WHERE idTvSeriesTmdb = ?";
+    private static final String INSERT_TVSERIES_SQL = "INSERT INTO tvseries (idTvSeriesTmdb, numberOfEpisodes, episodeRuntime, name) VALUES (?, ?, ?, ?)";
+    private static final String UPDATE_TVSERIES_SQL = "UPDATE tvseries SET name=?, episodeRuntime=?, numberOfEpisodes=? WHERE idTvSeriesTmdb = ?";
+    private static final String DELETE_TVSERIES_SQL = "DELETE FROM tvseries WHERE idTvSeriesTmdb = ?";
+    private static final String SELECT_ALL_TVSERIES_SQL = "SELECT idTvSeriesTmdb, numberOfEpisodes, episodeRuntime, name FROM tvseries";
+    private static final String SELECT_TVSERIES_BY_ID_SQL = "SELECT idTvSeriesTmdb, numberOfEpisodes, episodeRuntime, name FROM tvseries WHERE idTvSeriesTmdb = ?";
 
     public static int addTvSeries(Connection conn, TvSeriesBean tvSeries) throws ExceptionDao {
         try (PreparedStatement ps = conn.prepareStatement(INSERT_TVSERIES_SQL)) {
