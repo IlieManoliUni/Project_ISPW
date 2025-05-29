@@ -23,7 +23,7 @@ public class ContentService {
     private static final String DATE_FORMAT_PATTERN = "%d-%02d-%02d";
 
     public ContentService() {
-        // No logging needed in constructor
+        // Empty constructor
     }
 
     public List<MovieBean> searchAndMapMovies(String query) throws ExceptionApplicationController {
@@ -31,34 +31,38 @@ public class ContentService {
             List<MovieModel> movieModels = MovieTmdb.searchMovies(query);
             List<MovieBean> movieBeans = new java.util.ArrayList<>();
             for (MovieModel model : movieModels) {
+                MovieBean movieBean = new MovieBean(
+                        model.getId(),
+                        model.getRuntime(),
+                        model.getTitle()
+                );
+
+                movieBean.setOverview(model.getOverview());
+                movieBean.setOriginalTitle(model.getOriginalTitle());
+                movieBean.setOriginalLanguage(model.getOriginalLanguage());
+                movieBean.setReleaseDate(model.getReleaseDate());
+                movieBean.setVoteAverage(model.getVoteAverage());
+                movieBean.setBudget(model.getBudget());
+                movieBean.setRevenue(model.getRevenue());
+                movieBean.setPosterPath(model.getPosterPath());
+
                 List<String> genres = new java.util.ArrayList<>();
                 if (model.getGenres() != null) {
                     for (MovieModel.Genre genre : model.getGenres()) {
                         genres.add(genre.getName());
                     }
                 }
+                movieBean.setGenres(genres);
+
                 List<String> productionCompanies = new java.util.ArrayList<>();
                 if (model.getProductionCompanies() != null) {
                     for (MovieModel.ProductionCompany company : model.getProductionCompanies()) {
                         productionCompanies.add(company.getName());
                     }
                 }
+                movieBean.setProductionCompanies(productionCompanies);
 
-                movieBeans.add(new MovieBean(
-                        model.getId(),
-                        model.getTitle(),
-                        model.getOverview(),
-                        model.getOriginalTitle(),
-                        model.getOriginalLanguage(),
-                        model.getReleaseDate(),
-                        model.getRuntime(),
-                        genres,
-                        model.getVoteAverage(),
-                        model.getBudget(),
-                        model.getRevenue(),
-                        productionCompanies,
-                        model.getPosterPath()
-                ));
+                movieBeans.add(movieBean);
             }
             return movieBeans;
         } catch (ExceptionTmdbApi tmdbE) {
@@ -72,29 +76,33 @@ public class ContentService {
             List<TvSeriesBean> tvSeriesBeans = new java.util.ArrayList<>();
 
             for (TvSeriesModel model : tvSeriesModels) {
-                List<String> productionCompanies = extractProductionCompanyNames(model.getProductionCompanies());
-                List<String> createdBy = extractCreatorNames(model.getCreatedBy());
-
                 int episodeRuntime = calculateEpisodeRuntime(model.getEpisodeRunTime());
 
-                tvSeriesBeans.add(new TvSeriesBean(
-                        model.getId(),
+                TvSeriesBean tvSeriesBean = new TvSeriesBean(
                         episodeRuntime,
+                        model.getId(),
                         model.getNumberOfEpisodes(),
-                        model.getName(),
-                        model.getOverview(),
-                        model.getOriginalName(),
-                        model.getOriginalLanguage(),
-                        model.getFirstAirDate(),
-                        model.getLastAirDate(),
-                        model.getNumberOfSeasons(),
-                        model.getInProduction(),
-                        model.getStatus(),
-                        model.getVoteAverage(),
-                        createdBy,
-                        productionCompanies,
-                        model.getPosterPath()
-                ));
+                        model.getName()
+                );
+
+                tvSeriesBean.setOverview(model.getOverview());
+                tvSeriesBean.setOriginalName(model.getOriginalName());
+                tvSeriesBean.setOriginalLanguage(model.getOriginalLanguage());
+                tvSeriesBean.setFirstAirDate(model.getFirstAirDate());
+                tvSeriesBean.setLastAirDate(model.getLastAirDate());
+                tvSeriesBean.setNumberOfSeasons(model.getNumberOfSeasons());
+                tvSeriesBean.setInProduction(model.getInProduction());
+                tvSeriesBean.setStatus(model.getStatus());
+                tvSeriesBean.setVoteAverage(model.getVoteAverage());
+                tvSeriesBean.setPosterPath(model.getPosterPath());
+
+                List<String> createdBy = extractCreatorNames(model.getCreatedBy());
+                tvSeriesBean.setCreatedBy(createdBy);
+
+                List<String> productionCompanies = extractProductionCompanyNames(model.getProductionCompanies());
+                tvSeriesBean.setProductionCompanies(productionCompanies);
+
+                tvSeriesBeans.add(tvSeriesBean);
             }
             return tvSeriesBeans;
         } catch (ExceptionTmdbApi tmdbE) {
@@ -131,22 +139,26 @@ public class ContentService {
             List<AnimeModel> animeModels = AnimeAniList.searchAnime(query);
             List<AnimeBean> animeBeans = new java.util.ArrayList<>();
             for (AnimeModel model : animeModels) {
-                animeBeans.add(new AnimeBean(
+                AnimeBean animeBean = new AnimeBean(
                         model.getId(),
-                        model.getTitle() != null ? model.getTitle().getRomaji() : null,
-                        model.getDescription(),
-                        model.getCoverImage() != null ? model.getCoverImage().getMedium() : null,
-                        model.getEpisodes(),
                         model.getDuration(),
-                        model.getCountryOfOrigin(),
-                        model.getStartDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getStartDate().getYear(), model.getStartDate().getMonth(), model.getStartDate().getDay()) : null,
-                        model.getEndDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getEndDate().getYear(), model.getEndDate().getMonth(), model.getEndDate().getDay()) : null,
-                        model.getAverageScore(),
-                        model.getMeanScore(),
-                        model.getStatus(),
-                        model.getNextAiringEpisode() != null ? "Episode " + model.getNextAiringEpisode().getEpisode() + " airing at " + model.getNextAiringEpisode().getAiringAt() : null,
-                        model.getGenres() != null ? Arrays.asList(model.getGenres()) : Collections.emptyList()
-                ));
+                        model.getEpisodes(),
+                        model.getTitle() != null ? model.getTitle().getRomaji() : null // Use romaji title
+                );
+
+                animeBean.setDescription(model.getDescription());
+                animeBean.setCoverImageUrl(model.getCoverImage() != null ? model.getCoverImage().getMedium() : null);
+                animeBean.setCountryOfOrigin(model.getCountryOfOrigin());
+                animeBean.setStartDate(model.getStartDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getStartDate().getYear(), model.getStartDate().getMonth(), model.getStartDate().getDay()) : null);
+                animeBean.setEndDate(model.getEndDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getEndDate().getYear(), model.getEndDate().getMonth(), model.getEndDate().getDay()) : null);
+                animeBean.setAverageScore(model.getAverageScore());
+                animeBean.setMeanScore(model.getMeanScore());
+                animeBean.setStatus(model.getStatus());
+                animeBean.setNextAiringEpisodeDetails(model.getNextAiringEpisode() != null ? "Episode " + model.getNextAiringEpisode().getEpisode() + " airing at " + model.getNextAiringEpisode().getAiringAt() : null);
+
+                animeBean.setGenres(model.getGenres() != null ? Arrays.asList(model.getGenres()) : Collections.emptyList());
+
+                animeBeans.add(animeBean);
             }
             return animeBeans;
         } catch (ExceptionAniListApi aniListE) {
@@ -172,12 +184,28 @@ public class ContentService {
                 throw new ExceptionApplicationController("Movie with ID " + id + " not found or returned null model from TMDb API.");
             }
 
+            MovieBean movieBean = new MovieBean(
+                    model.getId(),
+                    model.getRuntime(),
+                    model.getTitle()
+            );
+
+            movieBean.setOverview(model.getOverview());
+            movieBean.setOriginalTitle(model.getOriginalTitle());
+            movieBean.setOriginalLanguage(model.getOriginalLanguage());
+            movieBean.setReleaseDate(model.getReleaseDate());
+            movieBean.setVoteAverage(model.getVoteAverage());
+            movieBean.setBudget(model.getBudget());
+            movieBean.setRevenue(model.getRevenue());
+            movieBean.setPosterPath(model.getPosterPath());
+
             List<String> genres = new java.util.ArrayList<>();
             if (model.getGenres() != null) {
                 for (MovieModel.Genre genre : model.getGenres()) {
                     genres.add(genre.getName());
                 }
             }
+            movieBean.setGenres(genres);
 
             List<String> productionCompanies = new java.util.ArrayList<>();
             if (model.getProductionCompanies() != null) {
@@ -185,22 +213,9 @@ public class ContentService {
                     productionCompanies.add(company.getName());
                 }
             }
+            movieBean.setProductionCompanies(productionCompanies);
 
-            return new MovieBean(
-                    model.getId(),
-                    model.getTitle(),
-                    model.getOverview(),
-                    model.getOriginalTitle(),
-                    model.getOriginalLanguage(),
-                    model.getReleaseDate(),
-                    model.getRuntime(),
-                    genres,
-                    model.getVoteAverage(),
-                    model.getBudget(),
-                    model.getRevenue(),
-                    productionCompanies,
-                    model.getPosterPath()
-            );
+            return movieBean;
         } catch (ExceptionTmdbApi tmdbE) {
             throw new ExceptionApplicationController("Movie with ID " + id + " not found from TMDb API: " + tmdbE.getMessage(), tmdbE);
         }
@@ -224,47 +239,33 @@ public class ContentService {
                 throw new ExceptionApplicationController("TV Series with ID " + id + " not found or returned null model from TMDb API.");
             }
 
-            List<String> genres = new java.util.ArrayList<>();
-            if (model.getGenres() != null) {
-                for (TvSeriesModel.Genre genre : model.getGenres()) {
-                    genres.add(genre.getName());
-                }
-            }
+            int episodeRuntime = calculateEpisodeRuntime(model.getEpisodeRunTime());
 
-            List<String> productionCompanies = new java.util.ArrayList<>();
-            if (model.getProductionCompanies() != null) {
-                for (TvSeriesModel.ProductionCompany company : model.getProductionCompanies()) {
-                    productionCompanies.add(company.getName());
-                }
-            }
-
-            List<String> createdBy = new java.util.ArrayList<>();
-            if (model.getCreatedBy() != null) {
-                for (TvSeriesModel.Creator creator : model.getCreatedBy()) {
-                    createdBy.add(creator.getName());
-                }
-            }
-
-            int episodeRuntime = (model.getEpisodeRunTime() != null && !model.getEpisodeRunTime().isEmpty()) ? model.getEpisodeRunTime().get(0) : 0;
-
-            return new TvSeriesBean(
-                    model.getId(),
+            TvSeriesBean tvSeriesBean = new TvSeriesBean(
                     episodeRuntime,
+                    model.getId(),
                     model.getNumberOfEpisodes(),
-                    model.getName(),
-                    model.getOverview(),
-                    model.getOriginalName(),
-                    model.getOriginalLanguage(),
-                    model.getFirstAirDate(),
-                    model.getLastAirDate(),
-                    model.getNumberOfSeasons(),
-                    model.getInProduction(),
-                    model.getStatus(),
-                    model.getVoteAverage(),
-                    createdBy,
-                    productionCompanies,
-                    model.getPosterPath()
+                    model.getName()
             );
+
+            tvSeriesBean.setOverview(model.getOverview());
+            tvSeriesBean.setOriginalName(model.getOriginalName());
+            tvSeriesBean.setOriginalLanguage(model.getOriginalLanguage());
+            tvSeriesBean.setFirstAirDate(model.getFirstAirDate());
+            tvSeriesBean.setLastAirDate(model.getLastAirDate());
+            tvSeriesBean.setNumberOfSeasons(model.getNumberOfSeasons());
+            tvSeriesBean.setInProduction(model.getInProduction());
+            tvSeriesBean.setStatus(model.getStatus());
+            tvSeriesBean.setVoteAverage(model.getVoteAverage());
+            tvSeriesBean.setPosterPath(model.getPosterPath());
+
+            List<String> createdBy = extractCreatorNames(model.getCreatedBy());
+            tvSeriesBean.setCreatedBy(createdBy);
+
+            List<String> productionCompanies = extractProductionCompanyNames(model.getProductionCompanies());
+            tvSeriesBean.setProductionCompanies(productionCompanies);
+
+            return tvSeriesBean;
         } catch (ExceptionTmdbApi tmdbE) {
             throw new ExceptionApplicationController("TV Series with ID " + id + " not found from TMDb API: " + tmdbE.getMessage(), tmdbE);
         }
@@ -275,22 +276,28 @@ public class ContentService {
         try {
             AnimeModel model = AnimeAniList.getAnimeById(id);
 
-            return new AnimeBean(
+            AnimeBean animeBean = new AnimeBean(
                     model.getId(),
-                    model.getTitle() != null ? model.getTitle().getRomaji() : null,
-                    model.getDescription(),
-                    model.getCoverImage() != null ? model.getCoverImage().getMedium() : null,
-                    model.getEpisodes(),
                     model.getDuration(),
-                    model.getCountryOfOrigin(),
-                    model.getStartDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getStartDate().getYear(), model.getStartDate().getMonth(), model.getStartDate().getDay()) : null,
-                    model.getEndDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getEndDate().getYear(), model.getEndDate().getMonth(), model.getEndDate().getDay()) : null,
-                    model.getAverageScore(),
-                    model.getMeanScore(),
-                    model.getStatus(),
-                    model.getNextAiringEpisode() != null ? "Episode " + model.getNextAiringEpisode().getEpisode() + " airing at " + model.getNextAiringEpisode().getAiringAt() : null,
-                    model.getGenres() != null ? Arrays.asList(model.getGenres()) : Collections.emptyList()
+                    model.getEpisodes(),
+                    model.getTitle() != null ? model.getTitle().getRomaji() : null // Use romaji title
             );
+
+
+            animeBean.setDescription(model.getDescription());
+            animeBean.setCoverImageUrl(model.getCoverImage() != null ? model.getCoverImage().getMedium() : null);
+            animeBean.setCountryOfOrigin(model.getCountryOfOrigin());
+            animeBean.setStartDate(model.getStartDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getStartDate().getYear(), model.getStartDate().getMonth(), model.getStartDate().getDay()) : null);
+            animeBean.setEndDate(model.getEndDate() != null ? String.format(DATE_FORMAT_PATTERN, model.getEndDate().getYear(), model.getEndDate().getMonth(), model.getEndDate().getDay()) : null);
+            animeBean.setAverageScore(model.getAverageScore());
+            animeBean.setMeanScore(model.getMeanScore());
+            animeBean.setStatus(model.getStatus());
+            animeBean.setNextAiringEpisodeDetails(model.getNextAiringEpisode() != null ? "Episode " + model.getNextAiringEpisode().getEpisode() + " airing at " + model.getNextAiringEpisode().getAiringAt() : null);
+
+
+            animeBean.setGenres(model.getGenres() != null ? Arrays.asList(model.getGenres()) : Collections.emptyList());
+
+            return animeBean;
         } catch (ExceptionAniListApi aniListE) {
             throw new ExceptionApplicationController("Failed to retrieve Anime details: " + aniListE.getMessage(), aniListE);
         } catch (Exception e) {

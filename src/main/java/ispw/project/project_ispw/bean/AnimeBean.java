@@ -28,27 +28,6 @@ public class AnimeBean implements Serializable {
         // Default constructor
     }
 
-    public AnimeBean(int idAnimeTmdb, String title, String description,
-                     String coverImageUrl, Integer episodes, Integer duration,
-                     String countryOfOrigin, String startDate, String endDate,
-                     Integer averageScore, Integer meanScore, String status,
-                     String nextAiringEpisodeDetails, List<String> genres) {
-        this.idAnimeTmdb = idAnimeTmdb;
-        this.title = title;
-        this.description = description;
-        this.coverImageUrl = coverImageUrl;
-        this.episodes = episodes;
-        this.duration = duration;
-        this.countryOfOrigin = countryOfOrigin;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.averageScore = averageScore;
-        this.meanScore = meanScore;
-        this.status = status;
-        this.nextAiringEpisodeDetails = nextAiringEpisodeDetails;
-        this.genres = genres;
-    }
-
     public AnimeBean(int idAnimeTmdb, Integer duration, Integer episodes, String title) {
         this.idAnimeTmdb = idAnimeTmdb;
         this.duration = duration;

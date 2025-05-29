@@ -29,30 +29,6 @@ public class TvSeriesBean implements Serializable {
         // Default constructor
     }
 
-    public TvSeriesBean(int idTvSeriesTmdb, int episodeRuntime, int numberOfEpisodes,
-                        String name, String overview, String originalName,
-                        String originalLanguage, String firstAirDate, String lastAirDate,
-                        int numberOfSeasons, boolean inProduction, String status,
-                        double voteAverage, List<String> createdBy,
-                        List<String> productionCompanies, String posterPath) {
-        this.idTvSeriesTmdb = idTvSeriesTmdb;
-        this.episodeRuntime = episodeRuntime;
-        this.numberOfEpisodes = numberOfEpisodes;
-        this.name = name;
-        this.overview = overview;
-        this.originalName = originalName;
-        this.originalLanguage = originalLanguage;
-        this.firstAirDate = firstAirDate;
-        this.lastAirDate = lastAirDate;
-        this.numberOfSeasons = numberOfSeasons;
-        this.inProduction = inProduction;
-        this.status = status;
-        this.voteAverage = voteAverage;
-        this.createdBy = createdBy;
-        this.productionCompanies = productionCompanies;
-        this.posterPath = posterPath;
-    }
-
     public TvSeriesBean(int episodeRuntime, int idTvSeriesTmdb, int numberOfEpisodes, String name) {
         this.episodeRuntime = episodeRuntime;
         this.idTvSeriesTmdb = idTvSeriesTmdb;
@@ -68,8 +44,8 @@ public class TvSeriesBean implements Serializable {
         this.inProduction = false;
         this.status = null;
         this.voteAverage = 0.0;
-        this.createdBy = Collections.emptyList(); // Initialize with an empty, immutable list
-        this.productionCompanies = Collections.emptyList(); // Initialize with an empty, immutable list
+        this.createdBy = Collections.emptyList();
+        this.productionCompanies = Collections.emptyList();
         this.posterPath = null;
     }
 

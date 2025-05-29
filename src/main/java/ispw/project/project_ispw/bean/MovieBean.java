@@ -26,26 +26,6 @@ public class MovieBean implements Serializable {
         // Default constructor
     }
 
-    public MovieBean(int idMovieTmdb, String title, String overview,
-                     String originalTitle, String originalLanguage, String releaseDate,
-                     int runtime, List<String> genres, double voteAverage,
-                     long budget, long revenue, List<String> productionCompanies,
-                     String posterPath) {
-        this.idMovieTmdb = idMovieTmdb;
-        this.title = title;
-        this.overview = overview;
-        this.originalTitle = originalTitle;
-        this.originalLanguage = originalLanguage;
-        this.releaseDate = releaseDate;
-        this.runtime = runtime;
-        this.genres = genres;
-        this.voteAverage = voteAverage;
-        this.budget = budget;
-        this.revenue = revenue;
-        this.productionCompanies = productionCompanies;
-        this.posterPath = posterPath;
-    }
-
     public MovieBean(int idMovieTmdb, int runtime, String title) {
         this.idMovieTmdb = idMovieTmdb;
         this.runtime = runtime;
@@ -55,11 +35,11 @@ public class MovieBean implements Serializable {
         this.originalTitle = null;
         this.originalLanguage = null;
         this.releaseDate = null;
-        this.genres = Collections.emptyList(); // Use an empty, immutable list
+        this.genres = Collections.emptyList();
         this.voteAverage = 0.0;
         this.budget = 0;
         this.revenue = 0;
-        this.productionCompanies = Collections.emptyList(); // Use an empty, immutable list
+        this.productionCompanies = Collections.emptyList();
         this.posterPath = null;
     }
 
