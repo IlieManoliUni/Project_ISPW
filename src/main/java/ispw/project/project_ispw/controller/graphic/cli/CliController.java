@@ -5,7 +5,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-
+import javafx.application.Platform;
 
 public class CliController {
 
@@ -16,11 +16,10 @@ public class CliController {
     private Button submitButton;
 
     private GraphicControllerCli graphicControllerCli;
-    private StringBuilder currentInputLine = new StringBuilder();
     private int inputLineStart = 0;
 
     public CliController() {
-        // Initialization logic goes in initialize()
+        // Initialization logic is in initialize()
     }
 
     @FXML
@@ -37,19 +36,19 @@ public class CliController {
         cliTextArea.addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyPressed);
 
         cliTextArea.textProperty().addListener((obs, oldText, newText) ->
-            cliTextArea.positionCaret(newText.length()));
+                cliTextArea.positionCaret(newText.length()));
     }
 
     private void displayOutput(String text) {
         cliTextArea.setEditable(true);
         cliTextArea.appendText(text + "\n");
         cliTextArea.setEditable(false);
+        cliTextArea.positionCaret(cliTextArea.getText().length());
     }
 
     private void promptForInput() {
         displayOutput("\n> ");
         inputLineStart = cliTextArea.getText().length();
-        currentInputLine.setLength(0);
         cliTextArea.setEditable(true);
         cliTextArea.positionCaret(cliTextArea.getText().length());
     }
@@ -61,51 +60,51 @@ public class CliController {
         } else if (event.getCode() == KeyCode.BACK_SPACE) {
             if (cliTextArea.getCaretPosition() <= inputLineStart) {
                 event.consume();
-            } else {
-                if (currentInputLine.length() > 0) {
-                    currentInputLine.deleteCharAt(currentInputLine.length() - 1);
-                }
             }
         } else if (event.getCode().isArrowKey()) {
             if (cliTextArea.getCaretPosition() < inputLineStart && event.getCode() != KeyCode.RIGHT) {
                 cliTextArea.positionCaret(inputLineStart);
+                event.consume();
+            } else if (cliTextArea.getCaretPosition() > cliTextArea.getText().length() && event.getCode() == KeyCode.LEFT) {
+                cliTextArea.positionCaret(cliTextArea.getText().length());
+                event.consume();
             }
-        } else if (event.getText().isEmpty() && cliTextArea.isEditable() && cliTextArea.getCaretPosition() >= inputLineStart) {
-                currentInputLine.append(event.getText());
-            }
-
+        } else if (cliTextArea.getCaretPosition() < inputLineStart) {
+            event.consume();
+        }
     }
 
     private void processCurrentInput() {
         cliTextArea.setEditable(false);
 
-        String command = currentInputLine.toString().trim();
+        String fullText = cliTextArea.getText();
+        String command = "";
+        if (fullText.length() > inputLineStart) {
+            command = fullText.substring(inputLineStart).trim();
+        }
 
         if (command.isEmpty()) {
             promptForInput();
             return;
         }
 
-        displayOutput(">>> " + command);
-
-        if (command.equalsIgnoreCase("clear")) {
-            cliTextArea.clear();
-            displayOutput("Welcome to Media Hub CLI (JavaFX)! Type 'help' for commands.");
-            promptForInput();
-            return;
-        }
-
-        if (command.equalsIgnoreCase("exit")) {
-            displayOutput("Exiting application. Goodbye!");
-            javafx.application.Platform.exit();
-            return;
-        }
-
-        try {
-            String response = graphicControllerCli.processCliCommand(command);
-            displayOutput(response);
-        } catch (Exception e) {
-            displayOutput("An internal error occurred: " + e.getMessage());
+        switch (command.toLowerCase()) {
+            case "clear":
+                cliTextArea.clear();
+                displayOutput("Welcome to Media Hub CLI (JavaFX)! Type 'help' for commands.");
+                break;
+            case "exit":
+                displayOutput("Exiting application. Goodbye!");
+                Platform.exit();
+                return;
+            default:
+                try {
+                    String response = graphicControllerCli.processCliCommand(command);
+                    displayOutput(response);
+                } catch (Exception e) {
+                    displayOutput("An internal error occurred: " + e.getMessage());
+                }
+                break;
         }
 
         promptForInput();
