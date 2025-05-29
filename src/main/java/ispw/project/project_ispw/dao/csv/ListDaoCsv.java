@@ -11,15 +11,8 @@ import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.nio.file.*;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,26 +78,13 @@ public class ListDaoCsv implements ListDao {
         return list;
     }
 
-    private ListBean retrieveByIdFromFile(int id) throws IOException, NumberFormatException {
+    private ListBean retrieveByIdFromFile(int id) throws IOException, NumberFormatException, CsvDaoException {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             String[] recordList;
             while ((recordList = csvReader.readNext()) != null) {
-                if (recordList.length < 1) {
-                    continue;
-                }
-                try {
-                    int currentId = Integer.parseInt(recordList[0]);
-                    if (currentId == id) {
-                        if (recordList.length < 3) {
-                            LOGGER.log(Level.WARNING, "Malformed record found for ID {0} while retrieving. Expected 3 columns, found {1}. Record: {2}",
-                                    new Object[]{id, recordList.length, java.util.Arrays.toString(recordList)});
-                            throw new CsvDaoException("Malformed record for ID " + id + ": not enough columns to create ListBean.");
-                        }
-                        return new ListBean(currentId, recordList[1], recordList[2]);
-                    }
-                } catch (NumberFormatException e) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed record during retrieveByIdFromFile due to invalid ID format. Record: {0}, Error: {1}",
-                            new Object[]{java.util.Arrays.toString(recordList), e.getMessage()});
+                ListBean foundList = findListRecordById(recordList, id);
+                if (foundList != null) {
+                    return foundList;
                 }
             }
         } catch (CsvValidationException e) {
@@ -113,20 +93,50 @@ public class ListDaoCsv implements ListDao {
         return null;
     }
 
+    private ListBean findListRecordById(String[] recordList, int targetId) throws CsvDaoException, NumberFormatException {
+        if (recordList.length < 1) {
+            return null;
+        }
+        int currentId = 0;
+        try {
+            currentId = Integer.parseInt(recordList[0]);
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.WARNING, "Skipping malformed record due to invalid ID format. Record: {0}, Error: {1}",
+                    new Object[]{Arrays.toString(recordList), e.getMessage()});
+        }
+
+        if (currentId == targetId) {
+            if (recordList.length < 3) {
+                LOGGER.log(Level.WARNING, "Malformed record found for ID {0}. Expected 3 columns, found {1}. Record: {2}",
+                        new Object[]{targetId, recordList.length, Arrays.toString(recordList)});
+                throw new CsvDaoException("Malformed record for ID " + targetId + ": not enough columns to create ListBean.");
+            }
+            return new ListBean(currentId, recordList[1], recordList[2]);
+        }
+        return null;
+    }
+
+    private int parseRecordIdForGeneration(String[] recordList) {
+        if (recordList.length > 0) {
+            try {
+                return Integer.parseInt(recordList[0]);
+            } catch (NumberFormatException e) {
+                LOGGER.log(Level.WARNING, "Skipping malformed record during ID generation due to invalid ID format: {0}, Error: {1}",
+                        new Object[]{Arrays.toString(recordList), e.getMessage()});
+                return 0;
+            }
+        }
+        return 0;
+    }
+
     private int generateNewListId() throws IOException, CsvDaoException {
         int maxId = 0;
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             String[] recordList;
             while ((recordList = csvReader.readNext()) != null) {
-                if (recordList.length > 0) {
-                    try {
-                        int currentId = Integer.parseInt(recordList[0]);
-                        if (currentId > maxId) {
-                            maxId = currentId;
-                        }
-                    } catch (NumberFormatException e) {
-                        LOGGER.log(Level.WARNING, "Skipping malformed record during ID generation due to invalid ID format: {0}", java.util.Arrays.toString(recordList));
-                    }
+                int currentId = parseRecordIdForGeneration(recordList);
+                if (currentId > maxId) {
+                    maxId = currentId;
                 }
             }
         } catch (CsvValidationException e) {
@@ -202,8 +212,8 @@ public class ListDaoCsv implements ListDao {
     }
 
     private void deleteListFromFile(ListBean list) throws IOException {
-        java.nio.file.Path originalPath = Paths.get(CSV_FILE_NAME);
-        java.nio.file.Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
+        Path originalPath = Paths.get(CSV_FILE_NAME);
+        Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
 
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath));
              CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
@@ -230,8 +240,8 @@ public class ListDaoCsv implements ListDao {
             }
         } catch (NumberFormatException e) {
             LOGGER.log(Level.WARNING, "Skipping removal for malformed list record in CSV due to invalid ID format. Record will be preserved. Record: {0}, Error: {1}",
-                    new Object[]{java.util.Arrays.toString(recordList), e.getMessage()});
-            csvWriter.writeNext(recordList); // Preserve malformed records
+                    new Object[]{Arrays.toString(recordList), e.getMessage()});
+            csvWriter.writeNext(recordList);
         }
     }
 
@@ -269,7 +279,7 @@ public class ListDaoCsv implements ListDao {
             String[] recordList;
             while ((recordList = csvReader.readNext()) != null) {
                 if (recordList.length < 3) {
-                    LOGGER.log(Level.WARNING, "Skipping malformed record in CSV during retrieveAllListsFromFile: not enough columns. Record: {0}", java.util.Arrays.toString(recordList));
+                    LOGGER.log(Level.WARNING, "Skipping malformed record in CSV during retrieveAllListsFromFile: not enough columns. Record: {0}", Arrays.toString(recordList));
                     continue;
                 }
                 ListBean parsedList = parseListRecord(recordList);
@@ -288,7 +298,7 @@ public class ListDaoCsv implements ListDao {
             return new ListBean(Integer.parseInt(recordList[0]), recordList[1], recordList[2]);
         } catch (NumberFormatException e) {
             LOGGER.log(Level.WARNING, "Skipping malformed list record in CSV. Expected numeric ID, but found invalid data. Record: {0}, Error: {1}",
-                    new Object[]{java.util.Arrays.toString(recordList), e.getMessage()});
+                    new Object[]{Arrays.toString(recordList), e.getMessage()});
             return null;
         }
     }
