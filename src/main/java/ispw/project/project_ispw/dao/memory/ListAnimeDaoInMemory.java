@@ -3,7 +3,7 @@ package ispw.project.project_ispw.dao.memory;
 import ispw.project.project_ispw.bean.AnimeBean;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.dao.ListAnime;
-import ispw.project.project_ispw.exception.ExceptionDao; // Assuming you have this custom exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,22 +60,15 @@ public class ListAnimeDaoInMemory implements ListAnime {
         int listId = list.getId();
         List<AnimeBean> animeList = animeByListId.getOrDefault(listId, Collections.emptyList());
 
-        if (animeList.isEmpty() && !animeByListId.containsKey(listId)) {
-            throw new ExceptionDao("No Animes found for list ID: " + listId);
-        }
         return Collections.unmodifiableList(animeList);
     }
 
     @Override
-    public void removeAllAnimesFromList(ListBean list) throws ExceptionDao {
+    public void removeAllAnimesFromList(ListBean list) {
         if (list == null) {
             throw new IllegalArgumentException("List cannot be null.");
         }
-
         int listId = list.getId();
-
-        if (animeByListId.remove(listId) == null) {
-            throw new ExceptionDao("List with ID " + listId + " not found, so no animes could be removed.");
-        }
+        animeByListId.remove(listId);
     }
 }

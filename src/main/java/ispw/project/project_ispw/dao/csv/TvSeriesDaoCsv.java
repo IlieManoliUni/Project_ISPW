@@ -6,7 +6,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.dao.TvSeriesDao;
 import ispw.project.project_ispw.exception.CsvDaoException;
-import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom DAO exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,92 +14,90 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collections; // For unmodifiable list
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TvSeriesDaoCsv implements TvSeriesDao {
 
+    private static final Logger LOGGER = Logger.getLogger(TvSeriesDaoCsv.class.getName());
+
     private static final String CSV_FILE_NAME;
 
-    // Using an instance cache for thread safety and consistency.
     private final HashMap<Integer, TvSeriesBean> localCache;
 
     static {
-        // This static block runs once when the class is loaded
         Properties properties = new Properties();
-        String fileName = "tvseries.csv"; // Default
+        String fileName = "tvseries.csv";
 
         try (InputStream input = TvSeriesDaoCsv.class.getClassLoader().getResourceAsStream("csv.properties")) {
             if (input != null) {
                 properties.load(input);
                 fileName = properties.getProperty("tvseries.csv.filename", fileName);
             } else {
-                // csv.properties file not found, using default CSV filename.
+                LOGGER.log(Level.WARNING, "csv.properties file not found. Using default filename: {0}", fileName);
             }
         } catch (IOException e) {
-            throw new CsvDaoException("Initialization failed: Error loading csv.properties.", e); // Critical startup error
+            throw new CsvDaoException("Initialization failed: Error loading csv.properties.", e);
         }
         CSV_FILE_NAME = fileName;
 
-        // Ensure the file exists right at the start
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
             }
         } catch (IOException e) {
-            // If file creation fails, this is a critical error for the DAO
             throw new CsvDaoException("Initialization failed: Could not create CSV file for TV series.", e);
         }
     }
 
     public TvSeriesDaoCsv() {
         this.localCache = new HashMap<>();
-        // Optionally load all data into cache on startup if file is small.
-        // For this example, `retrieveAllTvSeries` will handle loading into cache on first call if not already there.
     }
 
     @Override
-    public TvSeriesBean retrieveById(int id) throws ExceptionDao { // Changed to throw ExceptionDao
-        // First, check cache
+    public TvSeriesBean retrieveById(int id) throws ExceptionDao {
         synchronized (localCache) {
             if (localCache.containsKey(id)) {
                 return localCache.get(id);
             }
         }
 
-        // If not in cache, read from file
         TvSeriesBean tvSeries = null;
         try {
             tvSeries = retrieveByIdFromFile(id);
-        } catch (IOException | CsvValidationException | NumberFormatException e) {
+        } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to retrieve TV Series from CSV for ID: " + id + ". Data corruption or I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error while retrieving TV Series for ID: " + id, e);
         }
 
         if (tvSeries != null) {
-            // Add to cache
             synchronized (localCache) {
                 localCache.put(id, tvSeries);
             }
-        } else {
-            // If not found in file either
-            throw new ExceptionDao("No TV Series Found with ID: " + id);
         }
         return tvSeries;
     }
 
-    private TvSeriesBean retrieveByIdFromFile(int id) throws IOException, CsvValidationException, NumberFormatException {
+    private TvSeriesBean retrieveByIdFromFile(int id) throws IOException, CsvValidationException {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             String[] recordTvSeries;
             while ((recordTvSeries = csvReader.readNext()) != null) {
                 if (recordTvSeries.length < 4) {
-                    continue; // Skip invalid records
+                    continue;
                 }
-                int currentId = Integer.parseInt(recordTvSeries[0]);
-                if (currentId == id) {
-                    // Assuming TvSeriesBean constructor: public TvSeriesBean(int id, int episodeRuntime, int numberOfEpisodes, String name)
-                    return new TvSeriesBean(currentId, Integer.parseInt(recordTvSeries[1]), Integer.parseInt(recordTvSeries[2]), recordTvSeries[3]);
+                try {
+                    int currentId = Integer.parseInt(recordTvSeries[0]);
+                    if (currentId == id) {
+                        return new TvSeriesBean(currentId, Integer.parseInt(recordTvSeries[1]), Integer.parseInt(recordTvSeries[2]), recordTvSeries[3]);
+                    }
+                } catch (NumberFormatException e) {
+                    LOGGER.log(Level.WARNING, "Skipping malformed TV Series record during retrieveByIdFromFile due to invalid ID/runtime/episodes format. Record: {0}, Error: {1}",
+                            new Object[]{java.util.Arrays.toString(recordTvSeries), e.getMessage()});
                 }
             }
         }
@@ -107,10 +105,9 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
     }
 
     @Override
-    public boolean saveTvSeries(TvSeriesBean tvSeries) throws ExceptionDao { // Changed to throw ExceptionDao
+    public boolean saveTvSeries(TvSeriesBean tvSeries) throws ExceptionDao {
         int tvSeriesId = tvSeries.getIdTvSeriesTmdb();
 
-        // Check if ID already exists in cache or file (to prevent duplicates)
         synchronized (localCache) {
             if (localCache.containsKey(tvSeriesId)) {
                 throw new ExceptionDao("Duplicated TV Series ID already in cache: " + tvSeriesId);
@@ -120,19 +117,20 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
         TvSeriesBean existingTvSeries = null;
         try {
             existingTvSeries = retrieveByIdFromFile(tvSeriesId);
-        } catch (IOException | CsvValidationException | NumberFormatException e) {
-            throw new ExceptionDao("Failed to check existing TV Series for ID: " + tvSeriesId + ". Data corruption or I/O error.", e);
+        } catch (IOException | CsvValidationException e) {
+            throw new ExceptionDao("Failed to check existing TV Series for ID: " + tvSeriesId + ". I/O error.", e);
+        } catch (NumberFormatException e) {
+            throw new ExceptionDao("Data corruption while checking existing TV Series for ID: " + tvSeriesId + ". Invalid number format.", e);
         }
 
         if (existingTvSeries != null) {
             throw new ExceptionDao("Duplicated TV Series ID already exists in CSV file: " + tvSeriesId);
         }
 
-        // If it doesn't exist, save to file and add to cache
         try {
             saveTvSeriesToFile(tvSeries);
         } catch (IOException e) {
-            throw new ExceptionDao("Failed to save TV Series to CSV for ID: " + tvSeriesId + ". I/O or data error.", e);
+            throw new ExceptionDao("Failed to save TV Series to CSV for ID: " + tvSeriesId + ". I/O error.", e);
         }
 
         synchronized (localCache) {
@@ -143,7 +141,6 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
     }
 
     private void saveTvSeriesToFile(TvSeriesBean tvSeries) throws IOException {
-        // Using StandardOpenOption.APPEND for appending and newBufferedWriter for efficiency
         try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME), StandardOpenOption.APPEND))) {
             String[] recordTvSeries = {
                     String.valueOf(tvSeries.getIdTvSeriesTmdb()),
@@ -156,44 +153,42 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
     }
 
     @Override
-    public List<TvSeriesBean> retrieveAllTvSeries() throws ExceptionDao { // Changed to throw ExceptionDao
-        List<TvSeriesBean> tvSeriesList = null;
+    public List<TvSeriesBean> retrieveAllTvSeries() throws ExceptionDao {
+        List<TvSeriesBean> tvSeriesList = new ArrayList<>();
         try {
             tvSeriesList = retrieveAllTvSeriesFromFile();
-        }
-        catch (IOException | CsvValidationException | NumberFormatException e) {
-            throw new ExceptionDao("Failed to retrieve all TV Series from CSV. Data corruption or I/O error.", e);
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to retrieve all TV Series from CSV. I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error while retrieving all TV Series.", e);
+        } catch (NumberFormatException e) {
+            throw new ExceptionDao("Data corruption while retrieving all TV Series. Invalid number format.", e);
         }
 
-        // Load into cache if successful
         synchronized (localCache) {
-            // Clear existing cache to ensure it's fresh from the file
             localCache.clear();
             for (TvSeriesBean tvSeries : tvSeriesList) {
                 localCache.put(tvSeries.getIdTvSeriesTmdb(), tvSeries);
             }
         }
 
-        if (tvSeriesList.isEmpty()) {
-            // It might be valid for the file to be empty, depending on your business rules.
-            // Throwing an exception here might not always be desired.
-            // Consider returning an empty list instead or a specific "no data" exception if critical.
-            throw new ExceptionDao("No TV Series Found in CSV file.");
-        }
-
-        return Collections.unmodifiableList(tvSeriesList); // Return an unmodifiable list
+        return Collections.unmodifiableList(tvSeriesList);
     }
 
-    private List<TvSeriesBean> retrieveAllTvSeriesFromFile() throws IOException, CsvValidationException, NumberFormatException {
+    private List<TvSeriesBean> retrieveAllTvSeriesFromFile() throws IOException, CsvValidationException {
         List<TvSeriesBean> tvSeriesList = new ArrayList<>();
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             String[] recordTvSeries;
             while ((recordTvSeries = csvReader.readNext()) != null) {
                 if (recordTvSeries.length < 4) {
-                    continue; // Skip invalid records
+                    continue;
                 }
-                // Assuming TvSeriesBean constructor: public TvSeriesBean(int id, int episodeRuntime, int numberOfEpisodes, String name)
-                tvSeriesList.add(new TvSeriesBean(Integer.parseInt(recordTvSeries[0]), Integer.parseInt(recordTvSeries[1]), Integer.parseInt(recordTvSeries[2]), recordTvSeries[3]));
+                try {
+                    tvSeriesList.add(new TvSeriesBean(Integer.parseInt(recordTvSeries[0]), Integer.parseInt(recordTvSeries[1]), Integer.parseInt(recordTvSeries[2]), recordTvSeries[3]));
+                } catch (NumberFormatException e) {
+                    LOGGER.log(Level.WARNING, "Skipping malformed TV Series record during retrieveAllTvSeriesFromFile due to invalid ID/runtime/episodes format. Record: {0}, Error: {1}",
+                            new Object[]{java.util.Arrays.toString(recordTvSeries), e.getMessage()});
+                }
             }
         }
         return tvSeriesList;

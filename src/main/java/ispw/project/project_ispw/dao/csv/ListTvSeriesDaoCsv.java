@@ -87,39 +87,31 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
 
     @Override
     public void removeTvSeriesFromList(ListBean list, TvSeriesBean tvSeries) throws ExceptionDao {
-        try {
+        Path originalPath = Paths.get(CSV_FILE_NAME);
+        Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
+        List<String[]> allRecords = new ArrayList<>();
+
+        try (CSVReader reader = new CSVReader(Files.newBufferedReader(originalPath));
+             CSVWriter writer = new CSVWriter(Files.newBufferedWriter(tempPath))) {
+
             if (!tvSeriesExistsInList(list, tvSeries)) {
                 throw new ExceptionDao("TV Series ID " + tvSeries.getIdTvSeriesTmdb() + " not found in list ID " + list.getId() + ".");
             }
 
-            Path originalPath = Paths.get(CSV_FILE_NAME);
-            Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
-            List<String[]> allRecords = new ArrayList<>();
-
-            readRecordsForRemoval(originalPath, list.getId(), tvSeries.getIdTvSeriesTmdb(), allRecords);
-
-            try (CSVWriter writer = new CSVWriter(Files.newBufferedWriter(tempPath))) {
-                writer.writeAll(allRecords);
-            }
-
-            Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
-
-        } catch (IOException e) {
-            throw new ExceptionDao("Failed to remove TV Series from list in CSV. I/O or data error.", e);
-        } catch (CsvValidationException e) {
-            throw new CsvDaoException(e);
-        }
-    }
-
-    private void readRecordsForRemoval(Path csvPath, int listId, int tvSeriesIdToDelete, List<String[]> recordsToKeep) throws IOException, CsvValidationException {
-        try (CSVReader reader = new CSVReader(Files.newBufferedReader(csvPath))) {
             String[] recordListTvSeries;
             while ((recordListTvSeries = reader.readNext()) != null) {
                 if (recordListTvSeries.length < 2) {
                     continue;
                 }
-                processRecordForTvSeriesRemoval(recordListTvSeries, listId, tvSeriesIdToDelete, recordsToKeep);
+                processRecordForTvSeriesRemoval(recordListTvSeries, list.getId(), tvSeries.getIdTvSeriesTmdb(), allRecords);
             }
+            writer.writeAll(allRecords);
+            Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
+
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to remove TV Series from list in CSV. I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error during removeTvSeriesFromList.", e);
         }
     }
 
@@ -135,7 +127,6 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
         }
     }
 
-
     @Override
     public List<TvSeriesBean> getAllTvSeriesInList(ListBean list) throws ExceptionDao {
         List<TvSeriesBean> tvSeriesList = new ArrayList<>();
@@ -146,17 +137,17 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
                 if (recordListTvSeries.length < 2) {
                     continue;
                 }
-                TvSeriesBean tvSeries = processListTvSeriesRecordAndFetchTvSeries(recordListTvSeries, list.getId());
-                if (tvSeries != null) {
-                    tvSeriesList.add(tvSeries);
+                if (recordListTvSeries[0].equals(String.valueOf(list.getId()))) {
+                    TvSeriesBean tvSeries = processListTvSeriesRecordAndFetchTvSeries(recordListTvSeries, list.getId());
+                    if (tvSeries != null) {
+                        tvSeriesList.add(tvSeries);
+                    }
                 }
             }
-        } catch (IOException | CsvValidationException e) {
-            throw new ExceptionDao("Failed to retrieve all TV Series for list from CSV. Data corruption or I/O error.", e);
-        }
-
-        if (tvSeriesList.isEmpty()) {
-            throw new ExceptionDao("No TV Series Found in the List (ID: " + list.getId() + ").");
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to retrieve all TV Series for list from CSV. I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error during getAllTvSeriesInList.", e);
         }
 
         return tvSeriesList;
@@ -191,35 +182,26 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
         Path originalPath = Paths.get(CSV_FILE_NAME);
         Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
         List<String[]> allRecordsToKeep = new ArrayList<>();
-        boolean listHadEntries = false;
 
-        try {
-            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath))) {
-                String[] recordListTvSeries;
-                while ((recordListTvSeries = csvReader.readNext()) != null) {
-                    if (recordListTvSeries.length < 2) {
-                        continue;
-                    }
-                    if (!recordListTvSeries[0].equals(String.valueOf(list.getId()))) {
-                        allRecordsToKeep.add(recordListTvSeries);
-                    } else {
-                        listHadEntries = true;
-                    }
+        try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath));
+             CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
+
+            String[] recordListTvSeries;
+            while ((recordListTvSeries = csvReader.readNext()) != null) {
+                if (recordListTvSeries.length < 2) {
+                    continue;
+                }
+                if (!recordListTvSeries[0].equals(String.valueOf(list.getId()))) {
+                    allRecordsToKeep.add(recordListTvSeries);
                 }
             }
-
-            try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
-                csvWriter.writeAll(allRecordsToKeep);
-            }
-
+            csvWriter.writeAll(allRecordsToKeep);
             Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
 
-            if (!listHadEntries) {
-                throw new ExceptionDao("List with ID " + list.getId() + " not found or already empty.");
-            }
-
-        } catch (IOException | CsvValidationException e) {
-            throw new ExceptionDao("Failed to remove all TV series from list in CSV. I/O or data error.", e);
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to remove all TV series from list in CSV. I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error during removeAllTvSeriesFromList.", e);
         }
     }
 
@@ -245,8 +227,10 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
                     return true;
                 }
             }
-        } catch (IOException | CsvValidationException e) {
+        } catch (IOException e) {
             throw new ExceptionDao("Failed to check TV Series existence in list from CSV. I/O or data error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error during tvSeriesExistsInList.", e);
         }
         return false;
     }
@@ -279,8 +263,10 @@ public class ListTvSeriesDaoCsv implements ListTvSeries {
                     return tvSeries;
                 }
             }
-        } catch (IOException | CsvValidationException e) {
+        } catch (IOException e) {
             throw new ExceptionDao("Failed to fetch TV Series details from main TV Series CSV file. I/O or data error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error during fetchTvSeriesById.", e);
         }
         return null;
     }

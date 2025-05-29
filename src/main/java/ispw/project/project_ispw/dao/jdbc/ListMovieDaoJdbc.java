@@ -9,6 +9,7 @@ import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList; // Import ArrayList for empty list
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,8 +60,8 @@ public class ListMovieDaoJdbc implements ListMovie {
             conn = SingletonDatabase.getInstance().getConnection();
             movies = CrudListMovie.getMoviesFullDetailsByList(conn, list);
 
-            if (movies == null || movies.isEmpty()) {
-                throw new ExceptionDao("No Movies Found in list with ID: " + list.getId());
+            if (movies == null) {
+                return new ArrayList<>();
             }
         } finally {
             if (conn != null) {

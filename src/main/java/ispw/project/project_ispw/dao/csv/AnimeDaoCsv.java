@@ -21,7 +21,6 @@ import java.util.Properties;
 public class AnimeDaoCsv implements AnimeDao {
 
     private static final String CSV_FILE_NAME;
-
     private final HashMap<Integer, AnimeBean> localCache;
 
     static {
@@ -31,6 +30,7 @@ public class AnimeDaoCsv implements AnimeDao {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
             }
         } catch (IOException e) {
+
             throw new CsvDaoException("Initialization failed: Could not create CSV file at " + CSV_FILE_NAME, e);
         }
     }
@@ -43,6 +43,7 @@ public class AnimeDaoCsv implements AnimeDao {
         Properties properties = new Properties();
         try (InputStream input = AnimeDaoCsv.class.getClassLoader().getResourceAsStream("csv.properties")) {
             if (input == null) {
+
                 throw new IllegalStateException("csv.properties file not found in resources folder. Cannot initialize CSV DAO.");
             }
             properties.load(input);
@@ -77,10 +78,7 @@ public class AnimeDaoCsv implements AnimeDao {
             synchronized (localCache) {
                 localCache.put(id, anime);
             }
-        } else {
-            throw new ExceptionDao("No Anime Found with ID: " + id);
         }
-
         return anime;
     }
 
@@ -122,6 +120,7 @@ public class AnimeDaoCsv implements AnimeDao {
         }
 
         if (existingAnime != null) {
+
             throw new ExceptionDao("Duplicated Anime ID already exists in CSV file: " + animeId);
         }
 
@@ -137,6 +136,7 @@ public class AnimeDaoCsv implements AnimeDao {
     }
 
     private static void saveAnimeToFile(AnimeBean anime) throws IOException {
+
         try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME), java.nio.file.StandardOpenOption.APPEND))) {
             String[] recordAnime = {
                     String.valueOf(anime.getIdAnimeTmdb()),
@@ -150,7 +150,8 @@ public class AnimeDaoCsv implements AnimeDao {
 
     @Override
     public List<AnimeBean> retrieveAllAnime() throws ExceptionDao {
-        List<AnimeBean> animeList = null;
+        List<AnimeBean> animeList;
+
         try {
             animeList = retrieveAllAnimeFromFile();
         } catch (IOException | NumberFormatException e) {
@@ -164,10 +165,6 @@ public class AnimeDaoCsv implements AnimeDao {
             for (AnimeBean anime : animeList) {
                 localCache.put(anime.getIdAnimeTmdb(), anime);
             }
-        }
-
-        if (animeList.isEmpty()) {
-            throw new ExceptionDao("No Anime Found in CSV file.");
         }
 
         return Collections.unmodifiableList(animeList);

@@ -26,11 +26,7 @@ public class ListDaoInMemory implements ListDao {
 
     @Override
     public ListBean retrieveById(int id) throws ExceptionDao {
-        ListBean list = listMap.get(id);
-        if (list == null) {
-            throw new ExceptionDao("No List Found with ID: " + id);
-        }
-        return list;
+        return listMap.get(id);
     }
 
     @Override
@@ -94,11 +90,6 @@ public class ListDaoInMemory implements ListDao {
                 }
             }
         }
-
-        if (result.isEmpty()) {
-            throw new ExceptionDao("No Lists Found for username: " + username);
-        }
-
         return Collections.unmodifiableList(result);
     }
 }

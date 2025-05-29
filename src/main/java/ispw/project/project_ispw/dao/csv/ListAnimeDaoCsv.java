@@ -72,7 +72,7 @@ public class ListAnimeDaoCsv implements ListAnime {
                 csvWriter.writeNext(recordAnime);
             }
         } catch (IOException e) {
-            throw new ExceptionDao("Failed to add anime to list in CSV. I/O or data error.", e);
+            throw new ExceptionDao("Failed to add anime to list in CSV. I/O error.", e);
         }
     }
 
@@ -84,7 +84,10 @@ public class ListAnimeDaoCsv implements ListAnime {
             }
 
             List<String[]> allRecords = new ArrayList<>();
-            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
+            // --- REFACTORED START ---
+            // Combined CSVReader and CSVWriter into a single try block
+            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)));
+                 CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) { // This will overwrite the file
                 String[] recordAnime;
                 while ((recordAnime = csvReader.readNext()) != null) {
                     if (recordAnime.length < 2) {
@@ -94,12 +97,10 @@ public class ListAnimeDaoCsv implements ListAnime {
                         allRecords.add(recordAnime);
                     }
                 }
-            }
-
-            try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) {
                 csvWriter.writeAll(allRecords);
             }
-        } catch (IOException | CsvValidationException e) {
+            // --- REFACTORED END ---
+        } catch (IOException | CsvValidationException e) { // Catch both IOException and CsvValidationException here
             throw new ExceptionDao("Failed to remove anime from list in CSV. I/O or data error.", e);
         }
     }
@@ -121,12 +122,10 @@ public class ListAnimeDaoCsv implements ListAnime {
                     }
                 }
             }
-        } catch (IOException | CsvValidationException | NumberFormatException e) {
+        } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to retrieve all animes for list from CSV. Data corruption or I/O error.", e);
-        }
-
-        if (animeList.isEmpty()) {
-            throw new ExceptionDao("No Anime Found in the List (ID: " + list.getId() + ").");
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error during getAllAnimeInList.", e);
         }
 
         return animeList;
@@ -140,9 +139,11 @@ public class ListAnimeDaoCsv implements ListAnime {
 
         try {
             List<String[]> allRecords = new ArrayList<>();
-            boolean listHadEntries = false;
 
-            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
+            // --- REFACTORED START ---
+            // Combined CSVReader and CSVWriter into a single try block
+            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)));
+                 CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) { // This will overwrite the file
                 String[] recordAnime;
                 while ((recordAnime = csvReader.readNext()) != null) {
                     if (recordAnime.length < 2) {
@@ -150,21 +151,12 @@ public class ListAnimeDaoCsv implements ListAnime {
                     }
                     if (!recordAnime[0].equals(String.valueOf(list.getId()))) {
                         allRecords.add(recordAnime);
-                    } else {
-                        listHadEntries = true;
                     }
                 }
-            }
-
-            try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) {
                 csvWriter.writeAll(allRecords);
             }
-
-            if (!listHadEntries) {
-                throw new ExceptionDao("List with ID " + list.getId() + " not found or already empty.");
-            }
-
-        } catch (IOException | CsvValidationException e) {
+            // --- REFACTORED END ---
+        } catch (IOException | CsvValidationException e) { // Catch both IOException and CsvValidationException here
             throw new ExceptionDao("Failed to remove all anime from list in CSV. I/O or data error.", e);
         }
     }
@@ -180,8 +172,10 @@ public class ListAnimeDaoCsv implements ListAnime {
                     return true;
                 }
             }
-        } catch (IOException | CsvValidationException e) {
-            throw new ExceptionDao("Failed to check anime existence in list from CSV. I/O or data error.", e);
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to check anime existence in list from CSV. I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error during animeExistsInList.", e);
         }
         return false;
     }
@@ -198,8 +192,10 @@ public class ListAnimeDaoCsv implements ListAnime {
                     return anime;
                 }
             }
-        } catch (IOException | CsvValidationException e) {
-            throw new ExceptionDao("Failed to fetch anime details from main anime CSV file. I/O or data error.", e);
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to fetch anime details from main anime CSV file. I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error during fetchAnimeById.", e);
         }
         return null;
     }

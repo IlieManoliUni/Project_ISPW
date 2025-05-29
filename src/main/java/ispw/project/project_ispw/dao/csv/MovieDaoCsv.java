@@ -18,8 +18,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MovieDaoCsv implements MovieDao {
+
+    private static final Logger LOGGER = Logger.getLogger(MovieDaoCsv.class.getName());
 
     private static final String CSV_FILE_NAME;
 
@@ -33,6 +37,8 @@ public class MovieDaoCsv implements MovieDao {
             if (input != null) {
                 properties.load(input);
                 fileName = properties.getProperty("movie.csv.filename", fileName);
+            } else {
+                LOGGER.log(Level.WARNING, "csv.properties file not found. Using default filename: {0}", fileName);
             }
         } catch (IOException e) {
             throw new CsvDaoException("Initialization failed: Error loading csv.properties.", e);
@@ -63,30 +69,35 @@ public class MovieDaoCsv implements MovieDao {
         MovieBean movie = null;
         try {
             movie = retrieveByIdFromFile(id);
-        } catch (IOException | CsvValidationException | NumberFormatException e) {
+        } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to retrieve movie from CSV for ID: " + id + ". Data corruption or I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error while retrieving movie for ID: " + id, e);
         }
 
         if (movie != null) {
             synchronized (localCache) {
                 localCache.put(id, movie);
             }
-        } else {
-            throw new ExceptionDao("No Movie Found with ID: " + id);
         }
         return movie;
     }
 
-    private MovieBean retrieveByIdFromFile(int id) throws IOException, CsvValidationException, NumberFormatException {
+    private MovieBean retrieveByIdFromFile(int id) throws IOException, CsvValidationException {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             String[] recordMovie;
             while ((recordMovie = csvReader.readNext()) != null) {
                 if (recordMovie.length < 3) {
                     continue;
                 }
-                int currentId = Integer.parseInt(recordMovie[0]);
-                if (currentId == id) {
-                    return new MovieBean(currentId, Integer.parseInt(recordMovie[1]), recordMovie[2]);
+                try {
+                    int currentId = Integer.parseInt(recordMovie[0]);
+                    if (currentId == id) {
+                        return new MovieBean(currentId, Integer.parseInt(recordMovie[1]), recordMovie[2]);
+                    }
+                } catch (NumberFormatException e) {
+                    LOGGER.log(Level.WARNING, "Skipping malformed movie record during retrieveByIdFromFile due to invalid ID/runtime format. Record: {0}, Error: {1}",
+                            new Object[]{java.util.Arrays.toString(recordMovie), e.getMessage()});
                 }
             }
         }
@@ -106,8 +117,10 @@ public class MovieDaoCsv implements MovieDao {
         MovieBean existingMovie = null;
         try {
             existingMovie = retrieveByIdFromFile(movieId);
-        } catch (IOException | CsvValidationException | NumberFormatException e) {
-            throw new ExceptionDao("Failed to check existing movie for ID: " + movieId + ". Data corruption or I/O error.", e);
+        } catch (IOException | CsvValidationException e) {
+            throw new ExceptionDao("Failed to check existing movie for ID: " + movieId + ". I/O error.", e);
+        } catch (NumberFormatException e) {
+            throw new ExceptionDao("Data corruption while checking existing movie for ID: " + movieId + ". Invalid number format.", e);
         }
 
         if (existingMovie != null) {
@@ -117,7 +130,7 @@ public class MovieDaoCsv implements MovieDao {
         try {
             saveMovieToFile(movie);
         } catch (IOException e) {
-            throw new ExceptionDao("Failed to save movie to CSV for ID: " + movieId + ". I/O or data error.", e);
+            throw new ExceptionDao("Failed to save movie to CSV for ID: " + movieId + ". I/O error.", e);
         }
 
         synchronized (localCache) {
@@ -125,7 +138,7 @@ public class MovieDaoCsv implements MovieDao {
         }
     }
 
-    private void saveMovieToFile(MovieBean movie) throws IOException{
+    private void saveMovieToFile(MovieBean movie) throws IOException {
         try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME), StandardOpenOption.APPEND))) {
             String[] recordMovie = {String.valueOf(movie.getIdMovieTmdb()), String.valueOf(movie.getRuntime()), movie.getTitle()};
             csvWriter.writeNext(recordMovie);
@@ -134,11 +147,15 @@ public class MovieDaoCsv implements MovieDao {
 
     @Override
     public List<MovieBean> retrieveAllMovies() throws ExceptionDao {
-        List<MovieBean> movieList = null;
+        List<MovieBean> movieList = new ArrayList<>();
         try {
             movieList = retrieveAllMoviesFromFile();
-        } catch (IOException | CsvValidationException | NumberFormatException e) {
-            throw new ExceptionDao("Failed to retrieve all movies from CSV. Data corruption or I/O error.", e);
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to retrieve all movies from CSV. I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error while retrieving all movies.", e);
+        } catch (NumberFormatException e) {
+            throw new ExceptionDao("Data corruption while retrieving all movies. Invalid number format.", e);
         }
 
         synchronized (localCache) {
@@ -148,14 +165,10 @@ public class MovieDaoCsv implements MovieDao {
             }
         }
 
-        if (movieList.isEmpty()) {
-            throw new ExceptionDao("No Movies Found in CSV file.");
-        }
-
         return Collections.unmodifiableList(movieList);
     }
 
-    private List<MovieBean> retrieveAllMoviesFromFile() throws IOException, CsvValidationException, NumberFormatException {
+    private List<MovieBean> retrieveAllMoviesFromFile() throws IOException, CsvValidationException {
         List<MovieBean> movieList = new ArrayList<>();
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
             String[] recordMovie;
@@ -163,7 +176,12 @@ public class MovieDaoCsv implements MovieDao {
                 if (recordMovie.length < 3) {
                     continue;
                 }
-                movieList.add(new MovieBean(Integer.parseInt(recordMovie[0]), Integer.parseInt(recordMovie[1]), recordMovie[2]));
+                try {
+                    movieList.add(new MovieBean(Integer.parseInt(recordMovie[0]), Integer.parseInt(recordMovie[1]), recordMovie[2]));
+                } catch (NumberFormatException e) {
+                    LOGGER.log(Level.WARNING, "Skipping malformed movie record during retrieveAllMoviesFromFile due to invalid ID/runtime format. Record: {0}, Error: {1}",
+                            new Object[]{java.util.Arrays.toString(recordMovie), e.getMessage()});
+                }
             }
         }
         return movieList;

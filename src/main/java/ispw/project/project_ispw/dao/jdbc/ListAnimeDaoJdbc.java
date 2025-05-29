@@ -9,6 +9,7 @@ import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,9 +59,8 @@ public class ListAnimeDaoJdbc implements ListAnime {
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             animes = CrudListAnime.getAnimesFullDetailsByList(conn, list);
-
-            if (animes == null || animes.isEmpty()) {
-                throw new ExceptionDao("No Anime Found in list with ID: " + list.getId());
+            if (animes == null) {
+                return new ArrayList<>();
             }
         } finally {
             if (conn != null) {

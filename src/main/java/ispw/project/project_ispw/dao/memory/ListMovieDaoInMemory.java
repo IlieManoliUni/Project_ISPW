@@ -3,7 +3,7 @@ package ispw.project.project_ispw.dao.memory;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.bean.MovieBean;
 import ispw.project.project_ispw.dao.ListMovie;
-import ispw.project.project_ispw.exception.ExceptionDao; // Assuming you have this custom exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,24 +58,20 @@ public class ListMovieDaoInMemory implements ListMovie {
         }
 
         int listId = list.getId();
+
         List<MovieBean> movieList = movieByListId.getOrDefault(listId, Collections.emptyList());
 
-        if (movieList.isEmpty() && !movieByListId.containsKey(listId)) {
-            throw new ExceptionDao("No Movies found for list ID: " + listId);
-        }
         return Collections.unmodifiableList(movieList);
     }
 
     @Override
-    public void removeAllMoviesFromList(ListBean list) throws ExceptionDao {
+    public void removeAllMoviesFromList(ListBean list) {
         if (list == null) {
             throw new IllegalArgumentException("List cannot be null.");
         }
 
         int listId = list.getId();
+        movieByListId.remove(listId);
 
-        if (movieByListId.remove(listId) == null) {
-            throw new ExceptionDao("List with ID " + listId + " not found, so no movies could be removed.");
-        }
     }
 }

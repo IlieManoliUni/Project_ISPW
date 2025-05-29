@@ -9,6 +9,7 @@ import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,10 +26,6 @@ public class ListDaoJdbc implements ListDao {
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             list = CrudList.getListById(conn, id);
-
-            if (list == null) {
-                throw new ExceptionDao("No List Found with ID: " + id);
-            }
         } finally {
             if (conn != null) {
                 try {
@@ -78,13 +75,13 @@ public class ListDaoJdbc implements ListDao {
     @Override
     public List<ListBean> retrieveAllListsOfUsername(String username) throws ExceptionDao {
         Connection conn = null;
-        List<ListBean> lists;
+        List<ListBean> lists = null;
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             lists = CrudList.getListsByUsername(conn, username);
 
             if (lists == null || lists.isEmpty()) {
-                throw new ExceptionDao("No Lists Found for username: " + username);
+                return new ArrayList<>();
             }
         } finally {
             if (conn != null) {

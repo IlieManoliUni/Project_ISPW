@@ -3,7 +3,7 @@ package ispw.project.project_ispw.dao.memory;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.dao.ListTvSeries;
-import ispw.project.project_ispw.exception.ExceptionDao; // Assuming you have this custom exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,9 +60,6 @@ public class ListTvSeriesDaoInMemory implements ListTvSeries {
         int listId = list.getId();
         List<TvSeriesBean> tvSeriesList = tvSeriesByListId.getOrDefault(listId, Collections.emptyList());
 
-        if (tvSeriesList.isEmpty() && !tvSeriesByListId.containsKey(listId)) {
-            throw new ExceptionDao("No TV Series found for list ID: " + listId);
-        }
         return Collections.unmodifiableList(tvSeriesList);
     }
 
@@ -74,8 +71,6 @@ public class ListTvSeriesDaoInMemory implements ListTvSeries {
 
         int listId = list.getId();
 
-        if (tvSeriesByListId.remove(listId) == null) {
-            throw new ExceptionDao("List with ID " + listId + " not found, so no TV Series could be removed.");
-        }
+        tvSeriesByListId.remove(listId);
     }
 }

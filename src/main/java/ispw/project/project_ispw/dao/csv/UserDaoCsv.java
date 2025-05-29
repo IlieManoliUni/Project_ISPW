@@ -67,8 +67,10 @@ public class UserDaoCsv implements UserDao {
         UserBean user = null;
         try {
             user = retrieveByUsernameFromFile(username);
-        } catch (IOException | CsvValidationException e) {
-            throw new ExceptionDao("Failed to retrieve user from CSV for username: " + username + ". Data corruption or I/O error.", e);
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to retrieve user from CSV for username: " + username + ". I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error while retrieving user for username: " + username, e);
         }
 
         if (user != null) {
@@ -107,8 +109,10 @@ public class UserDaoCsv implements UserDao {
         UserBean existingUser = null;
         try {
             existingUser = retrieveByUsernameFromFile(username);
-        } catch (IOException | CsvValidationException e) {
-            throw new ExceptionDao("Failed to check existing user for username: " + username + ". Data corruption or I/O error.", e);
+        } catch (IOException e) {
+            throw new ExceptionDao("Failed to check existing user for username: " + username + ". I/O error.", e);
+        } catch (CsvValidationException e) {
+            throw new CsvDaoException("CSV data validation error while checking existing user for username: " + username, e);
         }
 
         if (existingUser != null) {
@@ -118,7 +122,7 @@ public class UserDaoCsv implements UserDao {
         try {
             saveUserToFile(user);
         } catch (IOException e) {
-            throw new ExceptionDao("Failed to save user to CSV for username: " + username + ". I/O or data error.", e);
+            throw new ExceptionDao("Failed to save user to CSV for username: " + username + ". I/O error.", e);
         }
 
         synchronized (localCache) {

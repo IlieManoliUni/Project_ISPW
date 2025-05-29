@@ -84,31 +84,27 @@ public class ListMovieDaoCsv implements ListMovie {
 
     @Override
     public void removeMovieFromList(ListBean list, MovieBean movie) throws ExceptionDao {
-        try {
+        java.nio.file.Path originalPath = Paths.get(CSV_FILE_NAME);
+        java.nio.file.Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
+        List<String[]> allRecords = new ArrayList<>();
+
+        try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath));
+             CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
+
             if (!movieExistsInList(list, movie)) {
                 throw new ExceptionDao("Movie ID " + movie.getIdMovieTmdb() + " not found in list ID " + list.getId() + ".");
             }
 
-            java.nio.file.Path originalPath = Paths.get(CSV_FILE_NAME);
-            java.nio.file.Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
-            List<String[]> allRecords = new ArrayList<>();
-
-            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath))) {
-                String[] recordListMovie;
-                while ((recordListMovie = csvReader.readNext()) != null) {
-                    if (recordListMovie.length < 2) {
-                        continue;
-                    }
-                    if (!(recordListMovie[0].equals(String.valueOf(list.getId())) && recordListMovie[1].equals(String.valueOf(movie.getIdMovieTmdb())))) {
-                        allRecords.add(recordListMovie);
-                    }
+            String[] recordListMovie;
+            while ((recordListMovie = csvReader.readNext()) != null) {
+                if (recordListMovie.length < 2) {
+                    continue;
+                }
+                if (!(recordListMovie[0].equals(String.valueOf(list.getId())) && recordListMovie[1].equals(String.valueOf(movie.getIdMovieTmdb())))) {
+                    allRecords.add(recordListMovie);
                 }
             }
-
-            try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
-                csvWriter.writeAll(allRecords);
-            }
-
+            csvWriter.writeAll(allRecords);
             Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
 
         } catch (IOException | CsvValidationException e) {
@@ -136,10 +132,6 @@ public class ListMovieDaoCsv implements ListMovie {
             throw new ExceptionDao("Failed to retrieve all movies for list from CSV. Data corruption or I/O error.", e);
         }
 
-        if (movieList.isEmpty()) {
-            throw new ExceptionDao("No Movies Found in the List (ID: " + list.getId() + ").");
-        }
-
         return movieList;
     }
 
@@ -160,7 +152,6 @@ public class ListMovieDaoCsv implements ListMovie {
         return null;
     }
 
-
     @Override
     public void removeAllMoviesFromList(ListBean list) throws ExceptionDao {
         if (list == null) {
@@ -170,32 +161,21 @@ public class ListMovieDaoCsv implements ListMovie {
         java.nio.file.Path originalPath = Paths.get(CSV_FILE_NAME);
         java.nio.file.Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
         List<String[]> allRecordsToKeep = new ArrayList<>();
-        boolean listHadEntries = false;
 
-        try {
-            try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath))) {
-                String[] recordListMovie;
-                while ((recordListMovie = csvReader.readNext()) != null) {
-                    if (recordListMovie.length < 2) {
-                        continue;
-                    }
-                    if (!recordListMovie[0].equals(String.valueOf(list.getId()))) {
-                        allRecordsToKeep.add(recordListMovie);
-                    } else {
-                        listHadEntries = true;
-                    }
+        try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath));
+             CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
+
+            String[] recordListMovie;
+            while ((recordListMovie = csvReader.readNext()) != null) {
+                if (recordListMovie.length < 2) {
+                    continue;
+                }
+                if (!recordListMovie[0].equals(String.valueOf(list.getId()))) {
+                    allRecordsToKeep.add(recordListMovie);
                 }
             }
-
-            try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
-                csvWriter.writeAll(allRecordsToKeep);
-            }
-
+            csvWriter.writeAll(allRecordsToKeep);
             Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
-
-            if (!listHadEntries) {
-                throw new ExceptionDao("List with ID " + list.getId() + " not found or already empty.");
-            }
 
         } catch (IOException | CsvValidationException e) {
             throw new ExceptionDao("Failed to remove all movies from list in CSV. I/O or data error.", e);

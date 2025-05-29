@@ -73,14 +73,14 @@ public class ListDaoCsv implements ListDao {
             list = retrieveByIdFromFile(id);
         } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to retrieve list from CSV for ID: " + id + ". Data corruption or I/O error.", e);
+        } catch (CsvDaoException e) {
+            throw new ExceptionDao("CSV data validation error while retrieving list for ID: " + id, e);
         }
 
         if (list != null) {
             synchronized (localCache) {
                 localCache.put(id, list);
             }
-        } else {
-            throw new ExceptionDao("No List Found with ID: " + id);
         }
         return list;
     }
@@ -98,7 +98,7 @@ public class ListDaoCsv implements ListDao {
                 }
             }
         } catch (CsvValidationException e) {
-            throw new IOException("CSV validation error.", e);
+            throw new CsvDaoException("CSV validation error.", e);
         }
         return null;
     }
@@ -118,6 +118,8 @@ public class ListDaoCsv implements ListDao {
             existingList = retrieveByIdFromFile(listId);
         } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to check existing list for ID: " + listId + ". Data corruption or I/O error.", e);
+        } catch (CsvDaoException e) {
+            throw new ExceptionDao("CSV data validation error while checking existing list for ID: " + listId, e);
         }
 
         if (existingList != null) {
@@ -154,8 +156,8 @@ public class ListDaoCsv implements ListDao {
 
         try {
             deleteListFromFile(list);
-        } catch (IOException e) {
-            throw new ExceptionDao("Failed to delete list from CSV. I/O error.", e);
+        } catch (IOException | CsvDaoException e) {
+            throw new ExceptionDao("Failed to delete list from CSV. I/O or data error.", e);
         }
     }
 
@@ -175,7 +177,7 @@ public class ListDaoCsv implements ListDao {
                 processListRecordForDeletion(recordList, list.getId(), csvWriter);
             }
         } catch (CsvValidationException e) {
-            throw new IOException("CSV validation error.", e);
+            throw new CsvDaoException("CSV validation error during deleteListFromFile.", e);
         }
 
         Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
@@ -200,6 +202,8 @@ public class ListDaoCsv implements ListDao {
             allLists = retrieveAllListsFromFile();
         } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to retrieve all lists from CSV. Data corruption or I/O error.", e);
+        } catch (CsvDaoException e) {
+            throw new ExceptionDao("CSV data validation error while retrieving all lists.", e);
         }
 
         List<ListBean> userLists = new ArrayList<>();
@@ -214,10 +218,6 @@ public class ListDaoCsv implements ListDao {
             for (ListBean list : allLists) {
                 localCache.put(list.getId(), list);
             }
-        }
-
-        if (userLists.isEmpty()) {
-            throw new ExceptionDao("No Lists Found for username: " + username + " in CSV file.");
         }
 
         return Collections.unmodifiableList(userLists);
@@ -237,7 +237,7 @@ public class ListDaoCsv implements ListDao {
                 }
             }
         } catch (CsvValidationException e) {
-            throw new IOException("CSV validation error.", e);
+            throw new CsvDaoException("CSV validation error during retrieveAllListsFromFile.", e);
         }
         return listModels;
     }
