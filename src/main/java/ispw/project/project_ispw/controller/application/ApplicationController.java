@@ -7,13 +7,10 @@ import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.controller.application.state.DemoModeState;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
+import ispw.project.project_ispw.controller.application.util.*;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
 
 import java.util.List;
-
-import ispw.project.project_ispw.controller.application.util.AuthService;
-import ispw.project.project_ispw.controller.application.util.ContentService;
-import ispw.project.project_ispw.controller.application.util.ListManagementService;
 
 public class ApplicationController {
 
@@ -24,29 +21,34 @@ public class ApplicationController {
     private String searchQuery;
     private ListBean selectedList;
 
-    private final PersistenceModeState persistenceState;
-
     private final AuthService authService;
     private final ContentService contentService;
     private final ListManagementService listManagementService;
 
 
     public ApplicationController(PersistenceModeState persistenceState) {
-        this.persistenceState = persistenceState;
 
         this.authService = new AuthService(persistenceState.getUserDao());
 
         this.contentService = new ContentService();
 
-        this.listManagementService = new ListManagementService(
-                persistenceState.getListDao(),
+        ListContentDaoProvider listContentDaoProvider = new ListContentDaoProvider(
                 persistenceState.getListMovieDao(),
                 persistenceState.getListTvSeriesDao(),
-                persistenceState.getListAnimeDao(),
-                this.contentService,
+                persistenceState.getListAnimeDao()
+        );
+
+        ContentDetailDaoProvider contentDetailDaoProvider = new ContentDetailDaoProvider(
                 persistenceState.getAnimeDao(),
                 persistenceState.getMovieDao(),
                 persistenceState.getTvSeriesDao()
+        );
+
+        this.listManagementService = new ListManagementService(
+                persistenceState.getListDao(),
+                listContentDaoProvider,
+                contentDetailDaoProvider,
+                this.contentService
         );
     }
 
@@ -114,25 +116,16 @@ public class ApplicationController {
         return authService.registerUser(userBean);
     }
 
-    public List<?> searchContent(String category, String query) throws ExceptionApplicationController {
-        try {
-            switch (category) {
-                case "Movie":
-                    return contentService.searchAndMapMovies(query);
-                case "TvSeries":
-                    return contentService.searchAndMapTvSeries(query);
-                case "Anime":
-                    return contentService.searchAndMapAnime(query);
-                default:
-                    throw new ExceptionApplicationController("Invalid content category: " + category);
-            }
-        } catch (ExceptionApplicationController e) {
-            // Re-throw specific application exceptions already wrapped by helper methods
-            throw e;
-        } catch (Exception e) {
-            // Catch any other unexpected generic exceptions
-            throw new ExceptionApplicationController("An unexpected error occurred during content search.", e);
-        }
+    public List<MovieBean> searchMovies(String query) throws ExceptionApplicationController {
+        return contentService.searchAndMapMovies(query);
+    }
+
+    public List<TvSeriesBean> searchTvSeries(String query) throws ExceptionApplicationController {
+        return contentService.searchAndMapTvSeries(query);
+    }
+
+    public List<AnimeBean> searchAnime(String query) throws ExceptionApplicationController {
+        return contentService.searchAndMapAnime(query);
     }
 
     public MovieBean retrieveMovieById(int id) throws ExceptionApplicationController {

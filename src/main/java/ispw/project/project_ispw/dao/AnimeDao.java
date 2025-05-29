@@ -1,18 +1,16 @@
 package ispw.project.project_ispw.dao;
 
 import ispw.project.project_ispw.bean.AnimeBean;
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.util.List;
 
 public interface AnimeDao {
 
-    // Method to retrieve an Anime by its ID
-    AnimeBean retrieveById(int id) throws Exception;
+    AnimeBean retrieveById(int id) throws ExceptionDao;
 
-    // Method to save a new Anime
-    void saveAnime(AnimeBean anime) throws Exception;
+    void saveAnime(AnimeBean anime) throws ExceptionDao;
 
-    // Method to retrieve all Anime
-    List<AnimeBean> retrieveAllAnime() throws Exception;
+    List<AnimeBean> retrieveAllAnime() throws ExceptionDao;
 }
 

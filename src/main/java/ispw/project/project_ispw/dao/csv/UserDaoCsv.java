@@ -5,6 +5,7 @@ import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.dao.UserDao;
+import ispw.project.project_ispw.exception.CsvDaoException;
 import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.io.IOException;
@@ -14,8 +15,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class UserDaoCsv implements UserDao {
+
+    private static final Logger LOGGER = Logger.getLogger(UserDaoCsv.class.getName());
 
     private static final String CSV_FILE_NAME;
 
@@ -23,27 +28,27 @@ public class UserDaoCsv implements UserDao {
 
     static {
         Properties properties = new Properties();
-        String fileName = "users.csv"; // Default
+        String fileName = "users.csv";
 
         try (InputStream input = UserDaoCsv.class.getClassLoader().getResourceAsStream("csv.properties")) {
             if (input != null) {
                 properties.load(input);
                 fileName = properties.getProperty("user.csv.filename", fileName);
             } else {
-                // csv.properties file not found, using default CSV filename for users.
+                LOGGER.log(Level.WARNING, "csv.properties file not found. Using default CSV filename for users: ''{0}''", fileName);
             }
         } catch (IOException e) {
-            // Error loading properties, using default filename.
+            LOGGER.log(Level.SEVERE, "Error loading csv.properties. Using default CSV filename for users: ''{0}''. Error: {1}",
+                    new Object[]{fileName, e.getMessage()});
         }
         CSV_FILE_NAME = fileName;
 
-        // Ensure the file exists right at the start
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
             }
         } catch (IOException e) {
-            throw new RuntimeException("Initialization failed: Could not create CSV file for users.", e);
+            throw new CsvDaoException("Initialization failed: Could not create CSV file for users.", e);
         }
     }
 
@@ -53,14 +58,12 @@ public class UserDaoCsv implements UserDao {
 
     @Override
     public UserBean retrieveByUsername(String username) throws ExceptionDao {
-        // First, check cache
         synchronized (localCache) {
             if (localCache.containsKey(username)) {
                 return localCache.get(username);
             }
         }
 
-        // If not in cache, read from file
         UserBean user = null;
         try {
             user = retrieveByUsernameFromFile(username);
@@ -69,24 +72,22 @@ public class UserDaoCsv implements UserDao {
         }
 
         if (user != null) {
-            // Add to cache
             synchronized (localCache) {
                 localCache.put(username, user);
             }
         }
-        // If user is null (not found in file), simply return null.
         return user;
     }
 
     private UserBean retrieveByUsernameFromFile(String username) throws IOException, CsvValidationException {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 2) {
-                    continue; // Skip malformed records
+            String[] recordUser;
+            while ((recordUser = csvReader.readNext()) != null) {
+                if (recordUser.length < 2) {
+                    continue;
                 }
-                if (record[0].equals(username)) {
-                    return new UserBean(record[0], record[1]); // username, password
+                if (recordUser[0].equals(username)) {
+                    return new UserBean(recordUser[0], recordUser[1]);
                 }
             }
         }
@@ -97,7 +98,6 @@ public class UserDaoCsv implements UserDao {
     public void saveUser(UserBean user) throws ExceptionDao {
         String username = user.getUsername();
 
-        // Check if username already exists in cache or file
         synchronized (localCache) {
             if (localCache.containsKey(username)) {
                 throw new ExceptionDao("User with username '" + username + "' already in cache.");
@@ -106,7 +106,6 @@ public class UserDaoCsv implements UserDao {
 
         UserBean existingUser = null;
         try {
-            // Use the corrected retrieveByUsernameFromFile, which returns null if not found
             existingUser = retrieveByUsernameFromFile(username);
         } catch (IOException | CsvValidationException e) {
             throw new ExceptionDao("Failed to check existing user for username: " + username + ". Data corruption or I/O error.", e);
@@ -116,10 +115,9 @@ public class UserDaoCsv implements UserDao {
             throw new ExceptionDao("Duplicated Username: " + username + ". User already exists in CSV file.");
         }
 
-        // If it doesn't exist, save to file and add to cache
         try {
             saveUserToFile(user);
-        } catch (IOException | CsvValidationException e) {
+        } catch (IOException e) {
             throw new ExceptionDao("Failed to save user to CSV for username: " + username + ". I/O or data error.", e);
         }
 
@@ -128,10 +126,10 @@ public class UserDaoCsv implements UserDao {
         }
     }
 
-    private void saveUserToFile(UserBean user) throws IOException, CsvValidationException {
+    private void saveUserToFile(UserBean user) throws IOException {
         try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME), StandardOpenOption.APPEND))) {
-            String[] record = {user.getUsername(), user.getPassword()};
-            csvWriter.writeNext(record);
+            String[] recordUser = {user.getUsername(), user.getPassword()};
+            csvWriter.writeNext(recordUser);
         }
     }
 }

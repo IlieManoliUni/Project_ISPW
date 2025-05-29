@@ -11,12 +11,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-/**
- * Controller for the Stats GUI screen. Displays runtime statistics for a selected list.
- * It retrieves data via the GraphicControllerGui, which delegates to the ApplicationController.
- */
 public class StatsController implements NavigableController {
+
+    private static final Logger LOGGER = Logger.getLogger(StatsController.class.getName());
+
+    private static final String MINUTES = " minutes)\n";
+    private static final String MINUTESP = " minutes.\n\n";
 
     @FXML
     private TextArea statsTextArea;
@@ -27,141 +30,60 @@ public class StatsController implements NavigableController {
     private GraphicControllerGui graphicControllerGui;
     private ListBean selectedList;
 
-    // --- NEW: FXML injection for the included DefaultBackHomeController ---
-    // This field will be automatically populated by FXMLLoader
-    // if 'stats.fxml' has <fx:include fx:id="headerBar" .../>
     @FXML
-    private DefaultBackHomeController headerBarController; // Assuming fx:id="headerBar" in stats.fxml
-    // --- END NEW ---
+    private DefaultBackHomeController headerBarController;
 
-    /**
-     * Default constructor required for JavaFX FXML loading.
-     */
     public StatsController() {
-        // No initialization here, dependencies are injected via setGraphicController
+        //Empty constructor
     }
 
-    /**
-     * Initializes JavaFX components after they have been loaded from the FXML file.
-     * This method is automatically called by FXMLLoader.
-     */
     @FXML
     private void initialize() {
-        // This method runs BEFORE setGraphicController.
         statsTextArea.setEditable(false);
     }
 
-    /**
-     * Called by the GraphicControllerGui to inject necessary dependencies and initialize the view.
-     * This is where the selected list is retrieved from the ApplicationController.
-     *
-     * @param graphicController The singleton instance of GraphicControllerGui.
-     */
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
 
-        // --- NEW: Manually inject GraphicControllerGui into the DefaultBackHomeController ---
-        // This is crucial because DefaultBackHomeController is embedded via fx:include
         if (headerBarController != null) {
             headerBarController.setGraphicController(this.graphicControllerGui);
         } else {
-            // Consider more robust error handling or a visual cue if headerBarController is null
+            LOGGER.log(Level.WARNING, "Header bar controller is null. The header might not function correctly.");
         }
-        // --- END NEW ---
 
-        // Retrieve the selected list bean from the ApplicationController's state
         this.selectedList = graphicControllerGui.getApplicationController().getSelectedList();
 
         if (selectedList != null) {
-            // Update the label to show the name of the currently selected list
             listNameLabel.setText(String.format("Stats for: %s", selectedList.getName()));
             calculateAndDisplayTotalMinutes();
         } else {
-            // If no list is selected (e.g., direct navigation or error), log and redirect
             showAlert(Alert.AlertType.WARNING, "No List Selected", "Please select a list to view its statistics.");
-            graphicControllerGui.setScreen("home"); // Redirect to the home screen
+            graphicControllerGui.setScreen("home");
         }
     }
 
-    /**
-     * Calculates and displays the total runtime for all movies, TV series, and anime
-     * present in the {@code selectedList}.
-     * All data retrieval operations are delegated to the {@code ApplicationController}.
-     */
     private void calculateAndDisplayTotalMinutes() {
-        // Basic check for essential dependencies before proceeding
         if (graphicControllerGui == null || selectedList == null) {
-            statsTextArea.setText("Error: Application initialization issue."); // Update UI to reflect error
+            statsTextArea.setText("Error: Application initialization issue.");
             showAlert(Alert.AlertType.ERROR, "System Error", "Application is not initialized correctly. Please restart.");
             return;
         }
 
         try {
-            // Retrieve all items for the selected list via the ApplicationController
             List<MovieBean> movieList = graphicControllerGui.getApplicationController().getMoviesInList(selectedList);
             List<TvSeriesBean> tvSeriesList = graphicControllerGui.getApplicationController().getTvSeriesInList(selectedList);
             List<AnimeBean> animeList = graphicControllerGui.getApplicationController().getAnimeInList(selectedList);
 
-            int totalMinutes = 0;
             StringBuilder details = new StringBuilder();
-
             details.append("Details for list '").append(selectedList.getName()).append("':\n\n");
 
-            // --- Process Movies ---
-            if (!movieList.isEmpty()) {
-                int movieRuntime = 0;
-                details.append("--- Movies ---\n");
-                for (MovieBean movie : movieList) {
-                    details.append("- ").append(movie.getTitle()).append(" (").append(movie.getRuntime()).append(" minutes)\n");
-                    movieRuntime += movie.getRuntime();
-                }
-                details.append("Total movie runtime: ").append(movieRuntime).append(" minutes.\n\n");
-                totalMinutes += movieRuntime;
-            } else {
-                details.append("--- No Movies in this list ---\n\n");
-            }
+            int totalMinutes = 0;
 
-            // --- Process TV Series ---
-            if (!tvSeriesList.isEmpty()) {
-                int tvSeriesRuntime = 0;
-                details.append("--- TV Series ---\n");
-                for (TvSeriesBean tvSeries : tvSeriesList) {
-                    int episodeDuration = tvSeries.getEpisodeRuntime();
-                    int seriesTotalRuntime = episodeDuration * tvSeries.getNumberOfEpisodes();
+            totalMinutes += appendMovieStats(movieList, details);
+            totalMinutes += appendTvSeriesStats(tvSeriesList, details);
+            totalMinutes += appendAnimeStats(animeList, details);
 
-                    details.append("- ").append(tvSeries.getName()).append(" (")
-                            .append(episodeDuration).append(" min/ep, ")
-                            .append(tvSeries.getNumberOfEpisodes()).append(" episodes, total ")
-                            .append(seriesTotalRuntime).append(" minutes)\n");
-                    tvSeriesRuntime += seriesTotalRuntime;
-                }
-                details.append("Total TV series runtime: ").append(tvSeriesRuntime).append(" minutes.\n\n");
-                totalMinutes += tvSeriesRuntime;
-            } else {
-                details.append("--- No TV Series in this list ---\n\n");
-            }
-
-            // --- Process Anime ---
-            if (!animeList.isEmpty()) {
-                int animeRuntime = 0;
-                details.append("--- Anime ---\n");
-                for (AnimeBean anime : animeList) {
-                    int totalAnimeRuntime = anime.getDuration() * anime.getEpisodes();
-
-                    details.append("- ").append(anime.getTitle()).append(" (")
-                            .append(anime.getDuration()).append(" min/ep, ")
-                            .append(anime.getEpisodes()).append(" episodes, total ")
-                            .append(totalAnimeRuntime).append(" minutes)\n");
-                    animeRuntime += totalAnimeRuntime;
-                }
-                details.append("Total anime runtime: ").append(animeRuntime).append(" minutes.\n\n");
-                totalMinutes += animeRuntime;
-            } else {
-                details.append("--- No Anime in this list ---\n\n");
-            }
-
-            // --- Display Overall Total ---
             details.append("\nOverall Total Runtime for list '").append(selectedList.getName()).append("': ").append(totalMinutes).append(" minutes.");
             statsTextArea.setText(details.toString());
 
@@ -174,13 +96,62 @@ public class StatsController implements NavigableController {
         }
     }
 
-    /**
-     * Helper method to display a standard JavaFX Alert dialog.
-     *
-     * @param alertType The type of alert (e.g., INFORMATION, WARNING, ERROR).
-     * @param title     The title of the alert window.
-     * @param message   The main content text of the alert.
-     */
+    private int appendMovieStats(List<MovieBean> movieList, StringBuilder details) {
+        int movieRuntime = 0;
+        if (!movieList.isEmpty()) {
+            details.append("--- Movies ---\n");
+            for (MovieBean movie : movieList) {
+                details.append("- ").append(movie.getTitle()).append(" (").append(movie.getRuntime()).append(MINUTES);
+                movieRuntime += movie.getRuntime();
+            }
+            details.append("Total movie runtime: ").append(movieRuntime).append(MINUTESP);
+        } else {
+            details.append("--- No Movies in this list ---\n\n");
+        }
+        return movieRuntime;
+    }
+
+    private int appendTvSeriesStats(List<TvSeriesBean> tvSeriesList, StringBuilder details) {
+        int tvSeriesRuntime = 0;
+        if (!tvSeriesList.isEmpty()) {
+            details.append("--- TV Series ---\n");
+            for (TvSeriesBean tvSeries : tvSeriesList) {
+                int episodeDuration = tvSeries.getEpisodeRuntime();
+                int seriesTotalRuntime = episodeDuration * tvSeries.getNumberOfEpisodes();
+
+                details.append("- ").append(tvSeries.getName()).append(" (")
+                        .append(episodeDuration).append(" min/ep, ")
+                        .append(tvSeries.getNumberOfEpisodes()).append(" episodes, total ")
+                        .append(seriesTotalRuntime).append(MINUTES);
+                tvSeriesRuntime += seriesTotalRuntime;
+            }
+            details.append("Total TV series runtime: ").append(tvSeriesRuntime).append(MINUTESP);
+        } else {
+            details.append("--- No TV Series in this list ---\n\n");
+        }
+        return tvSeriesRuntime;
+    }
+
+    private int appendAnimeStats(List<AnimeBean> animeList, StringBuilder details) {
+        int animeRuntime = 0;
+        if (!animeList.isEmpty()) {
+            details.append("--- Anime ---\n");
+            for (AnimeBean anime : animeList) {
+                int totalAnimeRuntime = anime.getDuration() * anime.getEpisodes();
+
+                details.append("- ").append(anime.getTitle()).append(" (")
+                        .append(anime.getDuration()).append(" min/ep, ")
+                        .append(anime.getEpisodes()).append(" episodes, total ")
+                        .append(totalAnimeRuntime).append(MINUTES);
+                animeRuntime += totalAnimeRuntime;
+            }
+            details.append("Total anime runtime: ").append(animeRuntime).append(MINUTESP);
+        } else {
+            details.append("--- No Anime in this list ---\n\n");
+        }
+        return animeRuntime;
+    }
+
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);

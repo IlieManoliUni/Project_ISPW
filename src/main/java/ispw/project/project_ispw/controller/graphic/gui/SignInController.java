@@ -9,7 +9,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class SignInController implements NavigableController {
+
+    private static final Logger LOGGER = Logger.getLogger(SignInController.class.getName());
 
     @FXML
     private TextField usernameField;
@@ -35,7 +40,7 @@ public class SignInController implements NavigableController {
         if (headerBarController != null) {
             headerBarController.setGraphicController(this.graphicControllerGui);
         } else {
-            // Error handling for when the included controller is null
+            LOGGER.log(Level.WARNING, "Header bar controller is null. The header might not function correctly.");
         }
     }
 
@@ -49,45 +54,34 @@ public class SignInController implements NavigableController {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        if (errorMessageLabel != null) {
-            errorMessageLabel.setText("");
-        }
+        errorMessageLabel.setText("");
 
         if (username.isEmpty() || password.isEmpty()) {
+            errorMessageLabel.setText("Both username and password are required.");
             showAlert(Alert.AlertType.WARNING, "Input Required", "Both username and password are required.");
-            if (errorMessageLabel != null) {
-                errorMessageLabel.setText("Both username and password are required.");
-            }
             return;
         }
 
         try {
             UserBean newUserBean = new UserBean(username, password);
 
-            // Call registerUser, which now handles the automatic login and navigation
             boolean registrationAndLoginSuccessful = graphicControllerGui.registerUser(newUserBean);
 
             if (!registrationAndLoginSuccessful) {
-                showAlert(Alert.AlertType.ERROR, "Operation Failed", "Registration or automatic login failed. Please try again or log in manually.");
-                if (errorMessageLabel != null) {
-                    errorMessageLabel.setText("Registration or automatic login failed. Please try again.");
-                }
+                String message = "Registration or automatic login failed. Please try again or log in manually.";
+                errorMessageLabel.setText("Registration or automatic login failed. Please try again.");
+                showAlert(Alert.AlertType.ERROR, "Operation Failed", message);
             }
         } catch (IllegalArgumentException e) {
+            errorMessageLabel.setText(e.getMessage());
             showAlert(Alert.AlertType.WARNING, "Validation Error", e.getMessage());
-            if (errorMessageLabel != null) {
-                errorMessageLabel.setText(e.getMessage());
-            }
         } catch (ExceptionApplicationController e) {
+            errorMessageLabel.setText(e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Operation Failed", e.getMessage());
-            if (errorMessageLabel != null) {
-                errorMessageLabel.setText(e.getMessage());
-            }
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "An unexpected error occurred during registration or login.", e);
+            errorMessageLabel.setText("An unexpected error occurred.");
             showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during registration or login.");
-            if (errorMessageLabel != null) {
-                errorMessageLabel.setText("An unexpected error occurred.");
-            }
         }
     }
 

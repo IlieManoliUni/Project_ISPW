@@ -1,4 +1,3 @@
-// File: src/main/java/ispw/project/project_ispw/controller/graphic/cli/SearchTvSeriesCommand.java
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.bean.TvSeriesBean;
@@ -13,7 +12,7 @@ public class SearchTvSeriesCommand implements CliCommand {
         if (args.isEmpty()) {
             return "Usage: searchtvseries <query>";
         }
-        List<TvSeriesBean> results = (List<TvSeriesBean>) context.getApplicationController().searchContent("TvSeries", args);
+        List<TvSeriesBean> results = context.getApplicationController().searchTvSeries(args);
         if (results.isEmpty()) {
             return "No TV Series found for query: '" + args + "'";
         } else {

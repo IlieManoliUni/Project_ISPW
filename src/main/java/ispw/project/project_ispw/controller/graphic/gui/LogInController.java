@@ -1,6 +1,5 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -25,34 +24,23 @@ public class LogInController implements NavigableController {
     @FXML
     private Label errorMessageLabel;
 
-    // Reference to the GraphicControllerGui (Screen Manager)
     private GraphicControllerGui graphicControllerGui;
 
-    // --- NEW: FXML injection for the included DefaultBackHomeController ---
-    // This field will be automatically populated by FXMLLoader
-    // if 'logIn.fxml' has <fx:include fx:id="headerBar" .../>
     @FXML
-    private DefaultBackHomeController headerBarController; // Assuming fx:id="headerBar" in logIn.fxml
-    // --- END NEW ---
+    private DefaultBackHomeController headerBarController;
 
-    // This method is called by the GraphicControllerGui when this controller's FXML is loaded
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
 
-        // --- NEW: Manually inject GraphicControllerGui into the DefaultBackHomeController ---
-        // This is crucial because DefaultBackHomeController is embedded via fx:include
         if (headerBarController != null) {
             headerBarController.setGraphicController(this.graphicControllerGui);
         }
-        // --- END NEW ---
     }
 
     @FXML
     private void initialize() {
-        // This method is called by FXMLLoader after all @FXML annotated fields are populated.
-        // It runs BEFORE setGraphicController().
-        clearFields(); // Clear fields when the view is loaded
+        clearFields();
     }
 
     @FXML
@@ -61,7 +49,7 @@ public class LogInController implements NavigableController {
         String password = passwordField.getText();
 
         if (errorMessageLabel != null) {
-            errorMessageLabel.setText(""); // Clear any previous error message
+            errorMessageLabel.setText("");
         }
 
         if (username.isEmpty() || password.isEmpty()) {
@@ -86,7 +74,7 @@ public class LogInController implements NavigableController {
             if (errorMessageLabel != null) {
                 errorMessageLabel.setText(e.getMessage());
             }
-        } catch (Exception e) {
+        } catch (Exception _) {
             showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during login.");
             if (errorMessageLabel != null) {
                 errorMessageLabel.setText("An unexpected error occurred.");
@@ -98,7 +86,7 @@ public class LogInController implements NavigableController {
     private void handleSignUpButtonAction() {
         try {
             graphicControllerGui.setScreen("signIn");
-        } catch (Exception e) {
+        } catch (Exception _) {
             showAlert(Alert.AlertType.ERROR, "Navigation Error", "Failed to navigate to sign-up page.");
         }
     }

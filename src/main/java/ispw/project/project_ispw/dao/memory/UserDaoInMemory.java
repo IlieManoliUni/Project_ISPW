@@ -1,4 +1,4 @@
-package ispw.project.project_ispw.dao.inMemory;
+package ispw.project.project_ispw.dao.memory;
 
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.dao.UserDao;
@@ -15,10 +15,7 @@ public class UserDaoInMemory implements UserDao {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty.");
         }
-        UserBean user = users.get(username);
-        // If user is null (not found), simply return null.
-        // Removed: throw new ExceptionDao("No User Found with username: " + username);
-        return user;
+        return users.get(username);
     }
 
     @Override
@@ -32,7 +29,6 @@ public class UserDaoInMemory implements UserDao {
         }
 
         if (users.containsKey(username)) {
-            // Throw ExceptionDao if the username already exists
             throw new ExceptionDao("Username already exists: " + username);
         }
         users.put(username, user);

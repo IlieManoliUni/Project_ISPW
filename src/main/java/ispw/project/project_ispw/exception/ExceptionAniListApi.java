@@ -1,15 +1,19 @@
 package ispw.project.project_ispw.exception;
 
 public class ExceptionAniListApi extends Exception {
-    private int httpStatusCode;
-    private String apiErrorMessage;
+    private final int httpStatusCode;
+    private final String apiErrorMessage;
 
     public ExceptionAniListApi(String message) {
         super(message);
+        this.httpStatusCode = -1;
+        this.apiErrorMessage = null;
     }
 
     public ExceptionAniListApi(String message, Throwable cause) {
         super(message, cause);
+        this.httpStatusCode = -1;
+        this.apiErrorMessage = null;
     }
 
     public ExceptionAniListApi(String message, int httpStatusCode, String apiErrorMessage) {
@@ -26,4 +30,3 @@ public class ExceptionAniListApi extends Exception {
         return apiErrorMessage;
     }
 }
-

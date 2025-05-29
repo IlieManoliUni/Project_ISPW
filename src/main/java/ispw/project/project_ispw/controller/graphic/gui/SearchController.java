@@ -20,8 +20,12 @@ import javafx.scene.text.Text;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SearchController implements NavigableController {
+
+    private static final Logger LOGGER = Logger.getLogger(SearchController.class.getName());
 
     @FXML
     private ListView<String> listView;
@@ -37,25 +41,20 @@ public class SearchController implements NavigableController {
     private String currentSearchCategory;
     private String currentSearchQuery;
 
-    // --- NEW: FXML injection for the included DefaultBackHomeController ---
-    // This field will be automatically populated by FXMLLoader
-    // if 'search.fxml' has <fx:include fx:id="headerBar" .../>
     @FXML
-    private DefaultBackHomeController headerBarController; // Assuming fx:id="headerBar" in search.fxml
-    // --- END NEW ---
+    private DefaultBackHomeController headerBarController;
 
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
 
-        // --- NEW: Manually inject GraphicControllerGui into the DefaultBackHomeController ---
-        // This is crucial because DefaultBackHomeController is embedded via fx:include
         if (headerBarController != null) {
             headerBarController.setGraphicController(this.graphicControllerGui);
         } else {
-            // Error handling for when the included controller is null
+            if (LOGGER.isLoggable(Level.SEVERE)) {
+                LOGGER.log(Level.SEVERE, "Error: headerBarController is null in SearchController. Cannot set GraphicController.");
+            }
         }
-        // --- END NEW ---
 
         this.currentSearchCategory = graphicControllerGui.getApplicationController().getSelectedSearchCategory();
         this.currentSearchQuery = graphicControllerGui.getApplicationController().getSearchQuery();
@@ -74,31 +73,40 @@ public class SearchController implements NavigableController {
 
     @FXML
     private void initialize() {
-        // Initialization logic, if any. This runs BEFORE setGraphicController.
+        //no elements to initialize
     }
 
-    /**
-     * Performs the search based on the category and search text stored in ApplicationController.
-     * Updates the ListView with the results.
-     */
     private void performSearch() {
         items.clear();
         searchResultBeanMap.clear();
 
         if (graphicControllerGui == null) {
-            showAlert(Alert.AlertType.ERROR, "System Error", "Application setup issue. Please restart.");
+            showAlert(Alert.AlertType.ERROR, "System Error Application", "Application setup issue. Please restart.");
             return;
         }
 
         try {
-            // Call the general searchContent method from ApplicationController
-            List<?> results = graphicControllerGui.getApplicationController().searchContent(currentSearchCategory, currentSearchQuery);
-            processSearchResults(results); // Process the list of beans directly
+            List<?> results = null;
+            switch (currentSearchCategory) {
+                case "Movie":
+                    results = graphicControllerGui.getApplicationController().searchMovies(currentSearchQuery);
+                    break;
+                case "TvSeries":
+                    results = graphicControllerGui.getApplicationController().searchTvSeries(currentSearchQuery);
+                    break;
+                case "Anime":
+                    results = graphicControllerGui.getApplicationController().searchAnime(currentSearchQuery);
+                    break;
+                default:
+                    throw new ExceptionApplicationController("Invalid search category: " + currentSearchCategory);
+            }
+            processSearchResults(results);
 
         } catch (ExceptionApplicationController e) {
             showAlert(Alert.AlertType.ERROR, "Search Error", e.getMessage());
         } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred during search.");
+            LOGGER.log(Level.SEVERE, () -> "An unexpected error occurred during search: " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred during search: " + e.getMessage());
         }
 
         if (items.isEmpty()) {
@@ -106,10 +114,6 @@ public class SearchController implements NavigableController {
         }
     }
 
-    /**
-     * Processes the list of search results (beans) and populates the ListView.
-     * @param results The list of Bean objects (MovieBean, TvSeriesBean, AnimeBean).
-     */
     private void processSearchResults(List<?> results) {
         if (results == null || results.isEmpty()) {
             return;
@@ -119,17 +123,25 @@ public class SearchController implements NavigableController {
             String itemString;
             int itemId = 0;
 
-            if (bean instanceof MovieBean movie) {
-                itemString = "Movie: " + movie.getTitle();
-                itemId = movie.getIdMovieTmdb();
-            } else if (bean instanceof TvSeriesBean tvSeries) {
-                itemString = "TV Series: " + tvSeries.getName();
-                itemId = tvSeries.getIdTvSeriesTmdb();
-            } else if (bean instanceof AnimeBean anime) {
-                itemString = "Anime: " + anime.getTitle();
-                itemId = anime.getIdAnimeTmdb();
-            } else {
-                continue;
+            switch (bean) {
+                case MovieBean movie -> {
+                    itemString = "Movie: " + movie.getTitle();
+                    itemId = movie.getIdMovieTmdb();
+                }
+                case TvSeriesBean tvSeries -> {
+                    itemString = "TV Series: " + tvSeries.getName();
+                    itemId = tvSeries.getIdTvSeriesTmdb();
+                }
+                case AnimeBean anime -> {
+                    itemString = "Anime: " + anime.getTitle();
+                    itemId = anime.getIdAnimeTmdb();
+                }
+                default -> {
+                    if (LOGGER.isLoggable(Level.WARNING)) {
+                        LOGGER.log(Level.WARNING, String.format("Unexpected bean type found in search results: %s", bean.getClass().getName()));
+                    }
+                    continue;
+                }
             }
 
             String key = itemString + " (ID: " + itemId + ")";
@@ -138,9 +150,6 @@ public class SearchController implements NavigableController {
         }
     }
 
-    /**
-     * Custom ListCell class with "See Details" button.
-     */
     private class CustomListCell extends ListCell<String> {
         private final HBox hbox;
         private final Text text;
@@ -167,7 +176,7 @@ public class SearchController implements NavigableController {
             } else {
                 text.setText(item);
                 setGraphic(hbox);
-                seeButton.setVisible(!item.startsWith("No results found")); // Hide button for "No results" message
+                seeButton.setVisible(!item.startsWith("No results found"));
             }
         }
 
@@ -175,11 +184,6 @@ public class SearchController implements NavigableController {
             seeButton.setOnAction(event -> handleSeeDetailsAction(getItem()));
         }
 
-        /**
-         * Handles the "See Details" action for a list item.
-         * Delegates the navigation and data passing to GraphicControllerGui.
-         * @param itemString The string representation of the item in the list view.
-         */
         private void handleSeeDetailsAction(String itemString) {
             if (itemString == null || graphicControllerGui == null) {
                 return;
@@ -192,34 +196,38 @@ public class SearchController implements NavigableController {
                     return;
                 }
 
-                String category = "";
-                int id = 0;
+                String category;
+                int id;
 
-                if (itemBean instanceof MovieBean movie) {
-                    category = "Movie";
-                    id = movie.getIdMovieTmdb();
-                } else if (itemBean instanceof TvSeriesBean tvSeries) {
-                    category = "TvSeries";
-                    id = tvSeries.getIdTvSeriesTmdb();
-                } else if (itemBean instanceof AnimeBean anime) {
-                    category = "Anime";
-                    id = anime.getIdAnimeTmdb();
-                } else {
-                    showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot show details for this item type.");
-                    return;
+                switch (itemBean) {
+                    case MovieBean movie -> {
+                        category = "Movie";
+                        id = movie.getIdMovieTmdb();
+                    }
+                    case TvSeriesBean tvSeries -> {
+                        category = "TvSeries";
+                        id = tvSeries.getIdTvSeriesTmdb();
+                    }
+                    case AnimeBean anime -> {
+                        category = "Anime";
+                        id = anime.getIdAnimeTmdb();
+                    }
+                    default -> {
+                        showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot show details for this item type.");
+                        return;
+                    }
                 }
 
                 graphicControllerGui.navigateToItemDetails(category, id);
 
             } catch (ExceptionApplicationController e) {
                 showAlert(Alert.AlertType.ERROR, "Error Showing Details", e.getMessage());
-            } catch (Exception e) {
+            } catch (Exception _) {
                 showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while showing details.");
             }
         }
     }
 
-    // Helper method to show alert messages
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);

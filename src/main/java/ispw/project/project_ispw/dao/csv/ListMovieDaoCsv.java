@@ -6,6 +6,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.bean.MovieBean;
 import ispw.project.project_ispw.dao.ListMovie;
+import ispw.project.project_ispw.exception.CsvDaoException;
 import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.io.IOException;
@@ -17,17 +18,20 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ListMovieDaoCsv implements ListMovie {
 
-    private static final String CSV_FILE_NAME;
-    private static final String MOVIE_CSV_FILE_NAME; // To get movie details
+    private static final Logger LOGGER = Logger.getLogger(ListMovieDaoCsv.class.getName());
 
-    // Static block to load CSV file names and ensure files exist
+    private static final String CSV_FILE_NAME;
+    private static final String MOVIE_CSV_FILE_NAME;
+
     static {
         Properties properties = new Properties();
-        String listMovieFileName = "list_movie.csv"; // Default
-        String movieFileName = "movie.csv"; // Default for fetching movie details
+        String listMovieFileName = "list_movie.csv";
+        String movieFileName = "movie.csv";
 
         try (InputStream input = ListMovieDaoCsv.class.getClassLoader().getResourceAsStream("csv.properties")) {
             if (input != null) {
@@ -35,16 +39,17 @@ public class ListMovieDaoCsv implements ListMovie {
                 listMovieFileName = properties.getProperty("list_movie.csv.filename", listMovieFileName);
                 movieFileName = properties.getProperty("movie.csv.filename", movieFileName);
             } else {
-                // csv.properties file not found, using default CSV filenames.
+                LOGGER.log(Level.WARNING, "csv.properties file not found. Using default CSV filenames: list_movie.csv=''{0}'', movie.csv=''{1}''",
+                        new Object[]{listMovieFileName, movieFileName});
             }
         } catch (IOException e) {
-            // Error loading properties, using default filenames.
+            LOGGER.log(Level.SEVERE, "Failed to load csv.properties. Using default CSV filenames: list_movie.csv=''{0}'', movie.csv=''{1}''. Error: {2}",
+                    new Object[]{listMovieFileName, movieFileName, e.getMessage()});
         }
 
         CSV_FILE_NAME = listMovieFileName;
         MOVIE_CSV_FILE_NAME = movieFileName;
 
-        // Ensure both files exist
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
@@ -53,26 +58,24 @@ public class ListMovieDaoCsv implements ListMovie {
                 Files.createFile(Paths.get(MOVIE_CSV_FILE_NAME));
             }
         } catch (IOException e) {
-            throw new RuntimeException("Initialization failed: Could not create CSV files.", e);
+            throw new CsvDaoException("Initialization failed: Could not create CSV files.", e);
         }
     }
 
     public ListMovieDaoCsv() {
-        // Constructor no longer needs to create the file; the static block handles it.
+        //Empty constructor
     }
 
     @Override
     public void addMovieToList(ListBean list, MovieBean movie) throws ExceptionDao {
         try {
-            // Check if the movie already exists in the list
             if (movieExistsInList(list, movie)) {
                 throw new ExceptionDao("Movie ID " + movie.getIdMovieTmdb() + " already exists in list ID " + list.getId() + ".");
             }
 
-            // Add the movie to the CSV file
             try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME), StandardOpenOption.APPEND))) {
-                String[] record = {String.valueOf(list.getId()), String.valueOf(movie.getIdMovieTmdb())};
-                csvWriter.writeNext(record);
+                String[] recordListMovie = {String.valueOf(list.getId()), String.valueOf(movie.getIdMovieTmdb())};
+                csvWriter.writeNext(recordListMovie);
             }
         } catch (IOException e) {
             throw new ExceptionDao("Failed to add movie to list in CSV. I/O or data error.", e);
@@ -82,7 +85,6 @@ public class ListMovieDaoCsv implements ListMovie {
     @Override
     public void removeMovieFromList(ListBean list, MovieBean movie) throws ExceptionDao {
         try {
-            // Check if the movie exists in the list
             if (!movieExistsInList(list, movie)) {
                 throw new ExceptionDao("Movie ID " + movie.getIdMovieTmdb() + " not found in list ID " + list.getId() + ".");
             }
@@ -91,25 +93,22 @@ public class ListMovieDaoCsv implements ListMovie {
             java.nio.file.Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
             List<String[]> allRecords = new ArrayList<>();
 
-            // Read all records, excluding the one to be removed
             try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath))) {
-                String[] record;
-                while ((record = csvReader.readNext()) != null) {
-                    if (record.length < 2) {
-                        continue; // Skip malformed records
+                String[] recordListMovie;
+                while ((recordListMovie = csvReader.readNext()) != null) {
+                    if (recordListMovie.length < 2) {
+                        continue;
                     }
-                    if (!(record[0].equals(String.valueOf(list.getId())) && record[1].equals(String.valueOf(movie.getIdMovieTmdb())))) {
-                        allRecords.add(record);
+                    if (!(recordListMovie[0].equals(String.valueOf(list.getId())) && recordListMovie[1].equals(String.valueOf(movie.getIdMovieTmdb())))) {
+                        allRecords.add(recordListMovie);
                     }
                 }
             }
 
-            // Write the updated records back to a temporary file
             try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
                 csvWriter.writeAll(allRecords);
             }
 
-            // Atomically replace the original file with the temporary one
             Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
 
         } catch (IOException | CsvValidationException e) {
@@ -121,23 +120,15 @@ public class ListMovieDaoCsv implements ListMovie {
     public List<MovieBean> getAllMoviesInList(ListBean list) throws ExceptionDao {
         List<MovieBean> movieList = new ArrayList<>();
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 2) {
-                    continue; // Skip malformed records
+            String[] recordListMovie;
+            while ((recordListMovie = csvReader.readNext()) != null) {
+                if (recordListMovie.length < 2) {
+                    continue;
                 }
-                if (record[0].equals(String.valueOf(list.getId()))) {
-                    try {
-                        int movieId = Integer.parseInt(record[1]);
-                        // Fetch Movie details from the movie.csv file
-                        MovieBean movie = fetchMovieById(movieId);
-                        if (movie != null) {
-                            movieList.add(movie);
-                        } else {
-                            // Movie with ID found in list but not in movie.csv.
-                        }
-                    } catch (NumberFormatException e) {
-                        // Skipping CSV record with invalid movie ID format.
+                if (recordListMovie[0].equals(String.valueOf(list.getId()))) {
+                    MovieBean movie = processListMovieRecordAndFetchMovie(recordListMovie, list.getId());
+                    if (movie != null) {
+                        movieList.add(movie);
                     }
                 }
             }
@@ -146,13 +137,29 @@ public class ListMovieDaoCsv implements ListMovie {
         }
 
         if (movieList.isEmpty()) {
-            // It might be valid for a list to be empty; throwing an exception here is optional.
-            // For now, mirroring previous behavior:
             throw new ExceptionDao("No Movies Found in the List (ID: " + list.getId() + ").");
         }
 
         return movieList;
     }
+
+    private MovieBean processListMovieRecordAndFetchMovie(String[] recordListMovie, int listId) throws ExceptionDao {
+        try {
+            int movieId = Integer.parseInt(recordListMovie[1]);
+            MovieBean movie = fetchMovieById(movieId);
+            if (movie != null) {
+                return movie;
+            } else {
+                LOGGER.log(Level.WARNING, "Movie with ID {0} found in list ID {1}, but details not found in movie.csv. Skipping this entry. Record: {2}",
+                        new Object[]{movieId, listId, java.util.Arrays.toString(recordListMovie)});
+            }
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.WARNING, "Skipping malformed list-movie record in CSV due to invalid movie ID format. Record: {0}, Error: {1}",
+                    new Object[]{java.util.Arrays.toString(recordListMovie), e.getMessage()});
+        }
+        return null;
+    }
+
 
     @Override
     public void removeAllMoviesFromList(ListBean list) throws ExceptionDao {
@@ -163,35 +170,30 @@ public class ListMovieDaoCsv implements ListMovie {
         java.nio.file.Path originalPath = Paths.get(CSV_FILE_NAME);
         java.nio.file.Path tempPath = Paths.get(CSV_FILE_NAME + ".tmp");
         List<String[]> allRecordsToKeep = new ArrayList<>();
-        boolean listHadEntries = false; // Flag to check if the list actually contained entries
+        boolean listHadEntries = false;
 
         try {
-            // Read all records, excluding those for the specified list ID
             try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath))) {
-                String[] record;
-                while ((record = csvReader.readNext()) != null) {
-                    if (record.length < 2) {
-                        continue; // Skip malformed records
+                String[] recordListMovie;
+                while ((recordListMovie = csvReader.readNext()) != null) {
+                    if (recordListMovie.length < 2) {
+                        continue;
                     }
-                    // Keep records that do NOT match the list ID
-                    if (!record[0].equals(String.valueOf(list.getId()))) {
-                        allRecordsToKeep.add(record);
+                    if (!recordListMovie[0].equals(String.valueOf(list.getId()))) {
+                        allRecordsToKeep.add(recordListMovie);
                     } else {
-                        listHadEntries = true; // Mark that we found entries for this list ID
+                        listHadEntries = true;
                     }
                 }
             }
 
-            // Write the filtered records back to a temporary file
             try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
                 csvWriter.writeAll(allRecordsToKeep);
             }
 
-            // Atomically replace the original file with the temporary one
             Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
 
             if (!listHadEntries) {
-                // If the list ID was not found in the CSV, throw an exception
                 throw new ExceptionDao("List with ID " + list.getId() + " not found or already empty.");
             }
 
@@ -200,45 +202,53 @@ public class ListMovieDaoCsv implements ListMovie {
         }
     }
 
-
-    // Helper method to check if a Movie is already in the List
     private boolean movieExistsInList(ListBean list, MovieBean movie) throws ExceptionDao {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 2) {
-                    continue; // Skip malformed records
+            String[] recordListMovie;
+            while ((recordListMovie = csvReader.readNext()) != null) {
+                if (recordListMovie.length < 2) {
+                    continue;
                 }
-                if (record[0].equals(String.valueOf(list.getId())) && record[1].equals(String.valueOf(movie.getIdMovieTmdb()))) {
-                    return true; // Movie already in the list
+                if (recordListMovie[0].equals(String.valueOf(list.getId())) && recordListMovie[1].equals(String.valueOf(movie.getIdMovieTmdb()))) {
+                    return true;
                 }
             }
         } catch (IOException | CsvValidationException e) {
             throw new ExceptionDao("Failed to check movie existence in list from CSV. I/O or data error.", e);
         }
-        return false; // Movie not in the list
+        return false;
     }
 
-    // Helper method to fetch a Movie by its ID from the "movie.csv" file
     private MovieBean fetchMovieById(int id) throws ExceptionDao {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(MOVIE_CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 3) { // Assuming ID, runtime, title
-                    continue; // Skip malformed Movie CSV records
+            String[] recordMovie;
+            while ((recordMovie = csvReader.readNext()) != null) {
+                if (recordMovie.length < 3) {
+                    continue;
                 }
-                try {
-                    if (Integer.parseInt(record[0]) == id) {
-                        // Assuming MovieBean constructor: public MovieBean(int id, int runtime, String title)
-                        return new MovieBean(Integer.parseInt(record[0]), Integer.parseInt(record[1]), record[2]);
-                    }
-                } catch (NumberFormatException e) {
-                    // Skipping CSV record with invalid number format.
+                MovieBean movie = parseAndMatchMovieRecord(recordMovie, id);
+                if (movie != null) {
+                    return movie;
                 }
             }
         } catch (IOException | CsvValidationException e) {
             throw new ExceptionDao("Failed to fetch movie details from main movie CSV file. I/O or data error.", e);
         }
-        return null; // Movie not found
+        return null;
+    }
+
+    private MovieBean parseAndMatchMovieRecord(String[] recordMovie, int targetId) {
+        try {
+            int currentId = Integer.parseInt(recordMovie[0]);
+            if (currentId == targetId) {
+                int runtime = Integer.parseInt(recordMovie[1]);
+                String title = recordMovie[2];
+                return new MovieBean(currentId, runtime, title);
+            }
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.WARNING, "Skipping malformed movie record in CSV. Expected numeric ID or runtime, but found invalid data. Record: {0}, Error: {1}",
+                    new Object[]{java.util.Arrays.toString(recordMovie), e.getMessage()});
+        }
+        return null;
     }
 }

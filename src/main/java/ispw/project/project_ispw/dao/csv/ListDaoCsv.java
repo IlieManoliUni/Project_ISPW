@@ -6,9 +6,11 @@ import com.opencsv.exceptions.CsvValidationException;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.dao.ListDao;
+import ispw.project.project_ispw.exception.CsvDaoException;
 import ispw.project.project_ispw.exception.ExceptionDao;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -18,59 +20,54 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ListDaoCsv implements ListDao {
 
+    private static final Logger LOGGER = Logger.getLogger(ListDaoCsv.class.getName());
+
     private static final String CSV_FILE_NAME;
 
-    // Use a robust, non-static cache for thread safety and consistency.
-    // For simplicity, I'll keep it as instance cache as it's typically managed.
     private final HashMap<Integer, ListBean> localCache;
 
     static {
-        // This static block runs once when the class is loaded
         Properties properties = new Properties();
-        String fileName = "list.csv"; // Default
+        String fileName = "list.csv";
 
         try (InputStream input = ListDaoCsv.class.getClassLoader().getResourceAsStream("csv.properties")) {
             if (input != null) {
                 properties.load(input);
                 fileName = properties.getProperty("list.csv.filename", fileName);
             } else {
-                // csv.properties file not found, using default filename.
+                LOGGER.log(Level.WARNING, "csv.properties file not found. Using default filename: {0}", fileName);
             }
         } catch (IOException e) {
-            // Error loading properties, using default filename.
+            LOGGER.log(Level.SEVERE, "Failed to load csv.properties. Using default filename: {0}. Error: {1}", new Object[]{fileName, e.getMessage()});
         }
         CSV_FILE_NAME = fileName;
 
-        // Ensure the file exists right at the start
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
             }
         } catch (IOException e) {
-            // If file creation fails, this is a critical error for the DAO
-            throw new RuntimeException("Initialization failed: Could not create CSV file for lists.", e);
+            throw new CsvDaoException("Initialization failed: Could not create CSV file for lists.", e);
         }
     }
 
     public ListDaoCsv() {
         this.localCache = new HashMap<>();
-        // Optionally load all data into cache on startup if file is small
-        // For this example, retrieveAllListsFromFile will handle loading into cache on first call if not already there.
     }
 
     @Override
     public ListBean retrieveById(int id) throws ExceptionDao {
-        // First, check cache
         synchronized (localCache) {
             if (localCache.containsKey(id)) {
                 return localCache.get(id);
             }
         }
 
-        // If not in cache, read from file
         ListBean list = null;
         try {
             list = retrieveByIdFromFile(id);
@@ -79,12 +76,10 @@ public class ListDaoCsv implements ListDao {
         }
 
         if (list != null) {
-            // Add to cache
             synchronized (localCache) {
                 localCache.put(id, list);
             }
         } else {
-            // If not found in file either
             throw new ExceptionDao("No List Found with ID: " + id);
         }
         return list;
@@ -92,14 +87,14 @@ public class ListDaoCsv implements ListDao {
 
     private ListBean retrieveByIdFromFile(int id) throws IOException, NumberFormatException {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 3) {
-                    continue; // Skip malformed records
+            String[] recordList;
+            while ((recordList = csvReader.readNext()) != null) {
+                if (recordList.length < 3) {
+                    continue;
                 }
-                int currentId = Integer.parseInt(record[0]);
+                int currentId = Integer.parseInt(recordList[0]);
                 if (currentId == id) {
-                    return new ListBean(currentId, record[1], record[2]);
+                    return new ListBean(currentId, recordList[1], recordList[2]);
                 }
             }
         } catch (CsvValidationException e) {
@@ -112,7 +107,6 @@ public class ListDaoCsv implements ListDao {
     public void saveList(ListBean list, UserBean user) throws ExceptionDao {
         int listId = list.getId();
 
-        // Check if ID already exists in cache or file
         synchronized (localCache) {
             if (localCache.containsKey(listId)) {
                 throw new ExceptionDao("List with ID " + listId + " already in cache.");
@@ -130,7 +124,6 @@ public class ListDaoCsv implements ListDao {
             throw new ExceptionDao("List with ID " + listId + " already exists in CSV file.");
         }
 
-        // If it doesn't exist, save to file and add to cache
         try {
             saveListToFile(list);
         } catch (IOException e) {
@@ -144,12 +137,12 @@ public class ListDaoCsv implements ListDao {
 
     private void saveListToFile(ListBean list) throws IOException {
         try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME), StandardOpenOption.APPEND))) {
-            String[] record = {
+            String[] recordList = {
                     String.valueOf(list.getId()),
                     list.getName(),
                     list.getUsername()
             };
-            csvWriter.writeNext(record);
+            csvWriter.writeNext(recordList);
         }
     }
 
@@ -173,26 +166,31 @@ public class ListDaoCsv implements ListDao {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(originalPath));
              CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(tempPath))) {
 
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 3) { // Ensure record has enough fields
-                    csvWriter.writeNext(record); // Write it back if unsure, or skip
+            String[] recordList;
+            while ((recordList = csvReader.readNext()) != null) {
+                if (recordList.length < 3) {
+                    csvWriter.writeNext(recordList);
                     continue;
                 }
-                try {
-                    if (Integer.parseInt(record[0]) != list.getId()) {
-                        csvWriter.writeNext(record);
-                    }
-                } catch (NumberFormatException e) {
-                    csvWriter.writeNext(record); // Write back records that cause parsing errors
-                }
+                processListRecordForDeletion(recordList, list.getId(), csvWriter);
             }
         } catch (CsvValidationException e) {
             throw new IOException("CSV validation error.", e);
         }
 
-        // Atomically replace the original file with the temporary one
         Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private void processListRecordForDeletion(String[] recordList, int listIdToDelete, CSVWriter csvWriter) {
+        try {
+            if (Integer.parseInt(recordList[0]) != listIdToDelete) {
+                csvWriter.writeNext(recordList);
+            }
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.WARNING, "Skipping removal for malformed list record in CSV due to invalid ID format. Record will be preserved. Record: {0}, Error: {1}",
+                    new Object[]{java.util.Arrays.toString(recordList), e.getMessage()});
+            csvWriter.writeNext(recordList);
+        }
     }
 
     @Override
@@ -211,41 +209,46 @@ public class ListDaoCsv implements ListDao {
             }
         }
 
-        // Optionally, cache all retrieved lists if retrieveAllListsFromFile fully reloads the cache.
-        // If retrieveAllListsFromFile populates the cache:
         synchronized (localCache) {
-            localCache.clear(); // Clear to ensure fresh state if this is the primary loading method
+            localCache.clear();
             for (ListBean list : allLists) {
                 localCache.put(list.getId(), list);
             }
         }
 
         if (userLists.isEmpty()) {
-            // Depending on business logic, returning an empty list might be preferred over an exception.
-            // For now, mirroring previous behavior:
             throw new ExceptionDao("No Lists Found for username: " + username + " in CSV file.");
         }
 
-        return Collections.unmodifiableList(userLists); // Return an unmodifiable list
+        return Collections.unmodifiableList(userLists);
     }
 
     private List<ListBean> retrieveAllListsFromFile() throws IOException, NumberFormatException {
         List<ListBean> listModels = new ArrayList<>();
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 3) {
-                    continue; // Skip malformed records
+            String[] recordList;
+            while ((recordList = csvReader.readNext()) != null) {
+                if (recordList.length < 3) {
+                    continue;
                 }
-                try {
-                    listModels.add(new ListBean(Integer.parseInt(record[0]), record[1], record[2]));
-                } catch (NumberFormatException e) {
-                    // Skipping CSV record with invalid ID format
+                ListBean parsedList = parseListRecord(recordList);
+                if (parsedList != null) {
+                    listModels.add(parsedList);
                 }
             }
         } catch (CsvValidationException e) {
             throw new IOException("CSV validation error.", e);
         }
         return listModels;
+    }
+
+    private ListBean parseListRecord(String[] recordList) {
+        try {
+            return new ListBean(Integer.parseInt(recordList[0]), recordList[1], recordList[2]);
+        } catch (NumberFormatException e) {
+            LOGGER.log(Level.WARNING, "Skipping malformed list record in CSV. Expected numeric ID, but found invalid data. Record: {0}, Error: {1}",
+                    new Object[]{java.util.Arrays.toString(recordList), e.getMessage()});
+            return null;
+        }
     }
 }

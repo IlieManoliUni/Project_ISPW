@@ -8,10 +8,10 @@ import ispw.project.project_ispw.dao.ListTvSeries;
 import ispw.project.project_ispw.dao.MovieDao;
 import ispw.project.project_ispw.dao.TvSeriesDao;
 import ispw.project.project_ispw.dao.UserDao;
-import ispw.project.project_ispw.dao.inMemory.*;
-import ispw.project.project_ispw.dao.inMemory.ListMovieDaoInMemory;
-import ispw.project.project_ispw.dao.inMemory.ListTvSeriesDaoInMemory;
-import ispw.project.project_ispw.dao.inMemory.ListAnimeDaoInMemory;
+import ispw.project.project_ispw.dao.memory.*;
+import ispw.project.project_ispw.dao.memory.ListMovieDaoInMemory;
+import ispw.project.project_ispw.dao.memory.ListTvSeriesDaoInMemory;
+import ispw.project.project_ispw.dao.memory.ListAnimeDaoInMemory;
 
 public class DemoModeState implements PersistenceModeState {
 

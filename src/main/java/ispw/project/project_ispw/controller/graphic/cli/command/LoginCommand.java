@@ -1,4 +1,3 @@
-// File: src/main/java/ispw/project/project_ispw/controller/graphic/cli/LoginCommand.java
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.controller.graphic.cli.GraphicControllerCli;
@@ -14,7 +13,6 @@ public class LoginCommand implements CliCommand {
         }
         boolean success = context.getApplicationController().login(loginArgs[0], loginArgs[1]);
         if (success) {
-            // Update the current user in GraphicControllerCli after successful login
             context.setCurrentUserBean(context.getApplicationController().getCurrentUserBean());
             return "User '" + context.getCurrentUserBean().getUsername() + "' logged in successfully.";
         } else {

@@ -24,6 +24,8 @@ import java.util.Map;
 
 public class ListController implements NavigableController {
 
+    private static final String ID_STRING = " (ID: ";
+
     @FXML
     private ListView<String> listView;
 
@@ -36,36 +38,27 @@ public class ListController implements NavigableController {
     private GraphicControllerGui graphicControllerGui;
     private ListBean selectedList;
 
-    // --- NEW: FXML injection for the included DefaultBackHomeController ---
-    // This field will be automatically populated by FXMLLoader
-    // if 'list.fxml' has <fx:include fx:id="headerBar" .../>
     @FXML
-    private DefaultBackHomeController headerBarController; // Assuming fx:id="headerBar" in list.fxml
-    // --- END NEW ---
+    private DefaultBackHomeController headerBarController;
 
     public ListController() {
-        // Constructor is empty as dependencies are injected via setGraphicController
+        //Empty constructor
     }
 
     @FXML
     private void initialize() {
-        // FXML initialization. This runs BEFORE setGraphicController.
-        // So, no logic dependent on graphicControllerGui or headerBarController here.
+        //no elements
     }
 
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
 
-        // --- NEW: Manually inject GraphicControllerGui into the DefaultBackHomeController ---
-        // This is crucial because DefaultBackHomeController is embedded via fx:include
         if (headerBarController != null) {
             headerBarController.setGraphicController(this.graphicControllerGui);
         } else {
-            // This case should ideally be caught by proper FXML setup or initialization
-            // For production, you might want more robust error handling or a visual indicator
+            // Consider logging this or providing a more visible alert if the header bar is critical
         }
-        // --- END NEW ---
 
         this.selectedList = graphicControllerGui.getApplicationController().getSelectedList();
 
@@ -81,11 +74,6 @@ public class ListController implements NavigableController {
         listView.setCellFactory(param -> new CustomListCell());
     }
 
-
-    /**
-     * Loads the items (movies, TV series, anime) for the currently selected list
-     * by delegating to the ApplicationController.
-     */
     private void loadListItems() {
         items.clear();
         itemBeanMap.clear();
@@ -96,33 +84,30 @@ public class ListController implements NavigableController {
             List<AnimeBean> anime = graphicControllerGui.getApplicationController().getAnimeInList(selectedList);
 
             for (MovieBean movie : movies) {
-                String key = "Movie: " + movie.getTitle() + " (ID: " + movie.getIdMovieTmdb() + ")";
+                String key = "Movie: " + movie.getTitle() + ID_STRING + movie.getIdMovieTmdb() + ")";
                 items.add(key);
                 itemBeanMap.put(key, movie);
             }
 
             for (TvSeriesBean series : tvSeries) {
-                String key = "TV Series: " + series.getName() + " (ID: " + series.getIdTvSeriesTmdb() + ")";
+                String key = "TV Series: " + series.getName() + ID_STRING + series.getIdTvSeriesTmdb() + ")";
                 items.add(key);
                 itemBeanMap.put(key, series);
             }
 
             for (AnimeBean a : anime) {
-                String key = "Anime: " + a.getTitle() + " (ID: " + a.getIdAnimeTmdb() + ")";
+                String key = "Anime: " + a.getTitle() + ID_STRING + a.getIdAnimeTmdb() + ")";
                 items.add(key);
                 itemBeanMap.put(key, a);
             }
 
         } catch (ExceptionApplicationController e) {
             showAlert(Alert.AlertType.ERROR, "Error Loading List Items", e.getMessage());
-        } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while loading list items.");
+        } catch (Exception _) {
+            showAlert(Alert.AlertType.ERROR, "System Error Database", "An unexpected error occurred while loading list items.");
         }
     }
 
-    /**
-     * Inner class for custom list cell rendering, including "See" and "Delete" buttons.
-     */
     private class CustomListCell extends ListCell<String> {
         private final HBox hbox;
         private final Text text;
@@ -159,11 +144,6 @@ public class ListController implements NavigableController {
             deleteButton.setOnAction(event -> handleDeleteAction(getItem()));
         }
 
-        /**
-         * Handles the "See Details" action for a list item.
-         * Delegates the navigation and data passing to GraphicControllerGui.
-         * @param itemString The string representation of the item in the list view.
-         */
         private void handleSeeAction(String itemString) {
             if (itemString == null || selectedList == null) return;
 
@@ -177,34 +157,34 @@ public class ListController implements NavigableController {
                 String category;
                 int id;
 
-                if (itemBean instanceof MovieBean movie) {
-                    category = "Movie";
-                    id = movie.getIdMovieTmdb();
-                } else if (itemBean instanceof TvSeriesBean tvSeries) {
-                    category = "TvSeries";
-                    id = tvSeries.getIdTvSeriesTmdb();
-                } else if (itemBean instanceof AnimeBean anime) {
-                    category = "Anime";
-                    id = anime.getIdAnimeTmdb();
-                } else {
-                    showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot show details for this item type.");
-                    return;
+                switch (itemBean) {
+                    case MovieBean movie -> {
+                        category = "Movie";
+                        id = movie.getIdMovieTmdb();
+                    }
+                    case TvSeriesBean tvSeries -> {
+                        category = "TvSeries";
+                        id = tvSeries.getIdTvSeriesTmdb();
+                    }
+                    case AnimeBean anime -> {
+                        category = "Anime";
+                        id = anime.getIdAnimeTmdb();
+                    }
+                    default -> {
+                        showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot show details for this item type.");
+                        return;
+                    }
                 }
 
                 graphicControllerGui.navigateToItemDetails(category, id);
 
             } catch (ExceptionApplicationController e) {
                 showAlert(Alert.AlertType.ERROR, "Error Showing Details", e.getMessage());
-            } catch (Exception e) {
+            } catch (Exception _) {
                 showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while showing details.");
             }
         }
 
-        /**
-         * Handles the "Remove" action for a list item.
-         * Delegates the removal logic to the ApplicationController.
-         * @param itemString The string representation of the item in the list view.
-         */
         private void handleDeleteAction(String itemString) {
             if (itemString == null || selectedList == null) return;
 
@@ -215,32 +195,28 @@ public class ListController implements NavigableController {
                     return;
                 }
 
-                // Pass the ID of the item instead of the full bean object
-                if (itemBean instanceof MovieBean movie) {
-                    graphicControllerGui.getApplicationController().removeMovieFromList(selectedList, movie.getIdMovieTmdb());
-                } else if (itemBean instanceof TvSeriesBean tvSeries) {
-                    graphicControllerGui.getApplicationController().removeTvSeriesFromList(selectedList, tvSeries.getIdTvSeriesTmdb());
-                } else if (itemBean instanceof AnimeBean anime) {
-                    graphicControllerGui.getApplicationController().removeAnimeFromList(selectedList, anime.getIdAnimeTmdb());
-                } else {
-                    showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot remove this item type.");
-                    return;
+                switch (itemBean) {
+                    case MovieBean movie -> graphicControllerGui.getApplicationController().removeMovieFromList(selectedList, movie.getIdMovieTmdb());
+                    case TvSeriesBean tvSeries -> graphicControllerGui.getApplicationController().removeTvSeriesFromList(selectedList, tvSeries.getIdTvSeriesTmdb());
+                    case AnimeBean anime -> graphicControllerGui.getApplicationController().removeAnimeFromList(selectedList, anime.getIdAnimeTmdb());
+                    default -> {
+                        showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot remove this item type.");
+                        return;
+                    }
                 }
 
-                // Remove from UI only after successful deletion from application layer
                 getListView().getItems().remove(itemString);
                 itemBeanMap.remove(itemString);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Item removed from list.");
 
             } catch (ExceptionApplicationController e) {
                 showAlert(Alert.AlertType.ERROR, "Removal Failed", e.getMessage());
-            } catch (Exception e) {
+            } catch (Exception _) {
                 showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred during removal.");
             }
         }
     }
 
-    // Helper method to show alert messages
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);

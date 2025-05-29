@@ -70,26 +70,12 @@ public class ContentService {
         try {
             List<TvSeriesModel> tvSeriesModels = TvSeriesTmdb.searchTvSeries(query);
             List<TvSeriesBean> tvSeriesBeans = new java.util.ArrayList<>();
+
             for (TvSeriesModel model : tvSeriesModels) {
-                List<String> genres = new java.util.ArrayList<>();
-                if (model.getGenres() != null) {
-                    for (TvSeriesModel.Genre genre : model.getGenres()) {
-                        genres.add(genre.getName());
-                    }
-                }
-                List<String> productionCompanies = new java.util.ArrayList<>();
-                if (model.getProductionCompanies() != null) {
-                    for (TvSeriesModel.ProductionCompany company : model.getProductionCompanies()) {
-                        productionCompanies.add(company.getName());
-                    }
-                }
-                List<String> createdBy = new java.util.ArrayList<>();
-                if (model.getCreatedBy() != null) {
-                    for (TvSeriesModel.Creator creator : model.getCreatedBy()) {
-                        createdBy.add(creator.getName());
-                    }
-                }
-                int episodeRuntime = (model.getEpisodeRunTime() != null && !model.getEpisodeRunTime().isEmpty()) ? model.getEpisodeRunTime().get(0) : 0;
+                List<String> productionCompanies = extractProductionCompanyNames(model.getProductionCompanies());
+                List<String> createdBy = extractCreatorNames(model.getCreatedBy());
+
+                int episodeRuntime = calculateEpisodeRuntime(model.getEpisodeRunTime());
 
                 tvSeriesBeans.add(new TvSeriesBean(
                         model.getId(),
@@ -114,6 +100,30 @@ public class ContentService {
         } catch (ExceptionTmdbApi tmdbE) {
             throw new ExceptionApplicationController("Failed to search TV Series from TMDb API: " + tmdbE.getMessage(), tmdbE);
         }
+    }
+
+    private List<String> extractProductionCompanyNames(List<TvSeriesModel.ProductionCompany> companiesList) {
+        List<String> names = new java.util.ArrayList<>();
+        if (companiesList != null) {
+            for (TvSeriesModel.ProductionCompany company : companiesList) {
+                names.add(company.getName());
+            }
+        }
+        return names;
+    }
+
+    private List<String> extractCreatorNames(List<TvSeriesModel.Creator> creatorsList) {
+        List<String> names = new java.util.ArrayList<>();
+        if (creatorsList != null) {
+            for (TvSeriesModel.Creator creator : creatorsList) {
+                names.add(creator.getName());
+            }
+        }
+        return names;
+    }
+
+    private int calculateEpisodeRuntime(List<Integer> runTimeList) {
+        return (runTimeList != null && !runTimeList.isEmpty()) ? runTimeList.get(0) : 0;
     }
 
     public List<AnimeBean> searchAndMapAnime(String query) throws ExceptionApplicationController {

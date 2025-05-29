@@ -5,13 +5,15 @@ import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 import ispw.project.project_ispw.bean.AnimeBean;
 import ispw.project.project_ispw.dao.AnimeDao;
-import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom DAO exception
+import ispw.project.project_ispw.exception.ExceptionDao;
+import ispw.project.project_ispw.exception.CsvDaoException;
 
-import java.io.*;
-import java.nio.file.Files; // For new way to handle file existence
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections; // For unmodifiable list
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -20,100 +22,82 @@ public class AnimeDaoCsv implements AnimeDao {
 
     private static final String CSV_FILE_NAME;
 
-    // Use a robust, non-static cache if multiple instances of AnimeDaoCsv are possible
-    // For a simple single instance scenario, static is fine.
-    // However, if the file changes externally, the cache will be stale.
-    // For simplicity, I'll keep it as instance cache as it's typically managed.
     private final HashMap<Integer, AnimeBean> localCache;
 
     static {
-        // This static block runs once when the class is loaded
         CSV_FILE_NAME = loadCsvFileName();
-        // Ensure the file exists right at the start
         try {
             if (!Files.exists(Paths.get(CSV_FILE_NAME))) {
                 Files.createFile(Paths.get(CSV_FILE_NAME));
             }
         } catch (IOException e) {
-            // If file creation fails, this is a critical error for the DAO
-            throw new RuntimeException("Initialization failed: Could not create CSV file.", e);
+            throw new CsvDaoException("Initialization failed: Could not create CSV file at " + CSV_FILE_NAME, e);
         }
     }
 
-    // Constructor no longer needs to create the file, static block handles it
     public AnimeDaoCsv() {
         this.localCache = new HashMap<>();
-        // Optionally load all data into cache on startup if file is small
-        // For large files, load on demand or partially.
-        // For this example, retrieveAllAnime will handle loading into cache on first call if not already there.
     }
 
     private static String loadCsvFileName() {
         Properties properties = new Properties();
         try (InputStream input = AnimeDaoCsv.class.getClassLoader().getResourceAsStream("csv.properties")) {
             if (input == null) {
-                // Better to throw a specific runtime exception here, as the DAO can't function without config
                 throw new IllegalStateException("csv.properties file not found in resources folder. Cannot initialize CSV DAO.");
             }
             properties.load(input);
-            // Provide a sensible default if property is missing, but log it.
             String filename = properties.getProperty("anime.csv.filename");
             if (filename == null || filename.trim().isEmpty()) {
                 filename = "anime.csv";
             }
             return filename;
         } catch (IOException e) {
-            throw new RuntimeException("Initialization failed: Error loading csv.properties.", e);
+            throw new CsvDaoException("Initialization failed: Error loading csv.properties.", e);
         }
     }
 
     @Override
     public AnimeBean retrieveById(int id) throws ExceptionDao {
-        // First, check cache
         synchronized (localCache) {
             if (localCache.containsKey(id)) {
                 return localCache.get(id);
             }
         }
 
-        // If not in cache, read from file
         AnimeBean anime = null;
         try {
             anime = retrieveByIdFromFile(id);
         } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to retrieve anime from CSV for ID: " + id + ". Data corruption or I/O error.", e);
+        } catch (CsvDaoException e) {
+            throw new ExceptionDao("CSV data validation error while retrieving anime for ID: " + id, e);
         }
 
         if (anime != null) {
-            // Add to cache
             synchronized (localCache) {
                 localCache.put(id, anime);
             }
         } else {
-            // If not found in file either
             throw new ExceptionDao("No Anime Found with ID: " + id);
         }
 
         return anime;
     }
 
-    // This method handles low-level file reading and parsing
     private static AnimeBean retrieveByIdFromFile(int id) throws IOException, NumberFormatException {
-        // Using Files.newBufferedReader provides more options for encoding if needed
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 4) {
-                    continue; // Skip invalid records
+            String[] recordAnime;
+            while ((recordAnime = csvReader.readNext()) != null) {
+                if (recordAnime.length < 4) {
+                    continue;
                 }
-                int currentId = Integer.parseInt(record[0]); // Throws NumberFormatException
+                int currentId = Integer.parseInt(recordAnime[0]);
                 if (currentId == id) {
-                    // id, duration, episodes, title -> record[0], record[2], record[1], record[3] (based on your current mapping)
-                    return new AnimeBean(currentId, Integer.parseInt(record[2]), Integer.parseInt(record[1]), record[3]);
+                    return new AnimeBean(currentId, Integer.parseInt(recordAnime[2]), Integer.parseInt(recordAnime[1]), recordAnime[3]);
                 }
             }
         } catch (CsvValidationException e) {
-            throw new RuntimeException(e);
+            throw new CsvDaoException("CSV data validation error during retrieval by ID.", e);
         }
         return null;
     }
@@ -122,26 +106,25 @@ public class AnimeDaoCsv implements AnimeDao {
     public void saveAnime(AnimeBean anime) throws ExceptionDao {
         int animeId = anime.getIdAnimeTmdb();
 
-        // Check if ID already exists in cache or file (to prevent duplicates)
         synchronized (localCache) {
             if (localCache.containsKey(animeId)) {
                 throw new ExceptionDao("Duplicated Anime ID already in cache: " + animeId);
             }
         }
 
-        // Must check file as well, as cache might not be fully loaded
         AnimeBean existingAnime = null;
         try {
             existingAnime = retrieveByIdFromFile(animeId);
         } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to check existing anime for ID: " + animeId + ". Data corruption or I/O error.", e);
+        } catch (CsvDaoException e) {
+            throw new ExceptionDao("CSV data validation error while checking existing anime for ID: " + animeId, e);
         }
 
         if (existingAnime != null) {
             throw new ExceptionDao("Duplicated Anime ID already exists in CSV file: " + animeId);
         }
 
-        // If it doesn't exist, save to file and add to cache
         try {
             saveAnimeToFile(anime);
         } catch (IOException e) {
@@ -153,19 +136,15 @@ public class AnimeDaoCsv implements AnimeDao {
         }
     }
 
-    // This method handles low-level file writing
     private static void saveAnimeToFile(AnimeBean anime) throws IOException {
-        // FileWriter with 'true' appends to the file
         try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME), java.nio.file.StandardOpenOption.APPEND))) {
-            String[] record = {
+            String[] recordAnime = {
                     String.valueOf(anime.getIdAnimeTmdb()),
-                    String.valueOf(anime.getEpisodes()), // Note: Your original mapping was duration then episodes
-                    String.valueOf(anime.getDuration()), // Corrected order based on your bean constructor mapping below
+                    String.valueOf(anime.getEpisodes()),
+                    String.valueOf(anime.getDuration()),
                     anime.getTitle()
             };
-            csvWriter.writeNext(record);
-            // You might need to flush or close the writer to ensure data is written immediately
-            // try-with-resources handles close(), which usually flushes.
+            csvWriter.writeNext(recordAnime);
         }
     }
 
@@ -176,11 +155,11 @@ public class AnimeDaoCsv implements AnimeDao {
             animeList = retrieveAllAnimeFromFile();
         } catch (IOException | NumberFormatException e) {
             throw new ExceptionDao("Failed to retrieve all animes from CSV. Data corruption or I/O error.", e);
+        } catch (CsvDaoException e) {
+            throw new ExceptionDao("CSV data validation error while retrieving all animes.", e);
         }
 
-        // Load into cache if successful
         synchronized (localCache) {
-            // Clear existing cache to ensure it's fresh from the file
             localCache.clear();
             for (AnimeBean anime : animeList) {
                 localCache.put(anime.getIdAnimeTmdb(), anime);
@@ -188,29 +167,24 @@ public class AnimeDaoCsv implements AnimeDao {
         }
 
         if (animeList.isEmpty()) {
-            // It might be valid for the file to be empty, depending on your business rules.
-            // Throwing an exception here might not always be desired.
-            // Consider returning an empty list instead or a specific "no data" exception if critical.
             throw new ExceptionDao("No Anime Found in CSV file.");
         }
 
-        return Collections.unmodifiableList(animeList); // Return an unmodifiable list
+        return Collections.unmodifiableList(animeList);
     }
 
-    // This method handles low-level file reading for all records
     private static List<AnimeBean> retrieveAllAnimeFromFile() throws IOException, NumberFormatException {
         List<AnimeBean> animeList = new ArrayList<>();
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 4) {
-                    continue; // Skip invalid records
+            String[] recordAnime;
+            while ((recordAnime = csvReader.readNext()) != null) {
+                if (recordAnime.length < 4) {
+                    continue;
                 }
-                // id, duration, episodes, title -> record[0], record[2], record[1], record[3] (based on your original mapping)
-                animeList.add(new AnimeBean(Integer.parseInt(record[0]), Integer.parseInt(record[2]), Integer.parseInt(record[1]), record[3]));
+                animeList.add(new AnimeBean(Integer.parseInt(recordAnime[0]), Integer.parseInt(recordAnime[2]), Integer.parseInt(recordAnime[1]), recordAnime[3]));
             }
         } catch (CsvValidationException e) {
-            throw new RuntimeException(e);
+            throw new CsvDaoException("CSV data validation error during retrieval of all animes.", e);
         }
         return animeList;
     }

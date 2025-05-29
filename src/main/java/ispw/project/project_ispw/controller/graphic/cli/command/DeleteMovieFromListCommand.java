@@ -1,4 +1,3 @@
-// File: src/main/java/ispw/project/project_ispw/controller/graphic/cli/DeleteMovieFromListCommand.java
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.bean.ListBean;

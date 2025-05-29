@@ -4,13 +4,17 @@ import ispw.project.project_ispw.bean.MovieBean;
 import ispw.project.project_ispw.connection.SingletonDatabase;
 import ispw.project.project_ispw.dao.MovieDao;
 import ispw.project.project_ispw.dao.queries.CrudMovie;
-import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom DAO exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MovieDaoJdbc implements MovieDao {
+
+    private static final Logger LOGGER = Logger.getLogger(MovieDaoJdbc.class.getName());
 
     @Override
     public MovieBean retrieveById(int id) throws ExceptionDao {
@@ -19,21 +23,17 @@ public class MovieDaoJdbc implements MovieDao {
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudMovie.getMovieById now returns MovieBean directly
             movie = CrudMovie.getMovieById(conn, id);
 
             if (movie == null) {
-                // If CrudMovie returns null, it means no record was found.
                 throw new ExceptionDao("No Movie Found with ID: " + id);
             }
-        } catch (ExceptionDao e) {
-            throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after retrieveById
+                    LOGGER.log(Level.WARNING, "Error closing connection after retrieveById for movie ID {0}: {1}", new Object[]{id, e.getMessage()});
                 }
             }
         }
@@ -46,16 +46,13 @@ public class MovieDaoJdbc implements MovieDao {
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudMovie.addMovie now takes Connection directly
             CrudMovie.addMovie(conn, movie);
-        } catch (ExceptionDao e) {
-            throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after saveMovie
+                    LOGGER.log(Level.WARNING, "Error closing connection after saveMovie for movie ''{0}'': {1}", new Object[]{movie.getTitle(), e.getMessage()});
                 }
             }
         }
@@ -68,16 +65,17 @@ public class MovieDaoJdbc implements MovieDao {
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudMovie.getAllMovies now returns List<MovieBean> directly
             movies = CrudMovie.getAllMovies(conn);
-        } catch (ExceptionDao e) {
-            throw e; // Re-throw the ExceptionDao
+
+            if (movies == null || movies.isEmpty()) {
+                throw new ExceptionDao("No Movies Found in the database.");
+            }
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after retrieveAllMovies
+                    LOGGER.log(Level.WARNING, "Error closing connection after retrieveAllMovies: {0}", e.getMessage());
                 }
             }
         }

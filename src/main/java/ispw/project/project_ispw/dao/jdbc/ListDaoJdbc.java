@@ -10,8 +10,12 @@ import ispw.project.project_ispw.exception.ExceptionDao;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ListDaoJdbc implements ListDao {
+
+    private static final Logger LOGGER = Logger.getLogger(ListDaoJdbc.class.getName());
 
     @Override
     public ListBean retrieveById(int id) throws ExceptionDao {
@@ -20,21 +24,17 @@ public class ListDaoJdbc implements ListDao {
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudList.getListById now returns ListBean directly
             list = CrudList.getListById(conn, id);
 
             if (list == null) {
-                // If CrudList returns null, it means no record was found.
                 throw new ExceptionDao("No List Found with ID: " + id);
             }
-        } catch (ExceptionDao e) {
-            throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after retrieveById
+                    LOGGER.log(Level.WARNING, "Error closing connection after retrieveById for list ID {0}: {1}", new Object[]{id, e.getMessage()});
                 }
             }
         }
@@ -46,16 +46,13 @@ public class ListDaoJdbc implements ListDao {
         Connection conn = null;
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudList.addList now takes Connection
             CrudList.addList(conn, list, user);
-        } catch (ExceptionDao e) {
-            throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after saveList
+                    LOGGER.log(Level.WARNING, "Error closing connection after saveList for list ''{0}'': {1}", new Object[]{list.getName(), e.getMessage()});
                 }
             }
         }
@@ -66,16 +63,13 @@ public class ListDaoJdbc implements ListDao {
         Connection conn = null;
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudList.deleteList now takes Connection and list ID directly
             CrudList.deleteList(conn, list.getId());
-        } catch (ExceptionDao e) {
-            throw e;
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after deleteList
+                    LOGGER.log(Level.WARNING, "Error closing connection after deleteList for list ID {0}: {1}", new Object[]{list.getId(), e.getMessage()});
                 }
             }
         }
@@ -87,16 +81,17 @@ public class ListDaoJdbc implements ListDao {
         List<ListBean> lists;
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudList.getListsByUsername now returns List<ListBean> directly
             lists = CrudList.getListsByUsername(conn, username);
-        } catch (ExceptionDao e) {
-            throw e;
+
+            if (lists == null || lists.isEmpty()) {
+                throw new ExceptionDao("No Lists Found for username: " + username);
+            }
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after retrieveAllListsOfUsername
+                    LOGGER.log(Level.WARNING, "Error closing connection after retrieveAllListsOfUsername for user ''{0}'': {1}", new Object[]{username, e.getMessage()});
                 }
             }
         }

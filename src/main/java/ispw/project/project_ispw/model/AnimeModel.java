@@ -1,36 +1,32 @@
 package ispw.project.project_ispw.model;
 
-import java.time.LocalDate; // For handling dates more robustly
+import java.time.LocalDate;
 
 public class AnimeModel {
     private int id;
-    private Title title; // Nested object for various title forms
+    private Title title;
     private String description;
-    private CoverImage coverImage; // Nested object for cover image URL
-    private Integer episodes; // Use Integer to allow for null if not yet determined
-    private Integer duration; // In minutes per episode, Integer to allow for null
+    private CoverImage coverImage;
+    private Integer episodes;
+    private Integer duration;
     private String countryOfOrigin;
-    private FuzzyDate startDate; // Nested object for start date
-    private FuzzyDate endDate;   // Nested object for end date
-    private Integer averageScore; // Use Integer to allow for null
-    private Integer meanScore;    // Use Integer to allow for null
-    private String status; // e.g., RELEASING, FINISHED, NOT_YET_RELEASED, CANCELLED, HIATUS
-    private AiringSchedule nextAiringEpisode; // Information about the next episode to air
-    private String[] genres; // Array or List of genres
-
-    // --- Nested Classes ---
+    private FuzzyDate startDate;
+    private FuzzyDate endDate;
+    private Integer averageScore;
+    private Integer meanScore;
+    private String status;
+    private AiringSchedule nextAiringEpisode;
+    private String[] genres;
 
     public static class Title {
         private String romaji;
         private String english;
-        private String nativeTitle; // Corresponds to 'native' in your query
+        private String nativeTitle;
 
         public Title() {
-            // This empty constructor is required by Gson for deserialization.
-            // It allows Gson to create an instance of Title before populating its fields.
+            // Empty constructor
         }
 
-        // Getters and Setters
         public String getRomaji() { return romaji; }
         public void setRomaji(String romaji) { this.romaji = romaji; }
         public String getEnglish() { return english; }
@@ -49,13 +45,12 @@ public class AnimeModel {
     }
 
     public static class CoverImage {
-        private String medium; // Only 'medium' is requested in your query
+        private String medium;
 
         public CoverImage() {
-            // This empty constructor is required by Gson for deserialization.
+            // Empty constructor
         }
 
-        // Getter and Setter
         public String getMedium() { return medium; }
         public void setMedium(String medium) { this.medium = medium; }
 
@@ -68,15 +63,14 @@ public class AnimeModel {
     }
 
     public static class FuzzyDate {
-        private Integer year; // Integer to allow for null
+        private Integer year;
         private Integer month;
         private Integer day;
 
         public FuzzyDate() {
-            // This empty constructor is required by Gson for deserialization.
+            // Empty constructor
         }
 
-        // Getters and Setters
         public Integer getYear() { return year; }
         public void setYear(Integer year) { this.year = year; }
         public Integer getMonth() { return month; }
@@ -84,7 +78,6 @@ public class AnimeModel {
         public Integer getDay() { return day; }
         public void setDay(Integer day) { this.day = day; }
 
-        // Helper method to convert to LocalDate if all parts are present
         public LocalDate toLocalDate() {
             if (year != null && month != null && day != null) {
                 return LocalDate.of(year, month, day);
@@ -103,14 +96,13 @@ public class AnimeModel {
     }
 
     public static class AiringSchedule {
-        private Integer episode; // Integer to allow for null
-        private Long airingAt; // Unix timestamp, use Long to allow for null
+        private Integer episode;
+        private Long airingAt;
 
         public AiringSchedule() {
-            // This empty constructor is required by Gson for deserialization.
+            // Empty constructor
         }
 
-        // Getters and Setters
         public Integer getEpisode() { return episode; }
         public void setEpisode(Integer episode) { this.episode = episode; }
         public Long getAiringAt() { return airingAt; }
@@ -125,11 +117,9 @@ public class AnimeModel {
         }
     }
 
-    // --- Main Anime Class Getters and Setters ---
 
     public AnimeModel() {
-        // This empty constructor is required by Gson for deserialization.
-        // It allows Gson to create an instance of AnimeModel before populating its fields from JSON.
+        // Empty constructor
     }
 
     public int getId() { return id; }

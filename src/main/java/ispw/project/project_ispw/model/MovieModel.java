@@ -1,71 +1,62 @@
-package ispw.project.project_ispw.model; // This package is for API-specific models
+package ispw.project.project_ispw.model;
 
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
-/**
- * Represents a single movie object as returned by The Movie Database (TMDb) API.
- * This class is designed to be deserialized directly from TMDb's JSON responses
- * using a library like Gson. It includes a comprehensive set of common fields
- * found in TMDb's 'movie details' endpoint.
- */
 public class MovieModel {
     private int id;
     private String title;
 
     @SerializedName("original_title")
-    private String originalTitle; // Often the title in its original language
+    private String originalTitle;
 
     @SerializedName("original_language")
     private String originalLanguage;
 
-    private String overview; // A brief summary of the movie
+    private String overview;
 
     @SerializedName("poster_path")
-    private String posterPath; // Relative path to the movie poster image
+    private String posterPath;
 
     @SerializedName("backdrop_path")
-    private String backdropPath; // Relative path to the movie backdrop image
+    private String backdropPath;
 
     @SerializedName("release_date")
-    private String releaseDate; // Date of release (e.g., "YYYY-MM-DD")
+    private String releaseDate;
 
     @SerializedName("vote_average")
-    private double voteAverage; // Average rating
+    private double voteAverage;
 
     @SerializedName("vote_count")
-    private int voteCount; // Number of votes
+    private int voteCount;
 
-    private int runtime; // Duration of the movie in minutes
+    private int runtime;
 
     private double popularity;
 
-    private String status; // e.g., "Released", "Rumored", "In Production"
+    private String status;
 
-    private String tagline; // A short tagline for the movie
+    private String tagline;
 
     @SerializedName("imdb_id")
-    private String imdbId; // IMDb ID for the movie
+    private String imdbId;
 
-    // Added budget and revenue fields
     private long budget;
     private long revenue;
 
-    private List<Genre> genres; // List of nested Genre objects
+    private List<Genre> genres;
 
     @SerializedName("production_companies")
-    private List<ProductionCompany> productionCompanies; // List of nested ProductionCompany objects
+    private List<ProductionCompany> productionCompanies;
 
     @SerializedName("production_countries")
-    private List<ProductionCountry> productionCountries; // List of nested ProductionCountry objects
+    private List<ProductionCountry> productionCountries;
 
     @SerializedName("spoken_languages")
-    private List<SpokenLanguage> spokenLanguages; // List of nested SpokenLanguage objects
+    private List<SpokenLanguage> spokenLanguages;
 
-    // --- Constant for common string literal in toString methods ---
     private static final String NAME_FIELD_PREFIX = ", name='";
 
-    // --- Getters ---
     public int getId() {
         return id;
     }
@@ -126,7 +117,6 @@ public class MovieModel {
         return imdbId;
     }
 
-    // Added getters for budget and revenue
     public long getBudget() {
         return budget;
     }
@@ -151,7 +141,6 @@ public class MovieModel {
         return spokenLanguages;
     }
 
-    // --- Setters (Often not strictly necessary if deserialized directly, but useful for mapping/testing) ---
     public void setId(int id) {
         this.id = id;
     }
@@ -212,7 +201,6 @@ public class MovieModel {
         this.imdbId = imdbId;
     }
 
-    // Added setters for budget and revenue
     public void setBudget(long budget) {
         this.budget = budget;
     }
@@ -237,10 +225,8 @@ public class MovieModel {
         this.spokenLanguages = spokenLanguages;
     }
 
-    // An empty constructor is typically needed for deserialization by libraries like Gson.
     public MovieModel() {
-        // This empty constructor is required by Gson for deserialization.
-        // It allows Gson to create an instance of MovieModel before populating its fields from JSON.
+        // Empty constructor
     }
 
     @Override
@@ -254,24 +240,17 @@ public class MovieModel {
                 ", releaseDate='" + releaseDate + '\'' +
                 ", runtime=" + runtime +
                 ", voteAverage=" + voteAverage +
-                ", budget=" + budget + // Added to toString
-                ", revenue=" + revenue + // Added to toString
+                ", budget=" + budget +
+                ", revenue=" + revenue +
                 '}';
     }
 
-    // --- Nested Classes for Complex JSON Objects ---
-
-    /**
-     * Represents a genre object as returned by TMDb API.
-     */
     public static class Genre {
         private int id;
         private String name;
 
-        // An empty constructor is typically needed for deserialization by libraries like Gson.
         public Genre() {
-            // This empty constructor is required by Gson for deserialization.
-            // It allows Gson to create an instance of Genre before populating its fields.
+            // Empty constructor
         }
 
         public int getId() { return id; }
@@ -283,9 +262,6 @@ public class MovieModel {
         public String toString() { return "Genre{" + "id=" + id + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
-    /**
-     * Represents a production company object as returned by TMDb API.
-     */
     public static class ProductionCompany {
         private int id;
         @SerializedName("logo_path")
@@ -294,10 +270,8 @@ public class MovieModel {
         @SerializedName("origin_country")
         private String originCountry;
 
-        // An empty constructor is typically needed for deserialization by libraries like Gson.
         public ProductionCompany() {
-            // This empty constructor is required by Gson for deserialization.
-            // It allows Gson to create an instance of ProductionCompany before populating its fields.
+            // Empty constructor
         }
 
         public int getId() { return id; }
@@ -313,18 +287,13 @@ public class MovieModel {
         public String toString() { return "ProductionCompany{" + "id=" + id + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
-    /**
-     * Represents a production country object as returned by TMDb API.
-     */
     public static class ProductionCountry {
         @SerializedName("iso_3166_1")
-        private String iso31661; // e.g., "US", "GB"
+        private String iso31661;
         private String name;
 
-        // An empty constructor is typically needed for deserialization by libraries like Gson.
         public ProductionCountry() {
-            // This empty constructor is required by Gson for deserialization.
-            // It allows Gson to create an instance of ProductionCountry before populating its fields.
+            // Empty constructor
         }
 
         public String getIso31661() { return iso31661; }
@@ -336,20 +305,16 @@ public class MovieModel {
         public String toString() { return "ProductionCountry{" + "iso31661='" + iso31661 + '\'' + NAME_FIELD_PREFIX + name + '\'' + '}'; }
     }
 
-    /**
-     * Represents a spoken language object as returned by TMDb API.
-     */
+
     public static class SpokenLanguage {
         @SerializedName("english_name")
         private String englishName;
         @SerializedName("iso_639_1")
-        private String iso6391; // e.g., "en", "es"
+        private String iso6391;
         private String name;
 
-        // An empty constructor is typically needed for deserialization by libraries like Gson.
         public SpokenLanguage() {
-            // This empty constructor is required by Gson for deserialization.
-            // It allows Gson to create an instance of SpokenLanguage before populating its fields.
+            // Empty constructor
         }
 
         public String getEnglishName() { return englishName; }

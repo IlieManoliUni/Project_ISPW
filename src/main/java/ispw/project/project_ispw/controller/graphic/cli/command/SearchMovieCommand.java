@@ -1,4 +1,3 @@
-// File: src/main/java/ispw/project/project_ispw/controller/graphic/cli/SearchMovieCommand.java
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.bean.MovieBean;
@@ -13,7 +12,7 @@ public class SearchMovieCommand implements CliCommand {
         if (args.isEmpty()) {
             return "Usage: searchmovie <query>";
         }
-        List<MovieBean> results = (List<MovieBean>) context.getApplicationController().searchContent("Movie", args);
+        List<MovieBean> results = context.getApplicationController().searchMovies(args);
         if (results.isEmpty()) {
             return "No movies found for query: '" + args + "'";
         } else {

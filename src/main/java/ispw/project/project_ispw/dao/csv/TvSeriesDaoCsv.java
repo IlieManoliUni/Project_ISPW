@@ -5,6 +5,7 @@ import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.dao.TvSeriesDao;
+import ispw.project.project_ispw.exception.CsvDaoException;
 import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom DAO exception
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
                 // csv.properties file not found, using default CSV filename.
             }
         } catch (IOException e) {
-            throw new RuntimeException("Initialization failed: Error loading csv.properties.", e); // Critical startup error
+            throw new CsvDaoException("Initialization failed: Error loading csv.properties.", e); // Critical startup error
         }
         CSV_FILE_NAME = fileName;
 
@@ -49,7 +50,7 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
             }
         } catch (IOException e) {
             // If file creation fails, this is a critical error for the DAO
-            throw new RuntimeException("Initialization failed: Could not create CSV file for TV series.", e);
+            throw new CsvDaoException("Initialization failed: Could not create CSV file for TV series.", e);
         }
     }
 
@@ -90,15 +91,15 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
 
     private TvSeriesBean retrieveByIdFromFile(int id) throws IOException, CsvValidationException, NumberFormatException {
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 4) {
+            String[] recordTvSeries;
+            while ((recordTvSeries = csvReader.readNext()) != null) {
+                if (recordTvSeries.length < 4) {
                     continue; // Skip invalid records
                 }
-                int currentId = Integer.parseInt(record[0]);
+                int currentId = Integer.parseInt(recordTvSeries[0]);
                 if (currentId == id) {
                     // Assuming TvSeriesBean constructor: public TvSeriesBean(int id, int episodeRuntime, int numberOfEpisodes, String name)
-                    return new TvSeriesBean(currentId, Integer.parseInt(record[1]), Integer.parseInt(record[2]), record[3]);
+                    return new TvSeriesBean(currentId, Integer.parseInt(recordTvSeries[1]), Integer.parseInt(recordTvSeries[2]), recordTvSeries[3]);
                 }
             }
         }
@@ -130,7 +131,7 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
         // If it doesn't exist, save to file and add to cache
         try {
             saveTvSeriesToFile(tvSeries);
-        } catch (IOException | CsvValidationException e) {
+        } catch (IOException e) {
             throw new ExceptionDao("Failed to save TV Series to CSV for ID: " + tvSeriesId + ". I/O or data error.", e);
         }
 
@@ -141,16 +142,16 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
         return true;
     }
 
-    private void saveTvSeriesToFile(TvSeriesBean tvSeries) throws IOException, CsvValidationException {
+    private void saveTvSeriesToFile(TvSeriesBean tvSeries) throws IOException {
         // Using StandardOpenOption.APPEND for appending and newBufferedWriter for efficiency
         try (CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME), StandardOpenOption.APPEND))) {
-            String[] record = {
+            String[] recordTvSeries = {
                     String.valueOf(tvSeries.getIdTvSeriesTmdb()),
                     String.valueOf(tvSeries.getEpisodeRuntime()),
                     String.valueOf(tvSeries.getNumberOfEpisodes()),
                     tvSeries.getName()
             };
-            csvWriter.writeNext(record);
+            csvWriter.writeNext(recordTvSeries);
         }
     }
 
@@ -186,13 +187,13 @@ public class TvSeriesDaoCsv implements TvSeriesDao {
     private List<TvSeriesBean> retrieveAllTvSeriesFromFile() throws IOException, CsvValidationException, NumberFormatException {
         List<TvSeriesBean> tvSeriesList = new ArrayList<>();
         try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)))) {
-            String[] record;
-            while ((record = csvReader.readNext()) != null) {
-                if (record.length < 4) {
+            String[] recordTvSeries;
+            while ((recordTvSeries = csvReader.readNext()) != null) {
+                if (recordTvSeries.length < 4) {
                     continue; // Skip invalid records
                 }
                 // Assuming TvSeriesBean constructor: public TvSeriesBean(int id, int episodeRuntime, int numberOfEpisodes, String name)
-                tvSeriesList.add(new TvSeriesBean(Integer.parseInt(record[0]), Integer.parseInt(record[1]), Integer.parseInt(record[2]), record[3]));
+                tvSeriesList.add(new TvSeriesBean(Integer.parseInt(recordTvSeries[0]), Integer.parseInt(recordTvSeries[1]), Integer.parseInt(recordTvSeries[2]), recordTvSeries[3]));
             }
         }
         return tvSeriesList;

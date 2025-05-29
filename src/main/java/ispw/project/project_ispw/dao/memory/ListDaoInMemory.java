@@ -1,31 +1,33 @@
-package ispw.project.project_ispw.dao.inMemory;
+package ispw.project.project_ispw.dao.memory;
 
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.dao.ListDao;
-import ispw.project.project_ispw.exception.ExceptionDao; // Assuming you have this custom exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.util.ArrayList;
-import java.util.Collections; // For unmodifiable list
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 public class ListDaoInMemory implements ListDao {
 
-    // Store lists by ID
+    private static final Logger LOGGER = Logger.getLogger(ListDaoInMemory.class.getName());
+
     private final Map<Integer, ListBean> listMap = new HashMap<>();
 
-    // Store list IDs by username
     private final Map<String, Set<Integer>> userListsMap = new HashMap<>();
 
     @Override
     public ListBean retrieveById(int id) throws ExceptionDao {
         ListBean list = listMap.get(id);
         if (list == null) {
-            // Throw ExceptionDao if the list is not found, consistent with CSV DAOs
             throw new ExceptionDao("No List Found with ID: " + id);
         }
         return list;
@@ -41,13 +43,11 @@ public class ListDaoInMemory implements ListDao {
         String username = user.getUsername();
 
         if (listMap.containsKey(id)) {
-            // Throw ExceptionDao if the list already exists
             throw new ExceptionDao("List with ID " + id + " already exists.");
         }
 
         listMap.put(id, list);
 
-        // Ensure the set for the username exists, then add the list ID
         userListsMap.computeIfAbsent(username, k -> new HashSet<>()).add(id);
     }
 
@@ -60,24 +60,19 @@ public class ListDaoInMemory implements ListDao {
         int id = list.getId();
         String username = list.getUsername();
 
-        // Check if the list exists before attempting to remove
         if (!listMap.containsKey(id)) {
             throw new ExceptionDao("List with ID " + id + " not found for deletion.");
         }
 
-        // Remove the list from the main map
         listMap.remove(id);
 
-        // Remove the list ID from the user's set of lists
         Set<Integer> userLists = userListsMap.get(username);
         if (userLists != null) {
             userLists.remove(id);
-            // Clean up if the user no longer has any lists
             if (userLists.isEmpty()) {
                 userListsMap.remove(username);
             }
         }
-        // No exception thrown if list isn't linked to user, as the primary removal is from listMap.
     }
 
     @Override
@@ -91,23 +86,19 @@ public class ListDaoInMemory implements ListDao {
 
         if (ids != null) {
             for (int id : ids) {
-                // Ensure the list still exists in listMap (data integrity check)
                 ListBean list = listMap.get(id);
                 if (list != null) {
                     result.add(list);
                 } else {
-                    // Log a warning if a list ID is found in userListsMap but not in listMap
-                    System.err.println("Warning: List ID " + id + " found for user " + username + " but not in main list map. Data inconsistency.");
+                    LOGGER.log(Level.WARNING, "List ID {0} found for user {1} but not in main list map. Data inconsistency.", new Object[]{id, username});
                 }
             }
         }
 
         if (result.isEmpty()) {
-            // Throw ExceptionDao if no lists are found for the username
             throw new ExceptionDao("No Lists Found for username: " + username);
         }
 
-        // Return an unmodifiable list to prevent external modification of the internal state
         return Collections.unmodifiableList(result);
     }
 }

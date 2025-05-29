@@ -1,17 +1,15 @@
 package ispw.project.project_ispw.dao;
 
 import ispw.project.project_ispw.bean.MovieBean;
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.util.List;
 
 public interface MovieDao {
 
-    // Method to retrieve a Movie by its ID
-    MovieBean retrieveById(int id) throws Exception;
+    MovieBean retrieveById(int id) throws ExceptionDao;
 
-    // Method to save a Movie
-    void saveMovie(MovieBean movie) throws Exception;
+    void saveMovie(MovieBean movie) throws ExceptionDao;
 
-    // Method to retrieve all Movies
-    List<MovieBean> retrieveAllMovies() throws Exception;
+    List<MovieBean> retrieveAllMovies() throws ExceptionDao;
 }

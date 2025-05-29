@@ -1,4 +1,3 @@
-// File: src/main/java/ispw/project/project_ispw/controller/graphic/cli/SearchAnimeCommand.java
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.bean.AnimeBean;
@@ -13,7 +12,7 @@ public class SearchAnimeCommand implements CliCommand {
         if (args.isEmpty()) {
             return "Usage: searchanime <query>";
         }
-        List<AnimeBean> results = (List<AnimeBean>) context.getApplicationController().searchContent("Anime", args);
+        List<AnimeBean> results = context.getApplicationController().searchAnime(args);
         if (results.isEmpty()) {
             return "No anime found for query: '" + args + "'";
         } else {

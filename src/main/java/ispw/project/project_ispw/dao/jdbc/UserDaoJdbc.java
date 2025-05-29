@@ -4,12 +4,16 @@ import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.connection.SingletonDatabase;
 import ispw.project.project_ispw.dao.UserDao;
 import ispw.project.project_ispw.dao.queries.CrudUser;
-import ispw.project.project_ispw.exception.ExceptionDao; // Import your custom DAO exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class UserDaoJdbc implements UserDao {
+
+    private static final Logger LOGGER = Logger.getLogger(UserDaoJdbc.class.getName());
 
     @Override
     public UserBean retrieveByUsername(String username) throws ExceptionDao {
@@ -18,26 +22,18 @@ public class UserDaoJdbc implements UserDao {
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // CrudUser.getUserByUsername now returns UserBean directly
             user = CrudUser.getUserByUsername(conn, username);
 
-            // Removed the problematic block:
-            // if (user == null) {
-            //     throw new ExceptionDao("No User Found matching username: " + username);
-            // }
-
-        } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after retrieveByUsername
+                    LOGGER.log(Level.WARNING, "Error closing connection after retrieveByUsername for user ''{0}'': {1}", new Object[]{username, e.getMessage()});
                 }
             }
         }
-        return user; // Will return null if no user is found, allowing AuthService to handle it
+        return user;
     }
 
     @Override
@@ -46,23 +42,19 @@ public class UserDaoJdbc implements UserDao {
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
-            // First, check if the user already exists using the new CrudUser.getUserByUsername
             UserBean existingUser = CrudUser.getUserByUsername(conn, user.getUsername());
 
             if (existingUser != null) {
                 throw new ExceptionDao("User already exists with username: " + user.getUsername());
             }
 
-            // If not, add the new user
             CrudUser.addUser(conn, user);
-        } catch (ExceptionDao e) { // Catch ExceptionDao directly
-            throw e; // Re-throw the ExceptionDao
         } finally {
             if (conn != null) {
                 try {
                     conn.close();
                 } catch (SQLException e) {
-                    // Error closing connection after saveUser
+                    LOGGER.log(Level.WARNING, "Error closing connection after saveUser for user ''{0}'': {1}", new Object[]{user.getUsername(), e.getMessage()});
                 }
             }
         }
