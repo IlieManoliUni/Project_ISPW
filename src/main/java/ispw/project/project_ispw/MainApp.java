@@ -14,11 +14,12 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+//MAIN
 public class MainApp extends Application {
 
     private static final Logger LOGGER = Logger.getLogger(MainApp.class.getName());
 
-    private static final LaunchType DESIRED_LAUNCH_TYPE = LaunchType.CLI;
+    private static final LaunchType DESIRED_LAUNCH_TYPE = LaunchType.GUI;
     private static final boolean RUN_IN_DEMO_MODE = true;
     private static final DaoType DESIRED_DAO_TYPE = DaoType.JDBC;
 
