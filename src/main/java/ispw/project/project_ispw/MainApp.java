@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 public class MainApp extends Application {
 
     private static final Logger LOGGER = Logger.getLogger(MainApp.class.getName());
-    //Type of graphic
+    
     private static final LaunchType DESIRED_LAUNCH_TYPE = LaunchType.GUI;
     private static final boolean RUN_IN_DEMO_MODE = false;
     private static final DaoType DESIRED_DAO_TYPE = DaoType.CSV;
