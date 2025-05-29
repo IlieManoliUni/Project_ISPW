@@ -56,8 +56,8 @@ public class CrudList {
     }
 
     public static void printAllLists(Connection conn) throws ExceptionDao {
-        try (PreparedStatement ps = conn.prepareStatement(SELECT_ALL_LISTS_SQL);
-             ResultSet res = ps.executeQuery()) {
+        try (PreparedStatement ps = conn.prepareStatement(SELECT_ALL_LISTS_SQL)){
+             ps.executeQuery();
         } catch (SQLException e) {
             throw new ExceptionDao("Failed to print all lists: " + e.getMessage(), e);
         }
