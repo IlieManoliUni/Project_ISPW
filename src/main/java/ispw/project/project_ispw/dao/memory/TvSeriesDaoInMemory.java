@@ -2,10 +2,10 @@ package ispw.project.project_ispw.dao.memory;
 
 import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.dao.TvSeriesDao;
-import ispw.project.project_ispw.exception.ExceptionDao; // Assuming you have this custom exception
+import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.util.ArrayList;
-import java.util.Collections; // For unmodifiable list
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +16,7 @@ public class TvSeriesDaoInMemory implements TvSeriesDao {
 
     @Override
     public TvSeriesBean retrieveById(int id) throws ExceptionDao {
-        TvSeriesBean tvSeries = tvSeriesMap.get(id);
-        if (tvSeries == null) {
-            throw new ExceptionDao("No TV Series Found with ID: " + id);
-        }
-        return tvSeries;
+        return tvSeriesMap.get(id);
     }
 
     @Override
@@ -39,8 +35,7 @@ public class TvSeriesDaoInMemory implements TvSeriesDao {
     @Override
     public List<TvSeriesBean> retrieveAllTvSeries() throws ExceptionDao {
         if (tvSeriesMap.isEmpty()) {
-
-            throw new ExceptionDao("No TV Series Found in memory.");
+            return new ArrayList<>();
         }
         return Collections.unmodifiableList(new ArrayList<>(tvSeriesMap.values()));
     }

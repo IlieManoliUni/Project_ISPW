@@ -23,7 +23,6 @@ public class UserDaoJdbc implements UserDao {
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             user = CrudUser.getUserByUsername(conn, username);
-
         } finally {
             if (conn != null) {
                 try {

@@ -8,6 +8,7 @@ import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList; // Import ArrayList for an empty list
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,15 +20,11 @@ public class MovieDaoJdbc implements MovieDao {
     @Override
     public MovieBean retrieveById(int id) throws ExceptionDao {
         Connection conn = null;
-        MovieBean movie = null;
+        MovieBean movie = null; // Initialize to null
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             movie = CrudMovie.getMovieById(conn, id);
-
-            if (movie == null) {
-                throw new ExceptionDao("No Movie Found with ID: " + id);
-            }
         } finally {
             if (conn != null) {
                 try {
@@ -61,14 +58,14 @@ public class MovieDaoJdbc implements MovieDao {
     @Override
     public List<MovieBean> retrieveAllMovies() throws ExceptionDao {
         Connection conn = null;
-        List<MovieBean> movies;
+        List<MovieBean> movies = null;
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             movies = CrudMovie.getAllMovies(conn);
 
             if (movies == null || movies.isEmpty()) {
-                throw new ExceptionDao("No Movies Found in the database.");
+                return new ArrayList<>();
             }
         } finally {
             if (conn != null) {

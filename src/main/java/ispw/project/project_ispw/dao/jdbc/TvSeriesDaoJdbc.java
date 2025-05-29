@@ -8,6 +8,7 @@ import ispw.project.project_ispw.exception.ExceptionDao;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,10 +25,6 @@ public class TvSeriesDaoJdbc implements TvSeriesDao {
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             tvSeries = CrudTvSeries.getTvSeriesById(conn, id);
-
-            if (tvSeries == null) {
-                throw new ExceptionDao("No TV Series Found with ID: " + id);
-            }
         } finally {
             if (conn != null) {
                 try {
@@ -48,7 +45,6 @@ public class TvSeriesDaoJdbc implements TvSeriesDao {
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             int rowsAffected = CrudTvSeries.addTvSeries(conn, tvSeries);
-
             success = rowsAffected > 0;
         } finally {
             if (conn != null) {
@@ -65,14 +61,13 @@ public class TvSeriesDaoJdbc implements TvSeriesDao {
     @Override
     public List<TvSeriesBean> retrieveAllTvSeries() throws ExceptionDao {
         Connection conn = null;
-        List<TvSeriesBean> tvSeriesList;
+        List<TvSeriesBean> tvSeriesList = null;
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             tvSeriesList = CrudTvSeries.getAllTvSeries(conn);
-
             if (tvSeriesList == null || tvSeriesList.isEmpty()) {
-                throw new ExceptionDao("No TV Series Found in the database.");
+                return new ArrayList<>();
             }
         } finally {
             if (conn != null) {

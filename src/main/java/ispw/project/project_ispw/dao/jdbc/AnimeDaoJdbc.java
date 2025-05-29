@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 public class AnimeDaoJdbc implements AnimeDao {
 
-    private static final Logger LOGGER = Logger.getLogger(AnimeDaoJdbc.class.getName()); // Declare the logger
+    private static final Logger LOGGER = Logger.getLogger(AnimeDaoJdbc.class.getName());
 
     @Override
     public AnimeBean retrieveById(int id) throws ExceptionDao {
@@ -24,10 +24,6 @@ public class AnimeDaoJdbc implements AnimeDao {
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             anime = CrudAnime.getAnimeById(conn, id);
-
-            if (anime == null) {
-                throw new ExceptionDao("No Anime Found with ID: " + id);
-            }
         } finally {
             if (conn != null) {
                 try {
@@ -66,9 +62,9 @@ public class AnimeDaoJdbc implements AnimeDao {
         try {
             conn = SingletonDatabase.getInstance().getConnection();
             animes = CrudAnime.getAllAnimes(conn);
-
             if (animes == null || animes.isEmpty()) {
-                throw new ExceptionDao("No Anime Found in the database.");
+                return new java.util.ArrayList<>();
+
             }
 
         } finally {
