@@ -9,9 +9,9 @@ import ispw.project.project_ispw.connection.MovieTmdb;
 import ispw.project.project_ispw.connection.TvSeriesTmdb;
 import ispw.project.project_ispw.exception.ExceptionAniListApi;
 import ispw.project.project_ispw.exception.ExceptionTmdbApi;
-import ispw.project.project_ispw.model.AnimeModel;
-import ispw.project.project_ispw.model.MovieModel;
-import ispw.project.project_ispw.model.TvSeriesModel;
+import ispw.project.project_ispw.model.AnimeDto;
+import ispw.project.project_ispw.model.MovieDto;
+import ispw.project.project_ispw.model.TvSeriesDto;
 
 
 import java.util.Collections;
@@ -28,9 +28,9 @@ public class ContentService {
 
     public List<MovieBean> searchAndMapMovies(String query) throws ExceptionApplicationController {
         try {
-            List<MovieModel> movieModels = MovieTmdb.searchMovies(query);
+            List<MovieDto> movieDtos = MovieTmdb.searchMovies(query);
             List<MovieBean> movieBeans = new java.util.ArrayList<>();
-            for (MovieModel model : movieModels) {
+            for (MovieDto model : movieDtos) {
                 MovieBean movieBean = new MovieBean(
                         model.getId(),
                         model.getRuntime(),
@@ -48,7 +48,7 @@ public class ContentService {
 
                 List<String> genres = new java.util.ArrayList<>();
                 if (model.getGenres() != null) {
-                    for (MovieModel.Genre genre : model.getGenres()) {
+                    for (MovieDto.Genre genre : model.getGenres()) {
                         genres.add(genre.getName());
                     }
                 }
@@ -56,7 +56,7 @@ public class ContentService {
 
                 List<String> productionCompanies = new java.util.ArrayList<>();
                 if (model.getProductionCompanies() != null) {
-                    for (MovieModel.ProductionCompany company : model.getProductionCompanies()) {
+                    for (MovieDto.ProductionCompany company : model.getProductionCompanies()) {
                         productionCompanies.add(company.getName());
                     }
                 }
@@ -72,10 +72,10 @@ public class ContentService {
 
     public List<TvSeriesBean> searchAndMapTvSeries(String query) throws ExceptionApplicationController {
         try {
-            List<TvSeriesModel> tvSeriesModels = TvSeriesTmdb.searchTvSeries(query);
+            List<TvSeriesDto> tvSeriesDtos = TvSeriesTmdb.searchTvSeries(query);
             List<TvSeriesBean> tvSeriesBeans = new java.util.ArrayList<>();
 
-            for (TvSeriesModel model : tvSeriesModels) {
+            for (TvSeriesDto model : tvSeriesDtos) {
                 int episodeRuntime = calculateEpisodeRuntime(model.getEpisodeRunTime());
 
                 TvSeriesBean tvSeriesBean = new TvSeriesBean(
@@ -110,20 +110,20 @@ public class ContentService {
         }
     }
 
-    private List<String> extractProductionCompanyNames(List<TvSeriesModel.ProductionCompany> companiesList) {
+    private List<String> extractProductionCompanyNames(List<TvSeriesDto.ProductionCompany> companiesList) {
         List<String> names = new java.util.ArrayList<>();
         if (companiesList != null) {
-            for (TvSeriesModel.ProductionCompany company : companiesList) {
+            for (TvSeriesDto.ProductionCompany company : companiesList) {
                 names.add(company.getName());
             }
         }
         return names;
     }
 
-    private List<String> extractCreatorNames(List<TvSeriesModel.Creator> creatorsList) {
+    private List<String> extractCreatorNames(List<TvSeriesDto.Creator> creatorsList) {
         List<String> names = new java.util.ArrayList<>();
         if (creatorsList != null) {
-            for (TvSeriesModel.Creator creator : creatorsList) {
+            for (TvSeriesDto.Creator creator : creatorsList) {
                 names.add(creator.getName());
             }
         }
@@ -136,9 +136,9 @@ public class ContentService {
 
     public List<AnimeBean> searchAndMapAnime(String query) throws ExceptionApplicationController {
         try {
-            List<AnimeModel> animeModels = AnimeAniList.searchAnime(query);
+            List<AnimeDto> animeModels = AnimeAniList.searchAnime(query);
             List<AnimeBean> animeBeans = new java.util.ArrayList<>();
-            for (AnimeModel model : animeModels) {
+            for (AnimeDto model : animeModels) {
                 AnimeBean animeBean = new AnimeBean(
                         model.getId(),
                         model.getDuration(),
@@ -178,7 +178,7 @@ public class ContentService {
 
     private MovieBean fetchAndMapMovieModel(int id) throws ExceptionApplicationController {
         try {
-            MovieModel model = MovieTmdb.getMovieById(id);
+            MovieDto model = MovieTmdb.getMovieById(id);
 
             if (model == null) {
                 throw new ExceptionApplicationController("Movie with ID " + id + " not found or returned null model from TMDb API.");
@@ -201,7 +201,7 @@ public class ContentService {
 
             List<String> genres = new java.util.ArrayList<>();
             if (model.getGenres() != null) {
-                for (MovieModel.Genre genre : model.getGenres()) {
+                for (MovieDto.Genre genre : model.getGenres()) {
                     genres.add(genre.getName());
                 }
             }
@@ -209,7 +209,7 @@ public class ContentService {
 
             List<String> productionCompanies = new java.util.ArrayList<>();
             if (model.getProductionCompanies() != null) {
-                for (MovieModel.ProductionCompany company : model.getProductionCompanies()) {
+                for (MovieDto.ProductionCompany company : model.getProductionCompanies()) {
                     productionCompanies.add(company.getName());
                 }
             }
@@ -233,7 +233,7 @@ public class ContentService {
 
     private TvSeriesBean fetchAndMapTvSeriesModel(int id) throws ExceptionApplicationController {
         try {
-            TvSeriesModel model = TvSeriesTmdb.getTvSeriesById(id);
+            TvSeriesDto model = TvSeriesTmdb.getTvSeriesById(id);
 
             if (model == null) {
                 throw new ExceptionApplicationController("TV Series with ID " + id + " not found or returned null model from TMDb API.");
@@ -274,7 +274,7 @@ public class ContentService {
 
     public AnimeBean retrieveAnimeById(int id) throws ExceptionApplicationController {
         try {
-            AnimeModel model = AnimeAniList.getAnimeById(id);
+            AnimeDto model = AnimeAniList.getAnimeById(id);
 
             AnimeBean animeBean = new AnimeBean(
                     model.getId(),

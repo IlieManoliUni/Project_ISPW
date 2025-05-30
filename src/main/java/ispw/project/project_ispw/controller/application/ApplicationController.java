@@ -14,7 +14,6 @@ import java.util.List;
 
 public class ApplicationController {
 
-    private UserBean currentUser;
     private String selectedItemCategory;
     private int selectedItemId;
     private String selectedSearchCategory;
@@ -57,11 +56,8 @@ public class ApplicationController {
     }
 
     public UserBean getCurrentUserBean() {
-        return currentUser;
-    }
-
-    public void setCurrentUserBean(UserBean currentUser) {
-        this.currentUser = currentUser;
+        // Delegate to AuthService to get the current user
+        return authService.getCurrentUser();
     }
 
     public String getSelectedItemCategory() {
@@ -105,11 +101,8 @@ public class ApplicationController {
     }
 
     public boolean login(String username, String password) throws ExceptionApplicationController {
-        boolean success = authService.login(username, password);
-        if (success) {
-            setCurrentUserBean(authService.getCurrentUser());
-        }
-        return success;
+        // The authService handles setting its internal currentUser upon successful login
+        return authService.login(username, password);
     }
 
     public boolean registerUser(UserBean userBean) throws ExceptionApplicationController {
@@ -198,7 +191,10 @@ public class ApplicationController {
 
     public void logout() throws ExceptionApplicationController {
         try {
-            this.currentUser = null;
+            // Delegate logout to AuthService
+            authService.logout();
+
+            // Clear other session-related state specific to ApplicationController
             this.selectedList = null;
             this.selectedSearchCategory = null;
             this.searchQuery = null;

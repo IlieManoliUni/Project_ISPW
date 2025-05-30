@@ -11,7 +11,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import ispw.project.project_ispw.exception.ExceptionTmdbApi;
-import ispw.project.project_ispw.model.MovieModel;
+import ispw.project.project_ispw.model.MovieDto;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,7 +75,7 @@ public class MovieTmdb {
         }
     }
 
-    public static MovieModel getMovieById(int movieId) throws ExceptionTmdbApi {
+    public static MovieDto getMovieById(int movieId) throws ExceptionTmdbApi {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(BASE_URL + movieId).newBuilder();
         urlBuilder.addQueryParameter("api_key", apiKey);
         String url = urlBuilder.build().toString();
@@ -83,17 +83,17 @@ public class MovieTmdb {
         String jsonResponse = executeHttpRequest(url);
 
         try {
-            return gson.fromJson(jsonResponse, MovieModel.class);
+            return gson.fromJson(jsonResponse, MovieDto.class);
         } catch (JsonSyntaxException e) {
             throw new ExceptionTmdbApi("Failed to parse JSON for movie ID " + movieId + ": " + e.getMessage(), e);
         }
     }
 
-    public static List<MovieModel> searchMovies(String query) throws ExceptionTmdbApi {
+    public static List<MovieDto> searchMovies(String query) throws ExceptionTmdbApi {
         return searchMovies(query, 1);
     }
 
-    public static List<MovieModel> searchMovies(String query, int page) throws ExceptionTmdbApi {
+    public static List<MovieDto> searchMovies(String query, int page) throws ExceptionTmdbApi {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(SEARCH_MOVIE_URL).newBuilder();
         urlBuilder.addQueryParameter("api_key", apiKey);
         urlBuilder.addQueryParameter("query", query);
@@ -106,10 +106,10 @@ public class MovieTmdb {
             JsonObject rootJson = gson.fromJson(jsonResponse, JsonObject.class);
             JsonArray resultsArray = rootJson.getAsJsonArray("results");
 
-            List<MovieModel> movies = new ArrayList<>();
+            List<MovieDto> movies = new ArrayList<>();
             if (resultsArray != null) {
                 for (int i = 0; i < resultsArray.size(); i++) {
-                    MovieModel movie = gson.fromJson(resultsArray.get(i), MovieModel.class);
+                    MovieDto movie = gson.fromJson(resultsArray.get(i), MovieDto.class);
                     movies.add(movie);
                 }
             }

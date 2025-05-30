@@ -21,9 +21,10 @@ public class AuthService {
         try {
             UserBean user = userDao.retrieveByUsername(username);
             if (user != null && user.getPassword().equals(password)) {
-                this.currentUser = user;
+                this.currentUser = user; // AuthService sets its own currentUser
                 return true;
             } else {
+                this.currentUser = null; // Ensure currentUser is null on failed login attempt
                 return false;
             }
         } catch (Exception e) {
@@ -43,5 +44,12 @@ public class AuthService {
         } catch (Exception e) {
             throw new ExceptionApplicationController("Failed to register user: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Clears the currently logged-in user, effectively logging them out.
+     */
+    public void logout() {
+        this.currentUser = null;
     }
 }

@@ -2,6 +2,7 @@ module ispw.project.project_ispw {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;
+    requires javafx.base;
 
     requires org.controlsfx.controls;
     requires com.dlsc.formsfx;

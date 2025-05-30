@@ -9,8 +9,9 @@ public class LogoutCommand implements CliCommand {
     public String execute(GraphicControllerCli context, String args) throws ExceptionApplicationController, ExceptionUser {
         if (context.isUserLoggedIn()) {
             String username = context.getCurrentUserBean().getUsername();
+
             context.getApplicationController().logout();
-            context.setCurrentUserBean(null);
+
             return "User '" + username + "' logged out successfully.";
         } else {
             return "No user is currently logged in.";

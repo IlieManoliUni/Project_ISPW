@@ -3,7 +3,7 @@ package ispw.project.project_ispw.model;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
-public class MovieModel {
+public class MovieDto {
     private int id;
     private String title;
 
@@ -225,7 +225,7 @@ public class MovieModel {
         this.spokenLanguages = spokenLanguages;
     }
 
-    public MovieModel() {
+    public MovieDto() {
         // Empty constructor
     }
 

@@ -11,7 +11,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import ispw.project.project_ispw.exception.ExceptionTmdbApi;
-import ispw.project.project_ispw.model.TvSeriesModel;
+import ispw.project.project_ispw.model.TvSeriesDto;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,12 +80,12 @@ public class TvSeriesTmdb {
         }
     }
 
-    public static TvSeriesModel getTvSeriesById(int tvSeriesId) throws ExceptionTmdbApi {
+    public static TvSeriesDto getTvSeriesById(int tvSeriesId) throws ExceptionTmdbApi {
         String url = BASE_URL + tvSeriesId + "?api_key=" + apiKey;
         String jsonResponse = executeHttpRequest(url);
 
         try {
-            TvSeriesModel tvSeries = gson.fromJson(jsonResponse, TvSeriesModel.class);
+            TvSeriesDto tvSeries = gson.fromJson(jsonResponse, TvSeriesDto.class);
             if (tvSeries == null) {
                 throw new ExceptionTmdbApi("Failed to deserialize TV Series details for ID " + tvSeriesId);
             }
@@ -95,11 +95,11 @@ public class TvSeriesTmdb {
         }
     }
 
-    public static List<TvSeriesModel> searchTvSeries(String query) throws ExceptionTmdbApi {
+    public static List<TvSeriesDto> searchTvSeries(String query) throws ExceptionTmdbApi {
         return searchTvSeries(query, 1);
     }
 
-    public static List<TvSeriesModel> searchTvSeries(String query, int page) throws ExceptionTmdbApi {
+    public static List<TvSeriesDto> searchTvSeries(String query, int page) throws ExceptionTmdbApi {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(SEARCH_TV_URL).newBuilder();
         urlBuilder.addQueryParameter("api_key", apiKey);
         urlBuilder.addQueryParameter("query", query);
@@ -112,10 +112,10 @@ public class TvSeriesTmdb {
             JsonObject rootJson = gson.fromJson(jsonResponse, JsonObject.class);
             JsonArray resultsArray = rootJson.getAsJsonArray("results");
 
-            List<TvSeriesModel> tvSeriesList = new ArrayList<>();
+            List<TvSeriesDto> tvSeriesList = new ArrayList<>();
             if (resultsArray != null) {
                 for (int i = 0; i < resultsArray.size(); i++) {
-                    TvSeriesModel tvSeries = parseSingleTvSeriesModel(resultsArray.get(i));
+                    TvSeriesDto tvSeries = parseSingleTvSeriesModel(resultsArray.get(i));
                     if (tvSeries != null) {
                         tvSeriesList.add(tvSeries);
                     }
@@ -126,9 +126,9 @@ public class TvSeriesTmdb {
             throw new ExceptionTmdbApi("Failed to parse JSON for TV series search query '" + query + "': " + e.getMessage(), e);
         }
     }
-    private static TvSeriesModel parseSingleTvSeriesModel(com.google.gson.JsonElement jsonElement) {
+    private static TvSeriesDto parseSingleTvSeriesModel(com.google.gson.JsonElement jsonElement) {
         try {
-            return gson.fromJson(jsonElement, TvSeriesModel.class);
+            return gson.fromJson(jsonElement, TvSeriesDto.class);
         } catch (JsonSyntaxException e) {
             logger.log(Level.WARNING,
                     "Failed to parse TV series element due to JSON syntax error. Element: {0}. Error: {1}",

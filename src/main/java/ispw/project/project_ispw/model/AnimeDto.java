@@ -2,7 +2,7 @@ package ispw.project.project_ispw.model;
 
 import java.time.LocalDate;
 
-public class AnimeModel {
+public class AnimeDto {
     private int id;
     private Title title;
     private String description;
@@ -118,7 +118,7 @@ public class AnimeModel {
     }
 
 
-    public AnimeModel() {
+    public AnimeDto() {
         // Empty constructor
     }
 

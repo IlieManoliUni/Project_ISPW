@@ -2,7 +2,7 @@ package ispw.project.project_ispw.controller.graphic.cli;
 
 import ispw.project.project_ispw.controller.application.ApplicationController;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
-import ispw.project.project_ispw.bean.UserBean;
+import ispw.project.project_ispw.bean.UserBean; // Still needed for method signatures and return types
 import ispw.project.project_ispw.controller.graphic.GraphicController;
 import ispw.project.project_ispw.controller.graphic.cli.command.*;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
@@ -25,7 +25,6 @@ public class GraphicControllerCli implements GraphicController {
     private static GraphicControllerCli instance;
 
     private final ApplicationController applicationController;
-    private UserBean currentUserBean = null;
     private final Map<String, CliCommand> commands;
     private Stage primaryStage;
 
@@ -79,16 +78,12 @@ public class GraphicControllerCli implements GraphicController {
         return this.applicationController;
     }
 
-    public void setCurrentUserBean(UserBean user) {
-        this.currentUserBean = user;
-    }
-
     public UserBean getCurrentUserBean() {
-        return currentUserBean;
+        return applicationController.getCurrentUserBean();
     }
 
     public boolean isUserLoggedIn() {
-        return currentUserBean != null;
+        return applicationController.getCurrentUserBean() != null;
     }
 
 

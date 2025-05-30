@@ -11,10 +11,11 @@ public class LoginCommand implements CliCommand {
         if (loginArgs.length < 2) {
             return "Usage: login <username> <password>";
         }
+
         boolean success = context.getApplicationController().login(loginArgs[0], loginArgs[1]);
+
         if (success) {
-            context.setCurrentUserBean(context.getApplicationController().getCurrentUserBean());
-            return "User '" + context.getCurrentUserBean().getUsername() + "' logged in successfully.";
+            return "User '" + context.getApplicationController().getCurrentUserBean().getUsername() + "' logged in successfully.";
         } else {
             return "Login failed. Invalid credentials.";
         }

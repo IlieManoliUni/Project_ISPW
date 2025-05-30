@@ -3,7 +3,7 @@ package ispw.project.project_ispw.model;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
-public class TvSeriesModel {
+public class TvSeriesDto {
     private int id;
 
     @SerializedName("name")
@@ -72,7 +72,7 @@ public class TvSeriesModel {
 
     private static final String NAME_FIELD_PREFIX = ", name='";
 
-    public TvSeriesModel() {
+    public TvSeriesDto() {
         //Empty constructor
     }
 
