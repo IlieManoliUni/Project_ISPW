@@ -61,12 +61,6 @@ public class UserModel {
                         authErrorMessage.set("Invalid credentials.");
                     }
                 });
-            } catch (ExceptionApplicationController e) {
-                Platform.runLater(() -> {
-                    currentUserProperty.set(null);
-                    authStatusMessage.set("Login failed.");
-                    authErrorMessage.set(e.getMessage());
-                });
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     currentUserProperty.set(null);
