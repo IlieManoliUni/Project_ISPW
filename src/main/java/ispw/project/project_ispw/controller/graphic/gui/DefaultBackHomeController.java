@@ -54,7 +54,7 @@ public class DefaultBackHomeController implements NavigableController {
 
 
         userModel.loggedInProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue && oldValue) { // If user was logged in and now is not
+            if (!newValue.booleanValue() && oldValue.booleanValue()) { // If user was logged in and now is not
                 graphicControllerGui.setScreen("logIn");
                 showAlert(Alert.AlertType.INFORMATION, "Logout", "You have been successfully logged out.");
             }

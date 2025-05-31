@@ -1,20 +1,23 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
 import ispw.project.project_ispw.bean.UserBean;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.model.UserModel;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SignInController implements NavigableController {
+public class SignInController implements NavigableController, UserAwareController {
 
     private static final Logger LOGGER = Logger.getLogger(SignInController.class.getName());
+    private static final String SYSTEM_ERROR_TITLE = "System Error";
+    private static final String SCREEN_HOME = "home";
 
     @FXML
     private TextField usernameField;
@@ -29,9 +32,17 @@ public class SignInController implements NavigableController {
     private Label errorMessageLabel;
 
     private GraphicControllerGui graphicControllerGui;
+    private UserModel userModel;
+
+    @FXML
+    private HBox headerBar;
 
     @FXML
     private DefaultBackHomeController headerBarController;
+
+    public SignInController() {
+        // Empty constructor
+    }
 
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
@@ -44,44 +55,107 @@ public class SignInController implements NavigableController {
         }
     }
 
+    @Override
+    public void setUserModel(UserModel userModel) {
+        this.userModel = userModel;
+
+        if (headerBarController != null) {
+            headerBarController.setUserModel(this.userModel);
+        }
+
+        userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.booleanValue()) {
+                graphicControllerGui.setScreen(SCREEN_HOME);
+            } else {
+                clearFields();
+            }
+        });
+
+        if (this.userModel.loggedInProperty().get()) {
+            graphicControllerGui.setScreen(SCREEN_HOME);
+        } else {
+            clearFields();
+        }
+    }
+
     @FXML
     private void initialize() {
-        clearFields();
+        // Initialization logic
     }
 
     @FXML
     private void handleSignInButtonAction() {
+        // 1. Get input and clear previous error messages
         String username = usernameField.getText();
         String password = passwordField.getText();
+        clearErrorMessage(); // New helper method
 
-        errorMessageLabel.setText("");
-
-        if (username.isEmpty() || password.isEmpty()) {
-            errorMessageLabel.setText("Both username and password are required.");
-            showAlert(Alert.AlertType.WARNING, "Input Required", "Both username and password are required.");
-            return;
+        // 2. Validate input fields
+        if (!validateInput(username, password)) { // New helper method
+            return; // Validation failed, message and alert already handled
         }
 
+        // 3. Check if user is already logged in
+        if (checkAlreadyLoggedIn()) { // New helper method
+            return; // Already logged in, message and redirect already handled
+        }
+
+        // 4. Attempt to register the user
+        registerUser(username, password); // New helper method
+    }
+
+    private void clearErrorMessage() {
+        if (errorMessageLabel != null) {
+            errorMessageLabel.setText("");
+        }
+    }
+
+    private boolean validateInput(String username, String password) {
+        if (username.isEmpty() || password.isEmpty()) {
+            if (errorMessageLabel != null) {
+                errorMessageLabel.setText("Both username and password are required.");
+            }
+            showAlert(Alert.AlertType.WARNING, "Input Required", "Both username and password are required.");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkAlreadyLoggedIn() {
+        if (userModel != null && userModel.loggedInProperty().get()) {
+            showAlert(Alert.AlertType.INFORMATION, "Already Logged In", "You are already logged in. Redirecting to home.");
+            graphicControllerGui.setScreen(SCREEN_HOME);
+            return true;
+        }
+        return false;
+    }
+
+    private void registerUser(String username, String password) {
         try {
             UserBean newUserBean = new UserBean(username, password);
 
-            boolean registrationAndLoginSuccessful = graphicControllerGui.registerUser(newUserBean);
-
-            if (!registrationAndLoginSuccessful) {
-                String message = "Registration or automatic login failed. Please try again or log in manually.";
-                errorMessageLabel.setText("Registration or automatic login failed. Please try again.");
-                showAlert(Alert.AlertType.ERROR, "Operation Failed", message);
+            if (userModel == null) {
+                LOGGER.log(Level.SEVERE, "UserModel is null. Cannot register user.");
+                if (errorMessageLabel != null) {
+                    errorMessageLabel.setText("System error: user model not initialized.");
+                }
+                showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "A system error occurred. Please try again later.");
+                return;
             }
+
+            userModel.register(newUserBean);
+
         } catch (IllegalArgumentException e) {
-            errorMessageLabel.setText(e.getMessage());
+            if (errorMessageLabel != null) {
+                errorMessageLabel.setText(e.getMessage());
+            }
             showAlert(Alert.AlertType.WARNING, "Validation Error", e.getMessage());
-        } catch (ExceptionApplicationController e) {
-            errorMessageLabel.setText(e.getMessage());
-            showAlert(Alert.AlertType.ERROR, "Operation Failed", e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "An unexpected error occurred during registration or login.", e);
-            errorMessageLabel.setText("An unexpected error occurred.");
-            showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during registration or login.");
+            LOGGER.log(Level.SEVERE, "An unexpected error occurred during registration.", e);
+            if (errorMessageLabel != null) {
+                errorMessageLabel.setText("An unexpected error occurred.");
+            }
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during registration: " + e.getMessage());
         }
     }
 

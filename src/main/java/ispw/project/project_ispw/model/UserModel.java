@@ -1,8 +1,8 @@
-package ispw.project.project_ispw.model; // Assuming this package for your application's models
+package ispw.project.project_ispw.model;
 
-import ispw.project.project_ispw.bean.UserBean; // Your existing UserBean
-import ispw.project.project_ispw.controller.application.util.AuthService; // Your existing AuthService
-import ispw.project.project_ispw.exception.ExceptionApplicationController; // Your custom exception
+import ispw.project.project_ispw.bean.UserBean;
+import ispw.project.project_ispw.controller.application.util.AuthService;
+import ispw.project.project_ispw.exception.ExceptionApplicationController;
 
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -15,48 +15,47 @@ import javafx.beans.property.StringProperty;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class UserModel {
+
+    private static final Logger logger = Logger.getLogger(UserModel.class.getName());
 
     private final AuthService authService;
     private final ExecutorService executorService;
 
-    // Observable properties for UI binding
     private final ObjectProperty<UserBean> currentUserProperty = new SimpleObjectProperty<>();
     private final BooleanProperty loggedInProperty = new SimpleBooleanProperty(false);
-    private final StringProperty usernameDisplayProperty = new SimpleStringProperty(""); // For UI display
-    private final StringProperty authStatusMessage = new SimpleStringProperty(""); // For login/registration feedback
-    private final StringProperty authErrorMessage = new SimpleStringProperty(""); // For auth errors
+    private final StringProperty usernameDisplayProperty = new SimpleStringProperty("");
+    private final StringProperty authStatusMessage = new SimpleStringProperty("");
+    private final StringProperty authErrorMessage = new SimpleStringProperty("");
 
     public UserModel(AuthService authService) {
         this.authService = authService;
         this.executorService = Executors.newSingleThreadExecutor();
 
-        // Bind loggedInProperty and usernameDisplayProperty to currentUserProperty
         currentUserProperty.addListener((obs, oldUser, newUser) -> {
             boolean isLoggedIn = newUser != null;
             loggedInProperty.set(isLoggedIn);
             usernameDisplayProperty.set(isLoggedIn ? newUser.getUsername() : "");
             authStatusMessage.set(isLoggedIn ? "Logged in as " + newUser.getUsername() : "");
-            authErrorMessage.set(null); // Clear errors on user status change
+            authErrorMessage.set(null);
         });
     }
 
-    // --- Public Methods for Controller to Call (Initiate Actions) ---
-
     public void login(String username, String password) {
         authStatusMessage.set("Attempting login...");
-        authErrorMessage.set(null); // Clear previous errors
+        authErrorMessage.set(null);
 
         executorService.submit(() -> {
             try {
                 boolean success = authService.login(username, password);
                 Platform.runLater(() -> {
                     if (success) {
-                        // Get the current user from AuthService and set it in our observable property
                         currentUserProperty.set(authService.getCurrentUser());
                         authStatusMessage.set("Login successful!");
                     } else {
-                        // On failed login, ensure currentUserProperty is null
                         currentUserProperty.set(null);
                         authStatusMessage.set("Login failed. Invalid username or password.");
                         authErrorMessage.set("Invalid credentials.");
@@ -69,16 +68,17 @@ public class UserModel {
                     authErrorMessage.set(e.getMessage());
                 });
             } catch (Exception e) {
-                // Catch unexpected exceptions
                 Platform.runLater(() -> {
                     currentUserProperty.set(null);
                     authStatusMessage.set("An unexpected error occurred during login.");
                     authErrorMessage.set("Error: " + e.getMessage());
-                    System.err.println("Login error: " + e.getMessage()); // Log for debugging
+                    logger.log(Level.SEVERE, e, () -> "Login error: " + e.getMessage());
                 });
             }
         });
     }
+
+    // In UserModel.java
 
     public void register(UserBean newUserBean) {
         authStatusMessage.set("Attempting registration...");
@@ -86,12 +86,16 @@ public class UserModel {
 
         executorService.submit(() -> {
             try {
-                boolean success = authService.registerUser(newUserBean);
+                boolean registrationSuccess = authService.registerUser(newUserBean); // Calls AuthService to register
+
                 Platform.runLater(() -> {
-                    if (success) {
-                        authStatusMessage.set("Registration successful! You can now log in.");
-                        authErrorMessage.set(null);
-                        // Optionally auto-login, or just clear form fields
+                    if (registrationSuccess) {
+                        // --- THE CORRECTED AUTO-LOGIN LOGIC WITHIN USERMODEL ---
+                        // After successful registration, use the UserModel's own login method.
+                        // This will correctly update currentUserProperty and loggedInProperty.
+                        login(newUserBean.getUsername(), newUserBean.getPassword()); // Calls UserModel's login method
+                        authStatusMessage.set("Registration successful. Logging in...");
+                        // --- END CORRECTED AUTO-LOGIN LOGIC ---
                     } else {
                         authStatusMessage.set("Registration failed.");
                         // Specific messages might be handled by AuthService and propagated
@@ -106,7 +110,7 @@ public class UserModel {
                 Platform.runLater(() -> {
                     authStatusMessage.set("An unexpected error occurred during registration.");
                     authErrorMessage.set("Error: " + e.getMessage());
-                    System.err.println("Registration error: " + e.getMessage()); // Log for debugging
+                    logger.log(Level.SEVERE, e, () -> "Registration error: " + e.getMessage());
                 });
             }
         });
@@ -115,9 +119,9 @@ public class UserModel {
     public void logout() {
         executorService.submit(() -> {
             try {
-                authService.logout(); // Delegate actual logout to AuthService
+                authService.logout();
                 Platform.runLater(() -> {
-                    currentUserProperty.set(null); // Clear the observable user
+                    currentUserProperty.set(null);
                     authStatusMessage.set("Logged out.");
                     authErrorMessage.set(null);
                 });
@@ -129,8 +133,6 @@ public class UserModel {
             }
         });
     }
-
-    // --- Observable Property Getters (for UI Binding) ---
 
     public ObjectProperty<UserBean> currentUserProperty() {
         return currentUserProperty;
@@ -152,9 +154,7 @@ public class UserModel {
         return authErrorMessage;
     }
 
-    // --- Lifecycle Methods ---
-
     public void shutdown() {
-        executorService.shutdownNow(); // Attempt to stop all running tasks
+        executorService.shutdownNow();
     }
 }

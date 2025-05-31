@@ -11,7 +11,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonSyntaxException;
 import ispw.project.project_ispw.exception.ExceptionAniListApi;
-import ispw.project.project_ispw.model.AnimeDto;
+import ispw.project.project_ispw.model.AnimeModel;
 
 import java.io.IOException;
 import java.util.List;
@@ -74,7 +74,7 @@ public class AnimeAniList {
         }
     }
 
-    public static AnimeDto getAnimeById(int animeId) throws ExceptionAniListApi {
+    public static AnimeModel getAnimeById(int animeId) throws ExceptionAniListApi {
         String query = """
                 query ($id: Int) {
                   Media(id: $id, type: ANIME) {
@@ -125,7 +125,7 @@ public class AnimeAniList {
             throw new ExceptionAniListApi("No anime found with ID: " + animeId);
         }
 
-        AnimeDto anime = gson.fromJson(mediaJson, AnimeDto.class);
+        AnimeModel anime = gson.fromJson(mediaJson, AnimeModel.class);
 
         if (anime.getDescription() != null) {
             anime.setDescription(stripHtmlTags(anime.getDescription()));
@@ -134,7 +134,7 @@ public class AnimeAniList {
         return anime;
     }
 
-    public static List<AnimeDto> searchAnime(String searchString) throws ExceptionAniListApi {
+    public static List<AnimeModel> searchAnime(String searchString) throws ExceptionAniListApi {
         String query = """
                 query ($search: String) {
                   Page(perPage: 10) {
@@ -184,11 +184,11 @@ public class AnimeAniList {
         JsonObject pageJson = rootJson.getAsJsonObject("data").getAsJsonObject("Page");
         JsonArray mediaArrayJson = pageJson.getAsJsonArray("media");
 
-        List<AnimeDto> animeList = new ArrayList<>();
+        List<AnimeModel> animeList = new ArrayList<>();
         if (mediaArrayJson != null) {
             for (int i = 0; i < mediaArrayJson.size(); i++) {
                 JsonObject animeJson = mediaArrayJson.get(i).getAsJsonObject();
-                AnimeDto anime = gson.fromJson(animeJson, AnimeDto.class);
+                AnimeModel anime = gson.fromJson(animeJson, AnimeModel.class);
 
                 if (anime.getDescription() != null) {
                     anime.setDescription(stripHtmlTags(anime.getDescription()));

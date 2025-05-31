@@ -1,9 +1,10 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
-import ispw.project.project_ispw.bean.AnimeBean;
-import ispw.project.project_ispw.bean.MovieBean;
-import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.model.AnimeModel;
+import ispw.project.project_ispw.model.MovieModel;
+import ispw.project.project_ispw.model.TvSeriesModel;
+import ispw.project.project_ispw.model.UserModel;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -23,9 +24,11 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SearchController implements NavigableController {
+public class SearchController implements NavigableController, UserAwareController {
 
     private static final Logger LOGGER = Logger.getLogger(SearchController.class.getName());
+    private static final String SYSTEM_ERROR_TITLE = "System Error";
+    private static final String SCREEN_LOGIN = "logIn"; // This constant is still useful for *other* login-required actions
 
     @FXML
     private ListView<String> listView;
@@ -35,11 +38,15 @@ public class SearchController implements NavigableController {
 
     private ObservableList<String> items = FXCollections.observableArrayList();
     private GraphicControllerGui graphicControllerGui;
+    private UserModel userModel;
 
-    private final Map<String, Object> searchResultBeanMap = new HashMap<>();
+    private final Map<String, Object> searchResultModelMap = new HashMap<>();
 
     private String currentSearchCategory;
     private String currentSearchQuery;
+
+    @FXML
+    private HBox headerBar;
 
     @FXML
     private DefaultBackHomeController headerBarController;
@@ -59,34 +66,66 @@ public class SearchController implements NavigableController {
         this.currentSearchCategory = graphicControllerGui.getApplicationController().getSelectedSearchCategory();
         this.currentSearchQuery = graphicControllerGui.getApplicationController().getSearchQuery();
 
-        if (currentSearchCategory != null && currentSearchQuery != null && !currentSearchQuery.isEmpty()) {
-            searchResultsLabel.setText(String.format("Search Results for '%s' in %s:", currentSearchQuery, currentSearchCategory));
-            performSearch();
-        } else {
-            showAlert(Alert.AlertType.WARNING, "No Search Performed", "Please provide a search category and query.");
-            graphicControllerGui.setScreen("home");
-        }
-
         listView.setItems(items);
         listView.setCellFactory(param -> new CustomListCell());
     }
 
+    @Override
+    public void setUserModel(UserModel userModel) {
+        this.userModel = userModel;
+
+        if (headerBarController != null) {
+            headerBarController.setUserModel(this.userModel);
+        }
+
+        userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.booleanValue()) { // User just logged out
+                // IMPORTANT: Only clear results or redirect IF the results themselves depend on user login,
+                // or if the user was logged in and explicitly logs out from this screen.
+                // For a public search, you might choose to keep results visible but disable/hide login-required features.
+                // For now, let's keep the current behavior of clearing results on logout for simplicity.
+                items.clear();
+                searchResultModelMap.clear();
+                searchResultsLabel.setText("Search Results (Logged Out)");
+                showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been logged out. Search results cleared.");
+                graphicControllerGui.setScreen(SCREEN_LOGIN); // Redirect to login after logout
+            } else { // User just logged in
+                // If there's a pending search query, re-run it
+                if (currentSearchCategory != null && currentSearchQuery != null && !currentSearchQuery.isEmpty()) {
+                    searchResultsLabel.setText(String.format("Search Results for '%s' in %s:", currentSearchQuery, currentSearchCategory));
+                    performSearch();
+                }
+            }
+        });
+
+        // Initial search execution when the controller is set up with the UserModel
+        // This ensures search results are loaded whether user is logged in or not.
+        if (currentSearchCategory != null && currentSearchQuery != null && !currentSearchQuery.isEmpty()) {
+            searchResultsLabel.setText(String.format("Search Results for '%s' in %s:", currentSearchQuery, currentSearchCategory));
+            performSearch();
+        } else {
+            showAlert(Alert.AlertType.WARNING, "No Search Performed", "Please provide a search category and query. Redirecting to home.");
+            graphicControllerGui.setScreen("home");
+        }
+    }
+
     @FXML
     private void initialize() {
-        //no elements to initialize
+        // No elements to initialize beyond FXML's injection.
     }
 
     private void performSearch() {
         items.clear();
-        searchResultBeanMap.clear();
+        searchResultModelMap.clear();
 
         if (graphicControllerGui == null) {
-            showAlert(Alert.AlertType.ERROR, "System Error Application", "Application setup issue. Please restart.");
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "Application setup issue. Please restart.");
             return;
         }
 
         try {
             List<?> results = null;
+            // The search methods in ApplicationController should not require login for public content.
             switch (currentSearchCategory) {
                 case "Movie":
                     results = graphicControllerGui.getApplicationController().searchMovies(currentSearchQuery);
@@ -105,8 +144,8 @@ public class SearchController implements NavigableController {
         } catch (ExceptionApplicationController e) {
             showAlert(Alert.AlertType.ERROR, "Search Error", e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, () -> "An unexpected error occurred during search: " + e.getMessage());
-            showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred during search: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, e, () -> "An unexpected error occurred during search: " + e.getMessage()); // Added 'e' for full stack trace
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during search: " + e.getMessage());
         }
 
         if (items.isEmpty()) {
@@ -119,34 +158,33 @@ public class SearchController implements NavigableController {
             return;
         }
 
-        for (Object bean : results) {
+        for (Object model : results) {
             String itemString;
             int itemId = 0;
 
-            switch (bean) {
-                case MovieBean movie -> {
+            switch (model) {
+                case MovieModel movie -> {
                     itemString = "Movie: " + movie.getTitle();
-                    itemId = movie.getIdMovieTmdb();
+                    itemId = movie.getId();
                 }
-                case TvSeriesBean tvSeries -> {
+                case TvSeriesModel tvSeries -> {
                     itemString = "TV Series: " + tvSeries.getName();
-                    itemId = tvSeries.getIdTvSeriesTmdb();
+                    itemId = tvSeries.getId();
                 }
-                case AnimeBean anime -> {
+                case AnimeModel anime -> {
                     itemString = "Anime: " + anime.getTitle();
-                    itemId = anime.getIdAnimeTmdb();
+                    itemId = anime.getId();
                 }
                 default -> {
-                    if (LOGGER.isLoggable(Level.WARNING)) {
-                        LOGGER.log(Level.WARNING, String.format("Unexpected bean type found in search results: %s", bean.getClass().getName()));
-                    }
+                    LOGGER.log(Level.WARNING, "Unexpected model type found in search results: {0}", model.getClass().getName());
                     continue;
                 }
             }
 
+            // Create a unique key that includes the ID to ensure proper mapping
             String key = itemString + " (ID: " + itemId + ")";
             items.add(key);
-            searchResultBeanMap.put(key, bean);
+            searchResultModelMap.put(key, model);
         }
     }
 
@@ -190,8 +228,8 @@ public class SearchController implements NavigableController {
             }
 
             try {
-                Object itemBean = searchResultBeanMap.get(itemString);
-                if (itemBean == null) {
+                Object itemModel = searchResultModelMap.get(itemString);
+                if (itemModel == null) {
                     showAlert(Alert.AlertType.ERROR, "Item Not Found", "Selected item details could not be retrieved.");
                     return;
                 }
@@ -199,18 +237,19 @@ public class SearchController implements NavigableController {
                 String category;
                 int id;
 
-                switch (itemBean) {
-                    case MovieBean movie -> {
+                // Extract category and ID from the bean to pass to navigateToItemDetails
+                switch (itemModel) {
+                    case MovieModel movie -> {
                         category = "Movie";
-                        id = movie.getIdMovieTmdb();
+                        id = movie.getId();
                     }
-                    case TvSeriesBean tvSeries -> {
+                    case TvSeriesModel tvSeries -> {
                         category = "TvSeries";
-                        id = tvSeries.getIdTvSeriesTmdb();
+                        id = tvSeries.getId();
                     }
-                    case AnimeBean anime -> {
+                    case AnimeModel anime -> {
                         category = "Anime";
-                        id = anime.getIdAnimeTmdb();
+                        id = anime.getId();
                     }
                     default -> {
                         showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot show details for this item type.");
@@ -218,12 +257,12 @@ public class SearchController implements NavigableController {
                     }
                 }
 
+                // Navigate to the 'show' screen
                 graphicControllerGui.navigateToItemDetails(category, id);
 
-            } catch (ExceptionApplicationController e) {
-                showAlert(Alert.AlertType.ERROR, "Error Showing Details", e.getMessage());
-            } catch (Exception _) {
-                showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while showing details.");
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, e, () -> "An unexpected error occurred while showing details: " + e.getMessage());
+                showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred while showing details: " + e.getMessage());
             }
         }
     }

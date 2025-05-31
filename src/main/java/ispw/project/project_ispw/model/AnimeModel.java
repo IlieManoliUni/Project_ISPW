@@ -1,8 +1,9 @@
 package ispw.project.project_ispw.model;
 
 import java.time.LocalDate;
+import java.util.List;
 
-public class AnimeDto {
+public class AnimeModel {
     private int id;
     private Title title;
     private String description;
@@ -16,7 +17,7 @@ public class AnimeDto {
     private Integer meanScore;
     private String status;
     private AiringSchedule nextAiringEpisode;
-    private String[] genres;
+    private List<String> genres;
 
     public static class Title {
         private String romaji;
@@ -39,25 +40,6 @@ public class AnimeDto {
             return "Title{" +
                     "romaji='" + romaji + '\'' +
                     ", english='" + english + '\'' +
-                    ", nativeTitle='" + nativeTitle + '\'' +
-                    '}';
-        }
-    }
-
-    public static class CoverImage {
-        private String medium;
-
-        public CoverImage() {
-            // Empty constructor
-        }
-
-        public String getMedium() { return medium; }
-        public void setMedium(String medium) { this.medium = medium; }
-
-        @Override
-        public String toString() {
-            return "CoverImage{" +
-                    "medium='" + medium + '\'' +
                     '}';
         }
     }
@@ -95,6 +77,24 @@ public class AnimeDto {
         }
     }
 
+    public static class CoverImage {
+        private String medium; // Only need 'medium' if that's all you're querying
+
+        public CoverImage() {
+            // Empty constructor
+        }
+
+        public String getMedium() { return medium; }
+        public void setMedium(String medium) { this.medium = medium; }
+
+        @Override
+        public String toString() {
+            return "CoverImage{" +
+                    "medium='" + medium + '\'' +
+                    '}';
+        }
+    }
+
     public static class AiringSchedule {
         private Integer episode;
         private Long airingAt;
@@ -118,7 +118,7 @@ public class AnimeDto {
     }
 
 
-    public AnimeDto() {
+    public AnimeModel() {
         // Empty constructor
     }
 
@@ -140,8 +140,8 @@ public class AnimeDto {
     public Integer getDuration() { return duration; }
     public void setDuration(Integer duration) { this.duration = duration; }
 
-    public String[] getGenres() { return genres; }
-    public void setGenres(String[] genres) { this.genres = genres; }
+    public List<String> getGenres() { return genres; }
+    public void setGenres(List<String> genres) { this.genres = genres; }
 
     public String getCountryOfOrigin() { return countryOfOrigin; }
     public void setCountryOfOrigin(String countryOfOrigin) { this.countryOfOrigin = countryOfOrigin; }
@@ -173,7 +173,7 @@ public class AnimeDto {
                 ", coverImage=" + coverImage +
                 ", episodes=" + episodes +
                 ", duration=" + duration +
-                ", genres=" + java.util.Arrays.toString(genres) +
+                ", genres=" + genres +
                 ", countryOfOrigin='" + countryOfOrigin + '\'' +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +

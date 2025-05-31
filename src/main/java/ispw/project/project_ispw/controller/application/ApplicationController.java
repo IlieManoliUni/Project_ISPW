@@ -9,6 +9,9 @@ import ispw.project.project_ispw.controller.application.state.DemoModeState;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
 import ispw.project.project_ispw.controller.application.util.*;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.model.AnimeModel;
+import ispw.project.project_ispw.model.MovieModel;
+import ispw.project.project_ispw.model.TvSeriesModel;
 
 import java.util.List;
 
@@ -53,6 +56,11 @@ public class ApplicationController {
 
     public ApplicationController() {
         this(new DemoModeState());
+    }
+
+    // NEW: Getter for AuthService, needed by UserModel
+    public AuthService getAuthService() {
+        return authService;
     }
 
     public UserBean getCurrentUserBean() {
@@ -109,27 +117,27 @@ public class ApplicationController {
         return authService.registerUser(userBean);
     }
 
-    public List<MovieBean> searchMovies(String query) throws ExceptionApplicationController {
+    public List<MovieModel> searchMovies(String query) throws ExceptionApplicationController {
         return contentService.searchAndMapMovies(query);
     }
 
-    public List<TvSeriesBean> searchTvSeries(String query) throws ExceptionApplicationController {
+    public List<TvSeriesModel> searchTvSeries(String query) throws ExceptionApplicationController {
         return contentService.searchAndMapTvSeries(query);
     }
 
-    public List<AnimeBean> searchAnime(String query) throws ExceptionApplicationController {
+    public List<AnimeModel> searchAnime(String query) throws ExceptionApplicationController {
         return contentService.searchAndMapAnime(query);
     }
 
-    public MovieBean retrieveMovieById(int id) throws ExceptionApplicationController {
+    public MovieModel retrieveMovieById(int id) throws ExceptionApplicationController {
         return contentService.retrieveMovieById(id);
     }
 
-    public TvSeriesBean retrieveTvSeriesById(int id) throws ExceptionApplicationController {
+    public TvSeriesModel retrieveTvSeriesById(int id) throws ExceptionApplicationController {
         return contentService.retrieveTvSeriesById(id);
     }
 
-    public AnimeBean retrieveAnimeById(int id) throws ExceptionApplicationController {
+    public AnimeModel retrieveAnimeById(int id) throws ExceptionApplicationController {
         return contentService.retrieveAnimeById(id);
     }
 

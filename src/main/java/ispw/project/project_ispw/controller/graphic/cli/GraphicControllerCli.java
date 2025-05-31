@@ -70,6 +70,7 @@ public class GraphicControllerCli implements GraphicController {
         commands.put("seetvseriesdetails", new SeeTvSeriesDetailsCommand());
     }
 
+    @Override
     public void setPrimaryStage(Stage primaryStage) {
         this.primaryStage = primaryStage;
     }

@@ -1,25 +1,30 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
 import ispw.project.project_ispw.bean.AnimeBean;
-import ispw.project.project_ispw.bean.ListBean;
+import ispw.project.project_ispw.bean.ListBean; // Still needed for ListModel creation
 import ispw.project.project_ispw.bean.MovieBean;
 import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.model.ListModel; // IMPORT YOUR LISTMODEL HERE
+import ispw.project.project_ispw.model.UserModel;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
 
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class StatsController implements NavigableController {
+public class StatsController implements NavigableController, UserAwareController {
 
     private static final Logger LOGGER = Logger.getLogger(StatsController.class.getName());
 
     private static final String MINUTES = " minutes)\n";
     private static final String MINUTESP = " minutes.\n\n";
+    private static final String SYSTEM_ERROR_TITLE = "System Error";
+    private static final String SCREEN_LOGIN = "logIn";
 
     @FXML
     private TextArea statsTextArea;
@@ -28,18 +33,25 @@ public class StatsController implements NavigableController {
     private Label listNameLabel;
 
     private GraphicControllerGui graphicControllerGui;
-    private ListBean selectedList;
+    private UserModel userModel;
 
+    // CHANGE THIS: Use ListModel instead of ListBean directly for the selected list
+    private ListModel selectedListModel; // Renamed from selectedList
+
+    @FXML
+    private HBox headerBar;
     @FXML
     private DefaultBackHomeController headerBarController;
 
     public StatsController() {
-        //Empty constructor
+        // Empty constructor
     }
 
     @FXML
     private void initialize() {
         statsTextArea.setEditable(false);
+        statsTextArea.setText("");
+        listNameLabel.setText("Stats of List (Not loaded)");
     }
 
     @Override
@@ -51,32 +63,91 @@ public class StatsController implements NavigableController {
         } else {
             LOGGER.log(Level.WARNING, "Header bar controller is null. The header might not function correctly.");
         }
+    }
 
-        this.selectedList = graphicControllerGui.getApplicationController().getSelectedList();
+    @Override
+    public void setUserModel(UserModel userModel) {
+        this.userModel = userModel;
 
-        if (selectedList != null) {
-            listNameLabel.setText(String.format("Stats for: %s", selectedList.getName()));
-            calculateAndDisplayTotalMinutes();
+        if (headerBarController != null) {
+            headerBarController.setUserModel(this.userModel);
+        }
+
+        userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
+            LOGGER.log(Level.INFO, "StatsController Listener: loggedInProperty changed: old={0}, new={1}", new Object[]{oldVal, newVal});
+            if (newVal.booleanValue()) { // User logged in
+                // If a list was previously selected, try to load stats again.
+                // Otherwise, it implies no list was selected, so redirect.
+                if (selectedListModel != null) {
+                    LOGGER.log(Level.INFO, "StatsController Listener: User logged in, list already selected. Recalculating stats.");
+                    // No need to set label text here, it's bound below
+                    calculateAndDisplayTotalMinutes();
+                } else {
+                    LOGGER.log(Level.WARNING, "StatsController Listener: User logged in, but no list selected. Redirecting to home.");
+                    showAlert(Alert.AlertType.WARNING, "No List Selected", "Please select a list to view its statistics. Redirecting to home.");
+                    graphicControllerGui.setScreen("home");
+                }
+            } else { // User logged out
+                LOGGER.log(Level.INFO, "StatsController Listener: User logged out. Clearing stats and redirecting.");
+                statsTextArea.setText("Please log in to view statistics");
+                listNameLabel.setText("Stats of List (Logged Out)");
+                showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been logged out. Statistics cleared.");
+                graphicControllerGui.setScreen(SCREEN_LOGIN);
+                // Clear the selectedListModel reference when logged out
+                selectedListModel = null;
+            }
+        });
+
+        // Initial setup when the controller is first shown
+        if (userModel.loggedInProperty().get()) {
+            LOGGER.log(Level.INFO, "StatsController.setUserModel(): Initial check: User IS logged in.");
+            ListBean initialSelectedListBean = graphicControllerGui.getApplicationController().getSelectedList();
+            if (initialSelectedListBean != null) {
+                // Initialize selectedListModel from the ListBean
+                this.selectedListModel = new ListModel(initialSelectedListBean); // Create a ListModel instance
+                // Bind the label to the name property of the ListModel
+                listNameLabel.textProperty().bind(selectedListModel.nameProperty());
+                calculateAndDisplayTotalMinutes();
+            } else {
+                LOGGER.log(Level.WARNING, "StatsController.setUserModel(): No list selected initially. Redirecting to home.");
+                showAlert(Alert.AlertType.WARNING, "No List Selected", "Please select a list to view its statistics. Redirecting to home.");
+                graphicControllerGui.setScreen("home");
+            }
         } else {
-            showAlert(Alert.AlertType.WARNING, "No List Selected", "Please select a list to view its statistics.");
-            graphicControllerGui.setScreen("home");
+            LOGGER.log(Level.INFO, "StatsController.setUserModel(): Initial check: User IS NOT logged in. Displaying login message.");
+            statsTextArea.setText("Please log in to view statistics.");
+            listNameLabel.setText("Stats of List (Not Logged In)");
+            // No alert or redirect here, as it might be the initial app startup.
         }
     }
 
     private void calculateAndDisplayTotalMinutes() {
-        if (graphicControllerGui == null || selectedList == null) {
-            statsTextArea.setText("Error: Application initialization issue.");
-            showAlert(Alert.AlertType.ERROR, "System Error", "Application is not initialized correctly. Please restart.");
+        if (userModel == null || !userModel.loggedInProperty().get()) {
+            LOGGER.log(Level.WARNING, "calculateAndDisplayTotalMinutes: User not logged in, cannot proceed.");
+            statsTextArea.setText("Please log in to view statistics.");
+            showAlert(Alert.AlertType.ERROR, "Authentication Required", "You must be logged in to view statistics.");
+            graphicControllerGui.setScreen(SCREEN_LOGIN);
+            return;
+        }
+        // Use selectedListModel here, and get the underlying ListBean if needed by ApplicationController
+        if (graphicControllerGui == null || selectedListModel == null) {
+            LOGGER.log(Level.SEVERE, "calculateAndDisplayTotalMinutes: Initialization error. graphicControllerGui or selectedListModel is null.");
+            statsTextArea.setText("Error: Application initialization issue or no list selected.");
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "Application is not initialized correctly or no list selected. Please restart or select a list.");
             return;
         }
 
         try {
-            List<MovieBean> movieList = graphicControllerGui.getApplicationController().getMoviesInList(selectedList);
-            List<TvSeriesBean> tvSeriesList = graphicControllerGui.getApplicationController().getTvSeriesInList(selectedList);
-            List<AnimeBean> animeList = graphicControllerGui.getApplicationController().getAnimeInList(selectedList);
+            // Get the underlying ListBean from the ListModel for ApplicationController calls
+            ListBean underlyingListBean = selectedListModel.getListBean();
+
+            List<MovieBean> movieList = graphicControllerGui.getApplicationController().getMoviesInList(underlyingListBean);
+            List<TvSeriesBean> tvSeriesList = graphicControllerGui.getApplicationController().getTvSeriesInList(underlyingListBean);
+            List<AnimeBean> animeList = graphicControllerGui.getApplicationController().getAnimeInList(underlyingListBean);
 
             StringBuilder details = new StringBuilder();
-            details.append("Details for list '").append(selectedList.getName()).append("':\n\n");
+            // Use selectedListModel.getName() for display
+            details.append("Details for list '").append(selectedListModel.getName()).append("':\n\n");
 
             int totalMinutes = 0;
 
@@ -84,15 +155,19 @@ public class StatsController implements NavigableController {
             totalMinutes += appendTvSeriesStats(tvSeriesList, details);
             totalMinutes += appendAnimeStats(animeList, details);
 
-            details.append("\nOverall Total Runtime for list '").append(selectedList.getName()).append("': ").append(totalMinutes).append(" minutes.");
+            // Use selectedListModel.getName() for final summary
+            details.append("\nOverall Total Runtime for list '").append(selectedListModel.getName()).append("': ").append(totalMinutes).append(" minutes.");
             statsTextArea.setText(details.toString());
+            LOGGER.log(Level.INFO, "Stats calculated for list ''{0}''. Total minutes: {1}", new Object[]{selectedListModel.getName(), totalMinutes});
 
         } catch (ExceptionApplicationController e) {
+            LOGGER.log(Level.SEVERE, "Error calculating stats for list ''{0}'': {1}", new Object[]{selectedListModel.getName(), e.getMessage()});
             statsTextArea.setText("Error calculating stats: " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Stats Error", "Could not calculate statistics for this list: " + e.getMessage());
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "An unexpected error occurred while calculating statistics for list ''{0}'': {1}", new Object[]{selectedListModel.getName(), e.getMessage()});
             statsTextArea.setText("An unexpected error occurred: " + e.getMessage());
-            showAlert(Alert.AlertType.ERROR, "System Error", "An unexpected error occurred while calculating statistics.");
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred while calculating statistics: " + e.getMessage());
         }
     }
 

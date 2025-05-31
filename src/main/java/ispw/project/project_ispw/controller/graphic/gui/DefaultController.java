@@ -1,13 +1,14 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
-import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.model.UserModel; // <-- NEW: Import UserModel
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
+import javafx.beans.binding.Bindings; // <-- NEW: Import Bindings
 
 public class DefaultController implements NavigableController {
 
@@ -26,19 +27,32 @@ public class DefaultController implements NavigableController {
     private ComboBox<String> categoryComboBox;
 
     private GraphicControllerGui graphicControllerGui;
+    private UserModel userModel; // <-- NEW: Declare UserModel instance
 
     @FXML
     private void initialize() {
-        //no elements to initialize
+        // No elements to initialize
+        // Binding and other setup should happen after graphicControllerGui and userModel are set
     }
 
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
 
+        // setupCategoryComboBox() and setupSearchButton() can be called here
+        // as they don't depend on userModel
         setupCategoryComboBox();
-        setupUserButton();
         setupSearchButton();
+
+        // setupUserButton() is now handled by setUserModel's binding logic.
+        // The `setOnAction` for userButton is moved into `setUserModel` or a new setup method
+        // called from `setUserModel` to ensure userModel is available.
+    }
+
+    // <-- NEW: Method to set the UserModel, called by GraphicControllerGui
+    public void setUserModel(UserModel userModel) {
+        this.userModel = userModel;
+        setupUserButtonBindingAndAction(); // Set up button binding and action here
     }
 
     private void setupCategoryComboBox() {
@@ -48,52 +62,48 @@ public class DefaultController implements NavigableController {
         }
     }
 
-    private void setupUserButton() {
-        if (userButton == null) {
+    // <-- MODIFIED: This method now sets up binding and action.
+    private void setupUserButtonBindingAndAction() {
+        if (userButton == null || userModel == null) {
+            // Handle cases where button or model are not yet initialized (e.g., FXML not loaded)
+            if (userButton != null) {
+                userButton.setText("Log In (Loading...)"); // Temporary text
+            }
             return;
         }
 
-        if (graphicControllerGui == null || graphicControllerGui.getApplicationController() == null) {
-            userButton.setText("Log In (Error)");
-            return;
-        }
+        // Bind the userButton's text to the usernameDisplayProperty
+        // If usernameDisplayProperty is empty, display "Log In". Otherwise, display the username.
+        userButton.textProperty().bind(Bindings.createStringBinding(() -> {
+            String username = userModel.usernameDisplayProperty().get();
+            return username.isEmpty() ? "Log In" : username;
+        }, userModel.usernameDisplayProperty()));
 
-        UserBean currentUser = graphicControllerGui.getApplicationController().getCurrentUserBean();
-        if (currentUser != null) {
-            userButton.setText(currentUser.getUsername());
-        } else {
-            userButton.setText("Log In");
-        }
-
-        userButton.setOnAction(event -> handleUserButtonClick());
-    }
-
-    private void handleUserButtonClick() {
-        try {
-            if (graphicControllerGui.getApplicationController().getCurrentUserBean() != null) {
+        // Set the action for the button based on login state
+        userButton.setOnAction(event -> {
+            if (userModel.loggedInProperty().get()) { // Check loggedInProperty from UserModel
                 handleLogout();
             } else {
                 handleLoginClick();
             }
-        } catch (Exception _) {
-            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred.");
-        }
+        });
     }
 
     private void handleLoginClick() {
+        // Navigate to the login screen
         graphicControllerGui.setScreen("logIn");
     }
 
     private void handleLogout() {
-        try {
-            graphicControllerGui.getApplicationController().logout();
-            userButton.setText("Log In");
-            graphicControllerGui.setScreen("logIn");
-        } catch (ExceptionApplicationController e) {
-            showAlert(Alert.AlertType.ERROR, "Logout Error", e.getMessage());
-        } catch (Exception _) {
-            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during logout.");
+        if (userModel == null) {
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "User model not initialized for logout.");
+            return;
         }
+        // Call logout on the UserModel. The UI will update automatically via binding.
+        userModel.logout();
+
+        // After logout, navigate to the login screen or home
+        graphicControllerGui.setScreen("logIn"); // Or "home" depending on desired flow
     }
 
     private void setupSearchButton() {
@@ -122,8 +132,8 @@ public class DefaultController implements NavigableController {
             graphicControllerGui.performSearchAndNavigate(selectedCategory, searchText);
         } catch (ExceptionApplicationController e) {
             showAlert(Alert.AlertType.ERROR, "Search Error", e.getMessage());
-        } catch (Exception _) {
-            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during search.");
+        } catch (Exception e) { // Catch generic Exception
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during search: " + e.getMessage());
         }
     }
 

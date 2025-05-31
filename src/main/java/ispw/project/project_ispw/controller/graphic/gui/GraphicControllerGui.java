@@ -1,11 +1,12 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
 import ispw.project.project_ispw.controller.application.ApplicationController;
-import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
 import ispw.project.project_ispw.controller.graphic.GraphicController;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.model.ListModel;
+import ispw.project.project_ispw.model.UserModel;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -24,65 +25,83 @@ public class GraphicControllerGui implements GraphicController {
 
     private static final Logger LOGGER = Logger.getLogger(GraphicControllerGui.class.getName());
     private static final String SYSTEM_ERROR_TITLE = "System Error";
+    private static final String LOGINSCREEN = "logIn";
 
-    private static GraphicControllerGui instance;
+    private static GraphicControllerGui instance; // Singleton instance
 
     private final Map<String, String> screenPaths = new HashMap<>();
     private final Deque<String> screenHistory = new ArrayDeque<>();
     private Stage primaryStage;
 
     private final ApplicationController applicationController;
+    private final UserModel userModel;
+    private final String fxmlPathPrefix; // NEW: Instance variable to store the passed prefix
 
-    private final Map<String, NavigableController> loadedControllers = new HashMap<>();
-
-    private GraphicControllerGui(PersistenceModeState persistenceState) {
+    // MODIFIED: Constructor now accepts fxmlPathPrefix
+    private GraphicControllerGui(PersistenceModeState persistenceState, String fxmlPathPrefix) {
         this.applicationController = new ApplicationController(persistenceState);
+        this.userModel = new UserModel(this.applicationController.getAuthService());
+        this.fxmlPathPrefix = fxmlPathPrefix; // Assign the parameter to the instance variable
 
-        addScreen("logIn", "/ispw/project/project_ispw/view/gui/logIn.fxml");
-        addScreen("home", "/ispw/project/project_ispw/view/gui/home.fxml");
-        addScreen("list", "/ispw/project/project_ispw/view/gui/list.fxml");
-        addScreen("search", "/ispw/project/project_ispw/view/gui/search.fxml");
-        addScreen("show", "/ispw/project/project_ispw/view/gui/show.fxml");
-        addScreen("signIn", "/ispw/project/project_ispw/view/gui/signIn.fxml");
-        addScreen("stats", "/ispw/project/project_ispw/view/gui/stats.fxml");
+        // Use the instance variable fxmlPathPrefix for adding screens
+        addScreen(LOGINSCREEN, this.fxmlPathPrefix + "logIn.fxml");
+        addScreen("home", this.fxmlPathPrefix + "home.fxml");
+        addScreen("list", this.fxmlPathPrefix + "list.fxml");
+        addScreen("search", this.fxmlPathPrefix + "search.fxml");
+        addScreen("show", this.fxmlPathPrefix + "show.fxml");
+        addScreen("signIn", this.fxmlPathPrefix + "signIn.fxml");
+        addScreen("stats", this.fxmlPathPrefix + "stats.fxml");
     }
 
-    public static synchronized GraphicControllerGui getInstance(PersistenceModeState persistenceState) {
+    // MODIFIED: getInstance now accepts fxmlPathPrefix
+    public static synchronized GraphicControllerGui getInstance(PersistenceModeState persistenceState, String fxmlPathPrefix) {
         if (instance == null) {
-            instance = new GraphicControllerGui(persistenceState);
+            // Pass the fxmlPathPrefix to the constructor
+            instance = new GraphicControllerGui(persistenceState, fxmlPathPrefix);
         }
         return instance;
     }
 
+    @Override
     public void setPrimaryStage(Stage primaryStage) {
         this.primaryStage = primaryStage;
     }
 
-    public void addScreen(String name, String fxmlFile) {
-        screenPaths.put(name, fxmlFile);
+    private void addScreen(String name, String fxmlPath) {
+        screenPaths.put(name, fxmlPath);
     }
 
     public void setScreen(String name) {
         if (!screenPaths.containsKey(name)) {
-            showAlert(Alert.AlertType.ERROR, "Navigation Error", "Screen not registered: " + name);
+            showAlert(Alert.AlertType.ERROR, "Navigation screen error", "Screen not registered: " + name);
+            LOGGER.log(Level.SEVERE, "Attempted to set unregistered screen: {0}", name);
             return;
         }
 
         try {
+            // Use the stored fxmlPathPrefix implicitly via screenPaths.get(name)
             FXMLLoader loader = new FXMLLoader(getClass().getResource(screenPaths.get(name)));
             Parent root = loader.load();
+            NavigableController controller = loader.getController();
 
-            Object specificViewController = loader.getController();
-
-            if (specificViewController instanceof NavigableController navigableController) {
-                navigableController.setGraphicController(this);
-                loadedControllers.put(name, navigableController);
-            } else {
-                if (LOGGER.isLoggable(Level.SEVERE)) LOGGER.log(Level.SEVERE, String.format("Controller for screen '%s' does not implement NavigableController.", name));
+            if (controller == null) {
+                LOGGER.log(Level.SEVERE, "FXMLLoader did not provide a controller for {0}.fxml", name);
+                throw new IOException("Controller not found for FXML: " + name);
             }
 
-            Scene scene = new Scene(root);
-            primaryStage.setScene(scene);
+            controller.setGraphicController(this);
+            if (controller instanceof UserAwareController userAwareController) {
+                userAwareController.setUserModel(this.userModel);
+            }
+
+            Scene scene = primaryStage.getScene();
+            if (scene == null) {
+                scene = new Scene(root);
+                primaryStage.setScene(scene);
+            } else {
+                scene.setRoot(root);
+            }
+
             primaryStage.show();
 
             if (screenHistory.isEmpty() || !screenHistory.peekLast().equals(name)) {
@@ -90,21 +109,23 @@ public class GraphicControllerGui implements GraphicController {
             }
 
         } catch (IOException e) {
-            showAlert(Alert.AlertType.ERROR, "Navigation Error", "Could not load screen: " + name + ".\n" + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Navigation screen error", "Could not load screen: " + name + ".\n" + e.getMessage());
+            LOGGER.log(Level.SEVERE, e, () -> "Failed to load FXML for screen: " + name); // Using supplier for deferred concatenation
         } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during navigation: " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during screen transition: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, e, () -> "An unexpected error occurred during screen transition to " + name); // Using supplier for deferred concatenation
         }
     }
 
     public NavigableController getController(String screenName) {
-        return loadedControllers.get(screenName);
+        LOGGER.log(Level.WARNING, "Attempted to get controller for screen {0}. GraphicControllerGui is configured to load new controllers per screen set, so this will return null.", screenName);
+        return null;
     }
 
     public void goBack() {
         if (screenHistory.size() > 1) {
             screenHistory.pollLast();
             String previousScreen = screenHistory.peekLast();
-
             setScreen(previousScreen);
         } else {
             LOGGER.warning("Attempted to go back with no screen history (only current screen remaining).");
@@ -115,6 +136,8 @@ public class GraphicControllerGui implements GraphicController {
         return applicationController;
     }
 
+    // --- User Authentication and Registration ---
+
     public boolean processLogin(String username, String password) throws ExceptionApplicationController {
         try {
             boolean success = applicationController.login(username, password);
@@ -123,57 +146,92 @@ public class GraphicControllerGui implements GraphicController {
             }
             return success;
         } catch (ExceptionApplicationController e) {
-            throw e;
+            LOGGER.log(Level.WARNING, "Login failed: {0}", e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Navigation login error", "An unexpected error occurred during login.");
+            return false;
         } catch (Exception e) {
-            throw new ExceptionApplicationController("An unexpected error occurred during login.", e);
+            LOGGER.log(Level.SEVERE, "Unexpected error during login process", e);
+            showAlert(Alert.AlertType.ERROR, "Navigation error", "An unexpected error occurred during login.");
+            return false;
         }
     }
 
-    public boolean registerUser(UserBean userBean) throws ExceptionApplicationController {
+    public void logout() {
         try {
-            boolean success = applicationController.registerUser(userBean);
-            if (success) {
-                return processLogin(userBean.getUsername(), userBean.getPassword());
-            }
-            return success;
+            applicationController.logout();
+            userModel.logout();
+            screenHistory.clear();
+            setScreen(LOGINSCREEN);
         } catch (ExceptionApplicationController e) {
-            throw e;
+            LOGGER.log(Level.SEVERE, "Error during logout process: {0}", e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Logout Error", "Failed to logout: " + e.getMessage());
         } catch (Exception e) {
-            throw new ExceptionApplicationController("An unexpected error occurred during registration.", e);
+            LOGGER.log(Level.SEVERE, "An unexpected error occurred during logout", e);
+            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during logout.");
         }
     }
 
-    public void performSearchAndNavigate(String category, String searchText) throws ExceptionApplicationController {
+    // --- Navigation Methods with Data Passing ---
+    // These methods set data in the ApplicationController before navigating.
+    // The target controller will then retrieve this data from ApplicationController in its setUserModel/initialize.
+
+    public void performSearchAndNavigate(String category, String searchText) {
         try {
             applicationController.setSelectedSearchCategory(category);
             applicationController.setSearchQuery(searchText);
             setScreen("search");
         } catch (Exception e) {
-            throw new ExceptionApplicationController("An unexpected error occurred during search navigation.", e);
+            LOGGER.log(Level.SEVERE, "Error navigating to search results", e);
+            showAlert(Alert.AlertType.ERROR, "Navigation error", "An unexpected error occurred while navigating to search results. Please try again.");
         }
     }
 
-    public void navigateToListDetail(ListBean listBean, String screenName) throws ExceptionApplicationController {
+    // CHANGED: This method now accepts ListModel
+    public void navigateToListDetail(ListModel listModel, String screenName) {
         try {
-            applicationController.setSelectedList(listBean);
-            setScreen(screenName);
+            // Extract the underlying ListBean to pass to the ApplicationController
+            applicationController.setSelectedList(listModel.getListBean());
+            setScreen(screenName); // Can be "list" or "stats"
         } catch (Exception e) {
-            throw new ExceptionApplicationController("An unexpected error occurred while navigating to list details.", e);
+            LOGGER.log(Level.SEVERE, "Error navigating to list details", e);
+            showAlert(Alert.AlertType.ERROR, "Navigation Error", "An unexpected error occurred while navigating to list details. Please try again.");
         }
     }
 
-    public void navigateToItemDetails(String category, int id) throws ExceptionApplicationController {
+    public void navigateToItemDetails(String category, int id) {
         try {
             applicationController.setSelectedItemCategory(category);
             applicationController.setSelectedItemId(id);
-
             setScreen("show");
-
         } catch (Exception e) {
-            throw new ExceptionApplicationController("An unexpected error occurred while navigating to item details.", e);
+            LOGGER.log(Level.SEVERE, "Error navigating to item details", e);
+            showAlert(Alert.AlertType.ERROR, "Navigation Error", "An unexpected error occurred while navigating to item details. Please try again.");
         }
     }
 
+    // --- Getters for data passed to controllers (retrieve from ApplicationController) ---
+    // These getters now correctly defer to the ApplicationController
+    public String getSelectedItemCategory() {
+        return applicationController.getSelectedItemCategory();
+    }
+
+    public int getSelectedItemId() {
+        return applicationController.getSelectedItemId();
+    }
+
+    public String getSearchQuery() {
+        return applicationController.getSearchQuery();
+    }
+
+    public String getSelectedSearchCategory() {
+        return applicationController.getSelectedSearchCategory();
+    }
+
+    public ListBean getSelectedList() { // This still returns ListBean as ApplicationController stores ListBean
+        return applicationController.getSelectedList();
+    }
+
+    // --- Alert Helper ---
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
@@ -186,10 +244,15 @@ public class GraphicControllerGui implements GraphicController {
     public void startView() {
         if (primaryStage == null) {
             showAlert(Alert.AlertType.ERROR, "Initialization Error", "Primary Stage not set for GraphicControllerGui.");
+            LOGGER.log(Level.SEVERE, "Primary Stage is null during startView.");
             return;
         }
 
-        setScreen("home");
+        if (userModel.loggedInProperty().get()) {
+            setScreen("home");
+        } else {
+            setScreen(LOGINSCREEN);
+        }
 
         primaryStage.setTitle("Media Hub GUI");
         primaryStage.setWidth(1000);

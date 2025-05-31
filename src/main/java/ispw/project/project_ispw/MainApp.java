@@ -5,6 +5,7 @@ import ispw.project.project_ispw.controller.application.state.FullModeState;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
 import ispw.project.project_ispw.controller.graphic.gui.GraphicControllerGui;
 import ispw.project.project_ispw.controller.graphic.cli.GraphicControllerCli;
+import ispw.project.project_ispw.controller.graphic.GraphicController;
 import ispw.project.project_ispw.dao.DaoType;
 
 import javafx.application.Application;
@@ -18,14 +19,24 @@ public class MainApp extends Application {
 
     private static final Logger LOGGER = Logger.getLogger(MainApp.class.getName());
 
+    // REMOVED: DEFAULT_GUI_FXML_PATH_PREFIX constant and logic for command-line parsing here
+    // This will now come from the ApplicationConfig
+
     private static final LaunchType DESIRED_LAUNCH_TYPE = LaunchType.GUI;
     private static final boolean RUN_IN_DEMO_MODE = false;
-    private static final DaoType DESIRED_DAO_TYPE = DaoType.CSV;
+    private static final DaoType DESIRED_DAO_TYPE = DaoType.JDBC;
 
     private static LaunchType currentLaunchType;
     private static PersistenceModeState currentPersistenceModeState;
+    // REMOVED: private static String guiFxmlPathPrefix; // No longer needed as a static field here
+
+    // NEW: ApplicationConfig instance, initialized once
+    private static ApplicationConfig appConfig;
 
     public static void main(String[] args) {
+        // Initialize the configuration first
+        appConfig = new ApplicationConfig();
+
         currentLaunchType = DESIRED_LAUNCH_TYPE;
 
         if (RUN_IN_DEMO_MODE) {
@@ -40,15 +51,20 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
+            GraphicController controller;
+
             if (currentLaunchType == LaunchType.GUI) {
-                GraphicControllerGui guiController = GraphicControllerGui.getInstance(currentPersistenceModeState);
-                guiController.setPrimaryStage(primaryStage);
-                guiController.startView();
+                // Get the FXML path prefix from the configuration
+                String guiFxmlPath = appConfig.getProperty("gui.fxml.path.prefix", "/ispw/project/project_ispw/view/gui/");
+                // The second parameter to getProperty is a default if the key is not found
+
+                controller = GraphicControllerGui.getInstance(currentPersistenceModeState, guiFxmlPath);
             } else {
-                GraphicControllerCli cliController = GraphicControllerCli.getInstance(currentPersistenceModeState);
-                cliController.setPrimaryStage(primaryStage);
-                cliController.startView();
+                controller = GraphicControllerCli.getInstance(currentPersistenceModeState);
             }
+
+            controller.setPrimaryStage(primaryStage);
+            controller.startView();
 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error loading FXML file during application startup.", e);

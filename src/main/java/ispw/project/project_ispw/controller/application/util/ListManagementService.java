@@ -8,6 +8,9 @@ import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.dao.ListDao;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
 import ispw.project.project_ispw.exception.ExceptionDao;
+import ispw.project.project_ispw.model.AnimeModel;
+import ispw.project.project_ispw.model.MovieModel;
+import ispw.project.project_ispw.model.TvSeriesModel;
 
 import java.util.List;
 
@@ -66,11 +69,16 @@ public class ListManagementService {
     }
 
     public boolean addMovieToList(ListBean targetList, int movieId) throws ExceptionApplicationController {
-        MovieBean movie = contentService.retrieveMovieById(movieId);
+        MovieModel movie = contentService.retrieveMovieById(movieId);
         if (movie == null) {
             throw new ExceptionApplicationController("Movie with ID " + movieId + " not found.");
         }
-        return addMovieToList(targetList, movie);
+            MovieBean movieBean = new MovieBean(
+                    movie.getId(),
+                    movie.getRuntime(),
+                    movie.getTitle());
+
+        return addMovieToList(targetList, movieBean);
     }
 
     public boolean addMovieToList(ListBean targetList, MovieBean movie) throws ExceptionApplicationController {
@@ -109,11 +117,15 @@ public class ListManagementService {
     }
 
     public boolean removeMovieFromList(ListBean targetList, int movieId) throws ExceptionApplicationController {
-        MovieBean movie = contentService.retrieveMovieById(movieId);
+        MovieModel movie = contentService.retrieveMovieById(movieId);
         if (movie == null) {
             throw new ExceptionApplicationController("Movie with ID " + movieId + " not found for removal.");
         }
-        return removeMovieFromList(targetList, movie);
+        MovieBean movieBean = new MovieBean(
+                movie.getId(),
+                movie.getRuntime(),
+                movie.getTitle());
+        return removeMovieFromList(targetList, movieBean);
     }
 
     public boolean removeMovieFromList(ListBean targetList, MovieBean movie) throws ExceptionApplicationController {
@@ -127,13 +139,22 @@ public class ListManagementService {
             throw new ExceptionApplicationController("Failed to remove movie from list: " + e.getMessage(), e);
         }
     }
+    private int calculateEpisodeRuntime(List<Integer> runTimeList) {
+        return (runTimeList != null && !runTimeList.isEmpty()) ? runTimeList.get(0) : 0;
+    }
 
     public boolean addTvSeriesToList(ListBean targetList, int tvSeriesId) throws ExceptionApplicationController {
-        TvSeriesBean tvSeries = contentService.retrieveTvSeriesById(tvSeriesId);
+        TvSeriesModel tvSeries = contentService.retrieveTvSeriesById(tvSeriesId);
         if (tvSeries == null) {
             throw new ExceptionApplicationController("TV Series with ID " + tvSeriesId + " not found.");
         }
-        return addTvSeriesToList(targetList, tvSeries);
+        TvSeriesBean tvSeriesBean = new TvSeriesBean(
+                calculateEpisodeRuntime(tvSeries.getEpisodeRunTime()),
+                tvSeries.getId(),
+                tvSeries.getNumberOfEpisodes(),
+                tvSeries.getName()
+        );
+        return addTvSeriesToList(targetList, tvSeriesBean);
     }
 
     public boolean addTvSeriesToList(ListBean targetList, TvSeriesBean tvSeries) throws ExceptionApplicationController {
@@ -172,11 +193,17 @@ public class ListManagementService {
     }
 
     public boolean removeTvSeriesFromList(ListBean targetList, int tvSeriesId) throws ExceptionApplicationController {
-        TvSeriesBean tvSeries = contentService.retrieveTvSeriesById(tvSeriesId);
+        TvSeriesModel tvSeries = contentService.retrieveTvSeriesById(tvSeriesId);
         if (tvSeries == null) {
             throw new ExceptionApplicationController("TV Series with ID " + tvSeriesId + " not found for removal.");
         }
-        return removeTvSeriesFromList(targetList, tvSeries);
+        TvSeriesBean tvSeriesBean = new TvSeriesBean(
+                calculateEpisodeRuntime(tvSeries.getEpisodeRunTime()),
+                tvSeries.getId(),
+                tvSeries.getNumberOfEpisodes(),
+                tvSeries.getName()
+        );
+        return removeTvSeriesFromList(targetList, tvSeriesBean);
     }
 
     public boolean removeTvSeriesFromList(ListBean targetList, TvSeriesBean tvSeries) throws ExceptionApplicationController {
@@ -194,11 +221,17 @@ public class ListManagementService {
     }
 
     public boolean addAnimeToList(ListBean targetList, int animeId) throws ExceptionApplicationController {
-        AnimeBean anime = contentService.retrieveAnimeById(animeId);
+        AnimeModel anime = contentService.retrieveAnimeById(animeId);
         if (anime == null) {
             throw new ExceptionApplicationController("Anime with ID " + animeId + " not found via ContentService.");
         }
-        return addAnimeToList(targetList, anime);
+        AnimeBean animeBean = new AnimeBean(
+                anime.getId(),
+                anime.getDuration(),
+                anime.getEpisodes(),
+                anime.getTitle() != null ? anime.getTitle().getRomaji() : null // Use romaji title
+        );
+        return addAnimeToList(targetList, animeBean);
     }
 
     public boolean addAnimeToList(ListBean targetList, AnimeBean anime) throws ExceptionApplicationController {
@@ -237,11 +270,17 @@ public class ListManagementService {
     }
 
     public boolean removeAnimeFromList(ListBean targetList, int animeId) throws ExceptionApplicationController {
-        AnimeBean anime = contentService.retrieveAnimeById(animeId);
+        AnimeModel anime = contentService.retrieveAnimeById(animeId);
         if (anime == null) {
             throw new ExceptionApplicationController("Anime with ID " + animeId + " not found for removal.");
         }
-        return removeAnimeFromList(targetList, anime);
+        AnimeBean animeBean = new AnimeBean(
+                anime.getId(),
+                anime.getDuration(),
+                anime.getEpisodes(),
+                anime.getTitle() != null ? anime.getTitle().getRomaji() : null // Use romaji title
+        );
+        return removeAnimeFromList(targetList, animeBean);
     }
 
     public boolean removeAnimeFromList(ListBean targetList, AnimeBean anime) throws ExceptionApplicationController {

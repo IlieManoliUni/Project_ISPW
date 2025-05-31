@@ -27,6 +27,6 @@
 
         <Button fx:id="logInButton" text="Log In" onAction="#handleLoginButtonAction" style="-fx-pref-width: 200; -fx-background-color: #4CAF50; -fx-text-fill: white;" />
 
-        <Button fx:id="signUpButton" text="Sign Up" onAction="#handleSignUpButtonAction" style="-fx-pref-width: 200; -fx-background-color: #2196F3; -fx-text-fill: white;" />
-    </VBox>
+        <Button fx:id="signUpButton" text="Sign Up" onAction="#handleSignInButtonAction" style="-fx-pref-width: 200; -fx-background-color: #2196F3; -fx-text-fill: white;" />
+       </VBox>
 </VBox>
