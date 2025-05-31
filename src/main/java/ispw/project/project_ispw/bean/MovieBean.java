@@ -1,6 +1,7 @@
 package ispw.project.project_ispw.bean;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class MovieBean implements Serializable {
 
@@ -45,4 +46,25 @@ public class MovieBean implements Serializable {
         this.runtime = runtime;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MovieBean movieBean = (MovieBean) o;
+        return idMovieTmdb == movieBean.idMovieTmdb; // Equality based solely on ID
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idMovieTmdb); // Hash code based solely on ID
+    }
+
+    @Override
+    public String toString() {
+        return "MovieBean{" +
+                "idMovieTmdb=" + idMovieTmdb +
+                ", title='" + title + '\'' +
+                ", runtime=" + runtime +
+                '}';
+    }
 }

@@ -38,6 +38,7 @@ public class SearchController implements NavigableController, UserAwareControlle
 
     private ObservableList<String> items = FXCollections.observableArrayList();
     private GraphicControllerGui graphicControllerGui;
+    @SuppressWarnings("squid:S1450")
     private UserModel userModel;
 
     private final Map<String, Object> searchResultModelMap = new HashMap<>();
