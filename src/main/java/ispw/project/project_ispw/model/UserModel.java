@@ -2,7 +2,6 @@ package ispw.project.project_ispw.model;
 
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.controller.application.util.AuthService;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
 
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -94,11 +93,6 @@ public class UserModel {
                         authStatusMessage.set("Registration failed.");
                         // Specific messages might be handled by AuthService and propagated
                     }
-                });
-            } catch (ExceptionApplicationController e) {
-                Platform.runLater(() -> {
-                    authStatusMessage.set("Registration failed.");
-                    authErrorMessage.set(e.getMessage());
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {
