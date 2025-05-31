@@ -269,8 +269,6 @@ public class HomeController implements NavigableController, UserAwareController 
             try {
                 // Now pass the ListModel to graphicControllerGui.navigateToListDetail
                 graphicControllerGui.navigateToListDetail(selectedListModel, screen);
-            } catch (ExceptionApplicationController e) {
-                showAlert(Alert.AlertType.ERROR, "Navigation Error", e.getMessage());
             } catch (Exception e) {
                 showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during navigation: " + e.getMessage());
             }

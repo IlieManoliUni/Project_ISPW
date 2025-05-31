@@ -130,8 +130,6 @@ public class DefaultController implements NavigableController {
 
         try {
             graphicControllerGui.performSearchAndNavigate(selectedCategory, searchText);
-        } catch (ExceptionApplicationController e) {
-            showAlert(Alert.AlertType.ERROR, "Search Error", e.getMessage());
         } catch (Exception e) { // Catch generic Exception
             showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during search: " + e.getMessage());
         }

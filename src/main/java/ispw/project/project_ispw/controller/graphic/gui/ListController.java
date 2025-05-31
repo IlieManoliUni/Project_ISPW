@@ -300,9 +300,6 @@ public class ListController implements NavigableController, UserAwareController 
                 graphicControllerGui.navigateToItemDetails(category, id);
                 LOGGER.log(Level.INFO, "Navigating to {0} details for item ''{1}'', ID {2}.", new Object[]{category, itemString, id});
 
-            } catch (ExceptionApplicationController e) {
-                LOGGER.log(Level.SEVERE, "Error showing item details for {0}: {1}", new Object[]{itemString, e.getMessage()});
-                showAlert(Alert.AlertType.ERROR, "Error Showing Details", e.getMessage());
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "An unexpected error occurred while showing details for {0}: {1}", new Object[]{itemString, e.getMessage()});
                 showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred while showing details: " + e.getMessage());

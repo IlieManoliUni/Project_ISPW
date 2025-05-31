@@ -5,8 +5,8 @@ import ispw.project.project_ispw.controller.graphic.cli.GraphicControllerCli;
 public class HelpCommand implements CliCommand {
     @Override
     public String execute(GraphicControllerCli context, String args) {
-        String loggedInCommands = "logout, searchmovie, searchtvseries, searchanime, createlist, deletelist, getalllists, saveanimetolist, deleteanimefromlist, savemovietolist, deletemoviefromlist, savetvseriestolist, deletetvseriesfromlist";
-        String loggedOutCommands = "login, signup, searchmovie, searchtvseries, searchanime";
+        String loggedInCommands = "logout, searchmovie, searchtvseries, searchanime, seeanimedetails, seemoviedetails, seetvseriesdetails, createlist, deletelist, getalllists, saveanimetolist, deleteanimefromlist, savemovietolist, deletemoviefromlist, savetvseriestolist, deletetvseriesfromlist";
+        String loggedOutCommands = "login, signup, searchmovie, searchtvseries, searchanime, seeanimedetails, seemoviedetails, seetvseriesdetails";
 
         StringBuilder helpText = new StringBuilder("--- Help ---\n");
         if (context.isUserLoggedIn()) {
