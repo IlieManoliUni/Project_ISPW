@@ -1,7 +1,6 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
 import ispw.project.project_ispw.model.UserModel;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -87,7 +86,7 @@ public class DefaultBackHomeController implements NavigableController {
     }
 
     @FXML
-    private void handleSearchButtonAction() throws ExceptionApplicationController {
+    private void handleSearchButtonAction() {
         String searchText = searchBar.getText().trim();
         String selectedCategory = categoryComboBox.getValue();
 

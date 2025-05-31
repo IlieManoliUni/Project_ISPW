@@ -1,6 +1,5 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
 import ispw.project.project_ispw.model.UserModel; // <-- NEW: Import UserModel
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
