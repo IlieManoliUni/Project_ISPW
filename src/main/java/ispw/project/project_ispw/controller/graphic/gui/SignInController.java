@@ -85,23 +85,19 @@ public class SignInController implements NavigableController, UserAwareControlle
 
     @FXML
     private void handleSignInButtonAction() {
-        // 1. Get input and clear previous error messages
         String username = usernameField.getText();
         String password = passwordField.getText();
-        clearErrorMessage(); // New helper method
+        clearErrorMessage();
 
-        // 2. Validate input fields
-        if (!validateInput(username, password)) { // New helper method
-            return; // Validation failed, message and alert already handled
+        if (!validateInput(username, password)) {
+            return;
         }
 
-        // 3. Check if user is already logged in
-        if (checkAlreadyLoggedIn()) { // New helper method
-            return; // Already logged in, message and redirect already handled
+        if (checkAlreadyLoggedIn()) {
+            return;
         }
 
-        // 4. Attempt to register the user
-        registerUser(username, password); // New helper method
+        registerUser(username, password);
     }
 
     private void clearErrorMessage() {

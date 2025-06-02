@@ -1,69 +1,66 @@
 package ispw.project.project_ispw.model;
 
-import com.google.gson.annotations.SerializedName; // <<< ADD THIS IMPORT
+import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 public class MovieModel {
     private int id;
     private String title;
 
-    @SerializedName("original_title") // <<< ADDED
+    @SerializedName("original_title")
     private String originalTitle;
 
-    @SerializedName("original_language") // <<< ADDED
+    @SerializedName("original_language")
     private String originalLanguage;
 
     private String overview;
 
-    @SerializedName("poster_path") // <<< ADDED
+    @SerializedName("poster_path")
     private String posterPath;
 
-    @SerializedName("backdrop_path") // <<< ADDED
+    @SerializedName("backdrop_path")
     private String backdropPath;
 
-    @SerializedName("release_date") // <<< ADDED
+    @SerializedName("release_date")
     private String releaseDate;
 
-    @SerializedName("vote_average") // <<< ADDED
+    @SerializedName("vote_average")
     private double voteAverage;
 
-    @SerializedName("vote_count") // <<< ADDED
+    @SerializedName("vote_count")
     private int voteCount;
 
-    private int runtime; // TMDB uses "runtime" directly
+    private int runtime;
 
-    private double popularity; // TMDB uses "popularity" directly
+    private double popularity;
 
-    private String status; // TMDB uses "status" directly
+    private String status;
 
-    private String tagline; // TMDB uses "tagline" directly
+    private String tagline;
 
-    @SerializedName("imdb_id") // <<< ADDED
+    @SerializedName("imdb_id")
     private String imdbId;
 
-    private long budget; // TMDB uses "budget" directly
-    private long revenue; // TMDB uses "revenue" directly
+    private long budget;
+    private long revenue;
 
-    // <<< CHANGED TYPE FROM List<String> to List<Genre>
     private List<Genre> genres;
 
-    // <<< CHANGED TYPE FROM List<String> to List<ProductionCompany> AND ADDED @SerializedName
     @SerializedName("production_companies")
     private List<ProductionCompany> productionCompanies;
 
-    @SerializedName("production_countries") // <<< ADDED
+    @SerializedName("production_countries")
     private List<ProductionCountry> productionCountries;
 
-    @SerializedName("spoken_languages") // <<< ADDED
+    @SerializedName("spoken_languages")
     private List<SpokenLanguage> spokenLanguages;
 
     private static final String NAME_FIELD_PREFIX = ", name='";
 
     public MovieModel() {
-        // Empty constructor needed for Gson
+        // Empty constructor
     }
 
-    // --- Getters ---
     public int getId() { return id; }
     public String getTitle() { return title; }
     public String getOriginalTitle() { return originalTitle; }
@@ -86,7 +83,6 @@ public class MovieModel {
     public List<ProductionCountry> getProductionCountries() { return productionCountries; }
     public List<SpokenLanguage> getSpokenLanguages() { return spokenLanguages; }
 
-    // --- Setters ---
     public void setId(int id) { this.id = id; }
     public void setTitle(String title) { this.title = title; }
     public void setOriginalTitle(String originalTitle) { this.originalTitle = originalTitle; }
@@ -127,8 +123,6 @@ public class MovieModel {
                 '}';
     }
 
-    // --- Nested Classes (Must be public static for Gson to work easily) ---
-
     public static class Genre {
         private int id;
         private String name;
@@ -146,10 +140,10 @@ public class MovieModel {
 
     public static class ProductionCompany {
         private int id;
-        @SerializedName("logo_path") // <<< ADDED
+        @SerializedName("logo_path")
         private String logoPath;
         private String name;
-        @SerializedName("origin_country") // <<< ADDED
+        @SerializedName("origin_country")
         private String originCountry;
 
         public ProductionCompany() {
@@ -168,7 +162,7 @@ public class MovieModel {
     }
 
     public static class ProductionCountry {
-        @SerializedName("iso_3166_1") // <<< ADDED
+        @SerializedName("iso_3166_1")
         private String iso31661;
         private String name;
 
@@ -184,9 +178,9 @@ public class MovieModel {
     }
 
     public static class SpokenLanguage {
-        @SerializedName("english_name") // <<< ADDED
+        @SerializedName("english_name")
         private String englishName;
-        @SerializedName("iso_639_1") // <<< ADDED
+        @SerializedName("iso_639_1")
         private String iso6391;
         private String name;
 

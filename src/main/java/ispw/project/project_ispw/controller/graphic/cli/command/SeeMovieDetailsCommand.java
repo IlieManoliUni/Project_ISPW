@@ -5,8 +5,8 @@ import ispw.project.project_ispw.exception.ExceptionApplicationController;
 import ispw.project.project_ispw.exception.ExceptionUser;
 import ispw.project.project_ispw.model.MovieModel;
 
-import java.util.List; // Needed for List
-import java.util.stream.Collectors; // Needed for Collectors.joining
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class SeeMovieDetailsCommand implements CliCommand {
 
@@ -18,7 +18,7 @@ public class SeeMovieDetailsCommand implements CliCommand {
 
         try {
             int movieId = Integer.parseInt(args.trim());
-            MovieModel movie = context.getApplicationController().retrieveMovieById(movieId);
+            MovieModel movie = (MovieModel) context.viewContentDetails("movie", movieId);
 
             StringBuilder sb = new StringBuilder();
             sb.append("--- Movie Details (ID: ").append(movie.getId()).append(") ---\n");
@@ -27,22 +27,17 @@ public class SeeMovieDetailsCommand implements CliCommand {
             sb.append("Overview: ").append(movie.getOverview()).append("\n");
             sb.append("Release Date: ").append(movie.getReleaseDate()).append("\n");
             sb.append("Runtime: ").append(movie.getRuntime()).append(" minutes\n");
-
-            // --- CORRECTED LINES ---
+            sb.append("Average Vote: ").append(movie.getVoteAverage()).append(" (Count: ").append(movie.getVoteCount()).append(")\n");
             sb.append("Genres: ").append(formatMovieGenres(movie.getGenres())).append("\n");
-            sb.append("Average Vote: ").append(String.format("%.2f", movie.getVoteAverage())).append("\n");
-            sb.append("Budget: $").append(movie.getBudget()).append("\n");
-            sb.append("Revenue: $").append(movie.getRevenue()).append("\n");
             sb.append("Production Companies: ").append(formatMovieProductionCompanies(movie.getProductionCompanies())).append("\n");
-            // --- END CORRECTED LINES ---
-
+            sb.append("Spoken Languages: ").append(formatMovieSpokenLanguages(movie.getSpokenLanguages())).append("\n");
             sb.append("Poster Path: ").append(movie.getPosterPath() != null ? movie.getPosterPath() : "N/A").append("\n");
             sb.append("--------------------------------------");
 
             return sb.toString();
 
         } catch (NumberFormatException _) {
-            throw new NumberFormatException("Invalid movie ID. Please provide a valid integer ID.");
+            throw new NumberFormatException("Invalid Movie ID. Please provide a valid integer ID.");
         } catch (ExceptionApplicationController e) {
             throw e;
         }
@@ -50,33 +45,30 @@ public class SeeMovieDetailsCommand implements CliCommand {
 
     // --- Helper methods for formatting lists of MovieModel's nested objects ---
 
-    /**
-     * Formats a list of MovieModel.Genre objects into a comma-separated string of their names.
-     *
-     * @param genres The list of Genre objects.
-     * @return A comma-separated string of genre names, or "N/A" if the list is null or empty.
-     */
     private String formatMovieGenres(List<MovieModel.Genre> genres) {
         if (genres == null || genres.isEmpty()) {
             return "N/A";
         }
         return genres.stream()
-                .map(MovieModel.Genre::getName) // Extract the name from each Genre object
-                .collect(Collectors.joining(", ")); // Join the names with ", "
+                .map(MovieModel.Genre::getName)
+                .collect(Collectors.joining(", "));
     }
 
-    /**
-     * Formats a list of MovieModel.ProductionCompany objects into a comma-separated string of their names.
-     *
-     * @param companies The list of ProductionCompany objects.
-     * @return A comma-separated string of company names, or "N/A" if the list is null or empty.
-     */
     private String formatMovieProductionCompanies(List<MovieModel.ProductionCompany> companies) {
         if (companies == null || companies.isEmpty()) {
             return "N/A";
         }
         return companies.stream()
-                .map(MovieModel.ProductionCompany::getName) // Extract the name from each ProductionCompany object
-                .collect(Collectors.joining(", ")); // Join the names with ", "
+                .map(MovieModel.ProductionCompany::getName)
+                .collect(Collectors.joining(", "));
+    }
+
+    private String formatMovieSpokenLanguages(List<MovieModel.SpokenLanguage> languages) {
+        if (languages == null || languages.isEmpty()) {
+            return "N/A";
+        }
+        return languages.stream()
+                .map(MovieModel.SpokenLanguage::getEnglishName)
+                .collect(Collectors.joining(", "));
     }
 }

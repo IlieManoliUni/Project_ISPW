@@ -208,6 +208,7 @@ public class AnimeAniList {
     }
 
     /**
+     * For a sonarcloud error
      * Strips HTML tags from a string and cleans up whitespace.
      * Uses a possessive quantifier in the HTML tag regex to prevent ReDoS vulnerability.
      * Uses explicit grouping for whitespace regex to clarify precedence.

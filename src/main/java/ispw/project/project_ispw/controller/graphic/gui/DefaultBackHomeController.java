@@ -8,9 +8,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
-import javafx.beans.binding.Bindings; // For general static binding methods, good to keep
-import javafx.beans.binding.BooleanBinding; // <-- CRUCIAL: To ensure 'isEmpty()' is seen as a BooleanBinding
-import javafx.beans.binding.StringBinding;   // <-- CRUCIAL: To define the result of the conditional binding
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.binding.StringBinding;
 
 
 public class DefaultBackHomeController implements NavigableController {
@@ -39,21 +39,17 @@ public class DefaultBackHomeController implements NavigableController {
     public void setUserModel(UserModel userModel) {
         this.userModel = userModel;
 
-        // Step 1: Explicitly define the BooleanBinding for the condition
-        // This ensures the compiler correctly sees userNotLoggedIn as a BooleanBinding
         BooleanBinding userNotLoggedIn = userModel.usernameDisplayProperty().isEmpty();
 
-        // Step 2: Create the conditional StringBinding using the explicitly typed BooleanBinding
         StringBinding userButtonTextBinding = Bindings.when(userNotLoggedIn)
                 .then("Log In")
                 .otherwise(userModel.usernameDisplayProperty());
 
-        // Step 3: Bind the button's text property to the created StringBinding
         userButton.textProperty().bind(userButtonTextBinding);
 
 
         userModel.loggedInProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.booleanValue() && oldValue.booleanValue()) { // If user was logged in and now is not
+            if (!newValue.booleanValue() && oldValue.booleanValue()) {
                 graphicControllerGui.setScreen("logIn");
                 showAlert(Alert.AlertType.INFORMATION, "Logout", "You have been successfully logged out.");
             }

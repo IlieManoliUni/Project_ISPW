@@ -10,14 +10,11 @@ import java.util.List;
 public class GetAllListsCommand implements CliCommand {
     @Override
     public String execute(GraphicControllerCli context, String args) throws ExceptionApplicationController, ExceptionUser {
-        if (!context.isUserLoggedIn()) {
-            throw new ExceptionUser("You must be logged in to view your lists.");
-        }
-        List<ListBean> lists = context.getApplicationController().getListsForUser(context.getCurrentUserBean());
+        List<ListBean> lists = context.getListsForUser();
         if (lists.isEmpty()) {
-            return "No lists found for user '" + context.getCurrentUserBean().getUsername() + "'.";
+            return "No lists found for the current user.";
         } else {
-            StringBuilder sb = new StringBuilder("Your Lists for '" + context.getCurrentUserBean().getUsername() + "':\n");
+            StringBuilder sb = new StringBuilder("Your Lists:\n");
             for (ListBean list : lists) {
                 sb.append("  ID: ").append(list.getId()).append(", Name: '").append(list.getName()).append("'\n");
             }

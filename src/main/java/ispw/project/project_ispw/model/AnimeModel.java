@@ -78,7 +78,7 @@ public class AnimeModel {
     }
 
     public static class CoverImage {
-        private String medium; // Only need 'medium' if that's all you're querying
+        private String medium;
 
         public CoverImage() {
             // Empty constructor

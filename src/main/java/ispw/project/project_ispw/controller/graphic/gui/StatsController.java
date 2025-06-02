@@ -35,8 +35,7 @@ public class StatsController implements NavigableController, UserAwareController
     private GraphicControllerGui graphicControllerGui;
     private UserModel userModel;
 
-    // CHANGE THIS: Use ListModel instead of ListBean directly for the selected list
-    private ListModel selectedListModel; // Renamed from selectedList
+    private ListModel selectedListModel;
 
     @FXML
     private HBox headerBar;
@@ -75,37 +74,30 @@ public class StatsController implements NavigableController, UserAwareController
 
         userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
             LOGGER.log(Level.INFO, "StatsController Listener: loggedInProperty changed: old={0}, new={1}", new Object[]{oldVal, newVal});
-            if (newVal.booleanValue()) { // User logged in
-                // If a list was previously selected, try to load stats again.
-                // Otherwise, it implies no list was selected, so redirect.
+            if (newVal.booleanValue()) {
                 if (selectedListModel != null) {
                     LOGGER.log(Level.INFO, "StatsController Listener: User logged in, list already selected. Recalculating stats.");
-                    // No need to set label text here, it's bound below
                     calculateAndDisplayTotalMinutes();
                 } else {
                     LOGGER.log(Level.WARNING, "StatsController Listener: User logged in, but no list selected. Redirecting to home.");
                     showAlert(Alert.AlertType.WARNING, "No List Selected", "Please select a list to view its statistics. Redirecting to home.");
                     graphicControllerGui.setScreen("home");
                 }
-            } else { // User logged out
+            } else {
                 LOGGER.log(Level.INFO, "StatsController Listener: User logged out. Clearing stats and redirecting.");
                 statsTextArea.setText("Please log in to view statistics");
                 listNameLabel.setText("Stats of List (Logged Out)");
                 showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been logged out. Statistics cleared.");
                 graphicControllerGui.setScreen(SCREEN_LOGIN);
-                // Clear the selectedListModel reference when logged out
                 selectedListModel = null;
             }
         });
 
-        // Initial setup when the controller is first shown
         if (userModel.loggedInProperty().get()) {
             LOGGER.log(Level.INFO, "StatsController.setUserModel(): Initial check: User IS logged in.");
             ListBean initialSelectedListBean = graphicControllerGui.getApplicationController().getSelectedList();
             if (initialSelectedListBean != null) {
-                // Initialize selectedListModel from the ListBean
-                this.selectedListModel = new ListModel(initialSelectedListBean); // Create a ListModel instance
-                // Bind the label to the name property of the ListModel
+                this.selectedListModel = new ListModel(initialSelectedListBean);
                 listNameLabel.textProperty().bind(selectedListModel.nameProperty());
                 calculateAndDisplayTotalMinutes();
             } else {
@@ -117,7 +109,6 @@ public class StatsController implements NavigableController, UserAwareController
             LOGGER.log(Level.INFO, "StatsController.setUserModel(): Initial check: User IS NOT logged in. Displaying login message.");
             statsTextArea.setText("Please log in to view statistics.");
             listNameLabel.setText("Stats of List (Not Logged In)");
-            // No alert or redirect here, as it might be the initial app startup.
         }
     }
 
@@ -138,7 +129,6 @@ public class StatsController implements NavigableController, UserAwareController
         }
 
         try {
-            // Get the underlying ListBean from the ListModel for ApplicationController calls
             ListBean underlyingListBean = selectedListModel.getListBean();
 
             List<MovieBean> movieList = graphicControllerGui.getApplicationController().getMoviesInList(underlyingListBean);
@@ -146,7 +136,6 @@ public class StatsController implements NavigableController, UserAwareController
             List<AnimeBean> animeList = graphicControllerGui.getApplicationController().getAnimeInList(underlyingListBean);
 
             StringBuilder details = new StringBuilder();
-            // Use selectedListModel.getName() for display
             details.append("Details for list '").append(selectedListModel.getName()).append("':\n\n");
 
             int totalMinutes = 0;
@@ -155,7 +144,6 @@ public class StatsController implements NavigableController, UserAwareController
             totalMinutes += appendTvSeriesStats(tvSeriesList, details);
             totalMinutes += appendAnimeStats(animeList, details);
 
-            // Use selectedListModel.getName() for final summary
             details.append("\nOverall Total Runtime for list '").append(selectedListModel.getName()).append("': ").append(totalMinutes).append(" minutes.");
             statsTextArea.setText(details.toString());
             LOGGER.log(Level.INFO, "Stats calculated for list ''{0}''. Total minutes: {1}", new Object[]{selectedListModel.getName(), totalMinutes});

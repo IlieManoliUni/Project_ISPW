@@ -7,7 +7,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
-import javafx.beans.binding.Bindings; // <-- NEW: Import Bindings
+import javafx.beans.binding.Bindings;
 
 public class DefaultController implements NavigableController {
 
@@ -26,32 +26,25 @@ public class DefaultController implements NavigableController {
     private ComboBox<String> categoryComboBox;
 
     private GraphicControllerGui graphicControllerGui;
-    private UserModel userModel; // <-- NEW: Declare UserModel instance
+    private UserModel userModel;
 
     @FXML
     private void initialize() {
         // No elements to initialize
-        // Binding and other setup should happen after graphicControllerGui and userModel are set
     }
 
     @Override
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
 
-        // setupCategoryComboBox() and setupSearchButton() can be called here
-        // as they don't depend on userModel
         setupCategoryComboBox();
         setupSearchButton();
 
-        // setupUserButton() is now handled by setUserModel's binding logic.
-        // The `setOnAction` for userButton is moved into `setUserModel` or a new setup method
-        // called from `setUserModel` to ensure userModel is available.
     }
 
-    // <-- NEW: Method to set the UserModel, called by GraphicControllerGui
     public void setUserModel(UserModel userModel) {
         this.userModel = userModel;
-        setupUserButtonBindingAndAction(); // Set up button binding and action here
+        setupUserButtonBindingAndAction();
     }
 
     private void setupCategoryComboBox() {
@@ -61,26 +54,21 @@ public class DefaultController implements NavigableController {
         }
     }
 
-    // <-- MODIFIED: This method now sets up binding and action.
     private void setupUserButtonBindingAndAction() {
         if (userButton == null || userModel == null) {
-            // Handle cases where button or model are not yet initialized (e.g., FXML not loaded)
             if (userButton != null) {
                 userButton.setText("Log In (Loading...)"); // Temporary text
             }
             return;
         }
 
-        // Bind the userButton's text to the usernameDisplayProperty
-        // If usernameDisplayProperty is empty, display "Log In". Otherwise, display the username.
         userButton.textProperty().bind(Bindings.createStringBinding(() -> {
             String username = userModel.usernameDisplayProperty().get();
             return username.isEmpty() ? "Log In" : username;
         }, userModel.usernameDisplayProperty()));
 
-        // Set the action for the button based on login state
         userButton.setOnAction(event -> {
-            if (userModel.loggedInProperty().get()) { // Check loggedInProperty from UserModel
+            if (userModel.loggedInProperty().get()) {
                 handleLogout();
             } else {
                 handleLoginClick();
@@ -89,7 +77,6 @@ public class DefaultController implements NavigableController {
     }
 
     private void handleLoginClick() {
-        // Navigate to the login screen
         graphicControllerGui.setScreen("logIn");
     }
 
@@ -98,11 +85,9 @@ public class DefaultController implements NavigableController {
             showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "User model not initialized for logout.");
             return;
         }
-        // Call logout on the UserModel. The UI will update automatically via binding.
         userModel.logout();
 
-        // After logout, navigate to the login screen or home
-        graphicControllerGui.setScreen("logIn"); // Or "home" depending on desired flow
+        graphicControllerGui.setScreen("logIn");
     }
 
     private void setupSearchButton() {
@@ -129,7 +114,7 @@ public class DefaultController implements NavigableController {
 
         try {
             graphicControllerGui.performSearchAndNavigate(selectedCategory, searchText);
-        } catch (Exception e) { // Catch generic Exception
+        } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during search: " + e.getMessage());
         }
     }

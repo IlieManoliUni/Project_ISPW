@@ -19,22 +19,17 @@ public class MainApp extends Application {
 
     private static final Logger LOGGER = Logger.getLogger(MainApp.class.getName());
 
-    // REMOVED: DEFAULT_GUI_FXML_PATH_PREFIX constant and logic for command-line parsing here
-    // This will now come from the ApplicationConfig
 
-    private static final LaunchType DESIRED_LAUNCH_TYPE = LaunchType.GUI;
+    private static final LaunchType DESIRED_LAUNCH_TYPE = LaunchType.CLI;
     private static final boolean RUN_IN_DEMO_MODE = false;
     private static final DaoType DESIRED_DAO_TYPE = DaoType.JDBC;
 
     private static LaunchType currentLaunchType;
     private static PersistenceModeState currentPersistenceModeState;
-    // REMOVED: private static String guiFxmlPathPrefix; // No longer needed as a static field here
 
-    // NEW: ApplicationConfig instance, initialized once
     private static ApplicationConfig appConfig;
 
     public static void main(String[] args) {
-        // Initialize the configuration first
         appConfig = new ApplicationConfig();
 
         currentLaunchType = DESIRED_LAUNCH_TYPE;
@@ -54,9 +49,7 @@ public class MainApp extends Application {
             GraphicController controller;
 
             if (currentLaunchType == LaunchType.GUI) {
-                // Get the FXML path prefix from the configuration
                 String guiFxmlPath = appConfig.getProperty("gui.fxml.path.prefix", "/ispw/project/project_ispw/view/gui/");
-                // The second parameter to getProperty is a default if the key is not found
 
                 controller = GraphicControllerGui.getInstance(currentPersistenceModeState, guiFxmlPath);
             } else {

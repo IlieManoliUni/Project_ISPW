@@ -20,7 +20,7 @@ public class MovieDaoJdbc implements MovieDao {
     @Override
     public MovieBean retrieveById(int id) throws ExceptionDao {
         Connection conn = null;
-        MovieBean movie = null; // Initialize to null
+        MovieBean movie = null;
 
         try {
             conn = SingletonDatabase.getInstance().getConnection();

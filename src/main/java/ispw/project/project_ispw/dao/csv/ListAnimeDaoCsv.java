@@ -84,10 +84,8 @@ public class ListAnimeDaoCsv implements ListAnime {
             }
 
             List<String[]> allRecords = new ArrayList<>();
-            // --- REFACTORED START ---
-            // Combined CSVReader and CSVWriter into a single try block
             try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)));
-                 CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) { // This will overwrite the file
+                 CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) {
                 String[] recordAnime;
                 while ((recordAnime = csvReader.readNext()) != null) {
                     if (recordAnime.length < 2) {
@@ -99,8 +97,7 @@ public class ListAnimeDaoCsv implements ListAnime {
                 }
                 csvWriter.writeAll(allRecords);
             }
-            // --- REFACTORED END ---
-        } catch (IOException | CsvValidationException e) { // Catch both IOException and CsvValidationException here
+        } catch (IOException | CsvValidationException e) {
             throw new ExceptionDao("Failed to remove anime from list in CSV. I/O or data error.", e);
         }
     }
@@ -140,10 +137,8 @@ public class ListAnimeDaoCsv implements ListAnime {
         try {
             List<String[]> allRecords = new ArrayList<>();
 
-            // --- REFACTORED START ---
-            // Combined CSVReader and CSVWriter into a single try block
             try (CSVReader csvReader = new CSVReader(Files.newBufferedReader(Paths.get(CSV_FILE_NAME)));
-                 CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) { // This will overwrite the file
+                 CSVWriter csvWriter = new CSVWriter(Files.newBufferedWriter(Paths.get(CSV_FILE_NAME)))) {
                 String[] recordAnime;
                 while ((recordAnime = csvReader.readNext()) != null) {
                     if (recordAnime.length < 2) {
@@ -155,8 +150,7 @@ public class ListAnimeDaoCsv implements ListAnime {
                 }
                 csvWriter.writeAll(allRecords);
             }
-            // --- REFACTORED END ---
-        } catch (IOException | CsvValidationException e) { // Catch both IOException and CsvValidationException here
+        } catch (IOException | CsvValidationException e) {
             throw new ExceptionDao("Failed to remove all anime from list in CSV. I/O or data error.", e);
         }
     }

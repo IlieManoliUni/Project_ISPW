@@ -1,11 +1,11 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
 import ispw.project.project_ispw.bean.AnimeBean;
-import ispw.project.project_ispw.bean.ListBean; // Still needed for ListModel creation
-import ispw.project.project_ispw.bean.MovieBean; // Still needed for item handling
-import ispw.project.project_ispw.bean.TvSeriesBean; // Still needed for item handling
+import ispw.project.project_ispw.bean.ListBean;
+import ispw.project.project_ispw.bean.MovieBean;
+import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.exception.ExceptionApplicationController;
-import ispw.project.project_ispw.model.ListModel; // IMPORT YOUR ListModel HERE
+import ispw.project.project_ispw.model.ListModel;
 import ispw.project.project_ispw.model.UserModel;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,7 +20,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
 
-import java.util.HashMap; // Re-introduce HashMap for mapping Strings to beans
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -29,23 +29,23 @@ import java.util.logging.Logger;
 public class ListController implements NavigableController, UserAwareController {
 
     private static final Logger LOGGER = Logger.getLogger(ListController.class.getName());
-    private static final String ID_STRING_SUFFIX = " (ID: "; // Suffix to be consistent with previous code
+    private static final String ID_STRING_SUFFIX = " (ID: ";
     private static final String SCREEN_LOGIN = "logIn";
     private static final String SYSTEM_ERROR_TITLE = "System Error";
 
     @FXML
-    private ListView<String> listView; // TYPE IS BACK TO String
+    private ListView<String> listView;
 
     @FXML
     private Label listNameLabel;
 
-    private final ObservableList<String> items = FXCollections.observableArrayList(); // List of Strings
-    private final Map<String, Object> itemBeanMap = new HashMap<>(); // Map to store actual beans
+    private final ObservableList<String> items = FXCollections.observableArrayList();
+    private final Map<String, Object> itemBeanMap = new HashMap<>();
 
     private GraphicControllerGui graphicControllerGui;
     private UserModel userModel;
 
-    private ListModel selectedListModel; // TYPE IS ListModel (for the selected list)
+    private ListModel selectedListModel;
 
     @FXML
     private HBox headerBar;
@@ -58,9 +58,8 @@ public class ListController implements NavigableController, UserAwareController 
 
     @FXML
     private void initialize() {
-        // ListView setup: The items will be set once selectedListModel is available
-        listView.setItems(items); // Set the ObservableList for the ListView
-        listView.setCellFactory(param -> new CustomListCell()); // Set the custom cell factory
+        listView.setItems(items);
+        listView.setCellFactory(param -> new CustomListCell());
     }
 
     @Override
@@ -84,24 +83,21 @@ public class ListController implements NavigableController, UserAwareController 
 
         userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
             LOGGER.log(Level.INFO, "ListController Listener: loggedInProperty changed: old={0}, new={1}", new Object[]{oldVal, newVal});
-            if (newVal.booleanValue()) { // User logged in
-                handleUserLoggedIn(); // Extracted method for logged-in logic
-            } else { // User logged out
-                handleUserLoggedOut(); // Extracted method for logged-out logic
+            if (newVal.booleanValue()) {
+                handleUserLoggedIn();
+            } else {
+                handleUserLoggedOut();
             }
         });
 
-        // Initial setup when the controller is first displayed
         if (userModel.loggedInProperty().get()) {
             LOGGER.log(Level.INFO, "ListController.setUserModel(): Initial check: User IS logged in.");
-            initializeOnLogin(); // Extracted method for initial logged-in setup
+            initializeOnLogin();
         } else {
             LOGGER.log(Level.INFO, "ListController.setUserModel(): Initial check: User IS NOT logged in. Displaying login message.");
-            clearAndDisplayLoggedOutState(); // Extracted method for initial logged-out setup
+            clearAndDisplayLoggedOutState();
         }
     }
-
-// Helper methods to reduce cognitive complexity
 
     private void handleUserLoggedIn() {
         if (selectedListModel != null) {
@@ -144,20 +140,15 @@ public class ListController implements NavigableController, UserAwareController 
         items.clear();
         itemBeanMap.clear();
         listNameLabel.setText("List Name (Not Logged In)");
-        // No alert or redirect here, as it might be initial app startup.
     }
 
-    /**
-     * Initializes the selectedListModel and binds the list name label.
-     * @param listBean The ListBean representing the selected list.
-     */
     private void initializeSelectedListModel(ListBean listBean) {
         if (selectedListModel != null) {
-            listNameLabel.textProperty().unbind(); // Unbind if already bound
+            listNameLabel.textProperty().unbind();
         }
-        this.selectedListModel = new ListModel(listBean); // Create a ListModel from the ListBean
-        listNameLabel.textProperty().bind(selectedListModel.nameProperty()); // Bind to its name property
-        loadListItems(); // Load items for the newly selected list
+        this.selectedListModel = new ListModel(listBean);
+        listNameLabel.textProperty().bind(selectedListModel.nameProperty());
+        loadListItems();
         LOGGER.log(Level.INFO, "ListController: Initialized selectedListModel for list ''{0}''.", listBean.getName());
     }
 
@@ -179,7 +170,6 @@ public class ListController implements NavigableController, UserAwareController 
         }
 
         try {
-            // Get the underlying ListBean from the ListModel for ApplicationController calls
             ListBean underlyingListBean = selectedListModel.getListBean();
 
             List<MovieBean> movies = graphicControllerGui.getApplicationController().getMoviesInList(underlyingListBean);
@@ -215,7 +205,7 @@ public class ListController implements NavigableController, UserAwareController 
         }
     }
 
-    private class CustomListCell extends ListCell<String> { // TYPE IS BACK TO String
+    private class CustomListCell extends ListCell<String> {
         private final HBox hbox;
         private final Text text;
         private final Button seeButton;
@@ -236,24 +226,22 @@ public class ListController implements NavigableController, UserAwareController 
         }
 
         @Override
-        protected void updateItem(String item, boolean empty) { // Parameter type is String
+        protected void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
             if (empty || item == null) {
                 setGraphic(null);
-                // No binding to unbind for a simple String
             } else {
-                text.setText(item); // Set text directly from String
+                text.setText(item);
                 setGraphic(hbox);
             }
         }
 
         private void setupButtonActions() {
-            // Actions now receive String directly
             seeButton.setOnAction(event -> handleSeeAction(getItem()));
             deleteButton.setOnAction(event -> handleDeleteAction(getItem()));
         }
 
-        private void handleSeeAction(String itemString) { // Parameter type is String
+        private void handleSeeAction(String itemString) {
             if (itemString == null || selectedListModel == null) {
                 LOGGER.log(Level.WARNING, "handleSeeAction: itemString or selectedListModel is null.");
                 return;
@@ -267,7 +255,7 @@ public class ListController implements NavigableController, UserAwareController 
             }
 
             try {
-                Object itemBean = itemBeanMap.get(itemString); // Retrieve the actual bean from the map
+                Object itemBean = itemBeanMap.get(itemString);
                 if (itemBean == null) {
                     LOGGER.log(Level.WARNING, "handleSeeAction: Item bean not found in map for string: {0}", itemString);
                     showAlert(Alert.AlertType.ERROR, "Item Not Found", "Selected item details could not be retrieved.");
@@ -283,7 +271,7 @@ public class ListController implements NavigableController, UserAwareController 
                         id = movie.getIdMovieTmdb();
                     }
                     case TvSeriesBean tvSeries -> {
-                        category = "TvSeries"; // Consistent with your navigateToItemDetails
+                        category = "TvSeries";
                         id = tvSeries.getIdTvSeriesTmdb();
                     }
                     case AnimeBean anime -> {
@@ -306,7 +294,7 @@ public class ListController implements NavigableController, UserAwareController 
             }
         }
 
-        private void handleDeleteAction(String itemString) { // Parameter type is String
+        private void handleDeleteAction(String itemString) {
             if (itemString == null || selectedListModel == null) {
                 LOGGER.log(Level.WARNING, "handleDeleteAction: itemString or selectedListModel is null.");
                 return;
@@ -320,14 +308,14 @@ public class ListController implements NavigableController, UserAwareController 
             }
 
             try {
-                Object itemBean = itemBeanMap.get(itemString); // Retrieve the actual bean
+                Object itemBean = itemBeanMap.get(itemString);
                 if (itemBean == null) {
                     LOGGER.log(Level.WARNING, "handleDeleteAction: Item bean not found in map for string: {0}", itemString);
                     showAlert(Alert.AlertType.ERROR, "Item Not Found", "Selected item could not be removed.");
                     return;
                 }
 
-                ListBean underlyingListBean = selectedListModel.getListBean(); // Get the underlying ListBean from ListModel
+                ListBean underlyingListBean = selectedListModel.getListBean();
 
                 switch (itemBean) {
                     case MovieBean movie -> {
@@ -349,8 +337,8 @@ public class ListController implements NavigableController, UserAwareController 
                     }
                 }
 
-                getListView().getItems().remove(itemString); // Remove from ObservableList
-                itemBeanMap.remove(itemString); // Remove from map
+                getListView().getItems().remove(itemString);
+                itemBeanMap.remove(itemString);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Item removed from list.");
 
             } catch (ExceptionApplicationController e) {

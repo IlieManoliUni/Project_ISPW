@@ -9,6 +9,8 @@ import ispw.project.project_ispw.dao.MovieDao;
 import ispw.project.project_ispw.dao.TvSeriesDao;
 import ispw.project.project_ispw.dao.UserDao;
 
+//Not used because not implemented
+
 public class PersistenceModeContext {
 
     private PersistenceModeState currentState;

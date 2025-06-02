@@ -31,16 +31,16 @@ public class LogInController implements NavigableController, UserAwareController
     private Button signInButton;
 
     @FXML
-    private Label errorMessageLabel; // Keep this for binding
+    private Label errorMessageLabel;
 
     private GraphicControllerGui graphicControllerGui;
     private UserModel userModel;
 
     @FXML
-    private HBox headerBar; // Assuming you include default.fxml
+    private HBox headerBar;
 
     @FXML
-    private DefaultBackHomeController headerBarController; // <-- Corrected type to DefaultController
+    private DefaultBackHomeController headerBarController;
 
 
     public LogInController() {
@@ -66,26 +66,22 @@ public class LogInController implements NavigableController, UserAwareController
             headerBarController.setUserModel(this.userModel);
         }
 
-        // --- NEW: Bind errorMessageLabel to userModel's authStatusMessageProperty ---
         if (errorMessageLabel != null) {
             errorMessageLabel.textProperty().bind(userModel.authStatusMessageProperty());
         }
 
-        // --- Handle navigation based on login status ---
-        // This listener will navigate to HOME immediately if login succeeds
         userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal.booleanValue()) {
                 graphicControllerGui.setScreen(SCREEN_HOME);
             } else {
-                clearFields(); // Clear fields if logout occurs or login fails
+                clearFields();
             }
         });
 
-        // --- Initial check on load ---
         if (this.userModel.loggedInProperty().get()) {
-            graphicControllerGui.setScreen(SCREEN_HOME); // If already logged in, go home immediately
+            graphicControllerGui.setScreen(SCREEN_HOME);
         } else {
-            clearFields(); // Clear fields if not logged in initially
+            clearFields();
         }
     }
 
@@ -99,13 +95,12 @@ public class LogInController implements NavigableController, UserAwareController
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        // Clear previous error message if not bound (or if binding is cleared on successful input)
         if (errorMessageLabel != null && errorMessageLabel.textProperty().isBound()) {
-            errorMessageLabel.textProperty().unbind(); // Unbind temporarily to clear
+            errorMessageLabel.textProperty().unbind();
             errorMessageLabel.setText("");
-            errorMessageLabel.textProperty().bind(userModel.authStatusMessageProperty()); // Rebind
+            errorMessageLabel.textProperty().bind(userModel.authStatusMessageProperty());
         } else if (errorMessageLabel != null) {
-            errorMessageLabel.setText(""); // If not bound, just clear it
+            errorMessageLabel.setText("");
         }
 
 
@@ -125,11 +120,7 @@ public class LogInController implements NavigableController, UserAwareController
             return;
         }
 
-        // --- CRITICAL CHANGE HERE: Call userModel.login() directly ---
         userModel.login(username, password);
-        // The outcome (success/failure) and corresponding navigation/error messages
-        // are now handled reactively by the UserModel's properties and their listeners
-        // in setUserModel().
     }
 
     @FXML
@@ -148,10 +139,9 @@ public class LogInController implements NavigableController, UserAwareController
     public void clearFields() {
         if (usernameField != null) usernameField.setText("");
         if (passwordField != null) passwordField.setText("");
-        // Error message label is now bound, so it will update automatically.
-        // We might want to explicitly clear the auth status message in UserModel on certain UI actions.
+
         if (errorMessageLabel != null && errorMessageLabel.textProperty().isBound()) {
-            userModel.authStatusMessageProperty().set(""); // Clear the message via the model
+            userModel.authStatusMessageProperty().set("");
         } else if (errorMessageLabel != null) {
             errorMessageLabel.setText("");
         }

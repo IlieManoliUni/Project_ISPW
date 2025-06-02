@@ -71,27 +71,20 @@ public class UserModel {
         });
     }
 
-    // In UserModel.java
-
     public void register(UserBean newUserBean) {
         authStatusMessage.set("Attempting registration...");
         authErrorMessage.set(null);
 
         executorService.submit(() -> {
             try {
-                boolean registrationSuccess = authService.registerUser(newUserBean); // Calls AuthService to register
-
+                boolean registrationSuccess = authService.registerUser(newUserBean);
                 Platform.runLater(() -> {
                     if (registrationSuccess) {
-                        // --- THE CORRECTED AUTO-LOGIN LOGIC WITHIN USERMODEL ---
-                        // After successful registration, use the UserModel's own login method.
-                        // This will correctly update currentUserProperty and loggedInProperty.
-                        login(newUserBean.getUsername(), newUserBean.getPassword()); // Calls UserModel's login method
+
+                        login(newUserBean.getUsername(), newUserBean.getPassword());
                         authStatusMessage.set("Registration successful. Logging in...");
-                        // --- END CORRECTED AUTO-LOGIN LOGIC ---
                     } else {
                         authStatusMessage.set("Registration failed.");
-                        // Specific messages might be handled by AuthService and propagated
                     }
                 });
             } catch (Exception e) {

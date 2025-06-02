@@ -58,13 +58,11 @@ public class ApplicationController {
         this(new DemoModeState());
     }
 
-    // NEW: Getter for AuthService, needed by UserModel
     public AuthService getAuthService() {
         return authService;
     }
 
     public UserBean getCurrentUserBean() {
-        // Delegate to AuthService to get the current user
         return authService.getCurrentUser();
     }
 
@@ -109,7 +107,6 @@ public class ApplicationController {
     }
 
     public boolean login(String username, String password) throws ExceptionApplicationController {
-        // The authService handles setting its internal currentUser upon successful login
         return authService.login(username, password);
     }
 
@@ -199,10 +196,8 @@ public class ApplicationController {
 
     public void logout() throws ExceptionApplicationController {
         try {
-            // Delegate logout to AuthService
             authService.logout();
 
-            // Clear other session-related state specific to ApplicationController
             this.selectedList = null;
             this.selectedSearchCategory = null;
             this.searchQuery = null;

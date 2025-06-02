@@ -27,7 +27,7 @@ public class GraphicControllerGui implements GraphicController {
     private static final String SYSTEM_ERROR_TITLE = "System Error";
     private static final String LOGINSCREEN = "logIn";
 
-    private static GraphicControllerGui instance; // Singleton instance
+    private static GraphicControllerGui instance;
 
     private final Map<String, String> screenPaths = new HashMap<>();
     private final Deque<String> screenHistory = new ArrayDeque<>();
@@ -35,15 +35,13 @@ public class GraphicControllerGui implements GraphicController {
 
     private final ApplicationController applicationController;
     private final UserModel userModel;
-    private final String fxmlPathPrefix; // NEW: Instance variable to store the passed prefix
+    private final String fxmlPathPrefix;
 
-    // MODIFIED: Constructor now accepts fxmlPathPrefix
     private GraphicControllerGui(PersistenceModeState persistenceState, String fxmlPathPrefix) {
         this.applicationController = new ApplicationController(persistenceState);
         this.userModel = new UserModel(this.applicationController.getAuthService());
-        this.fxmlPathPrefix = fxmlPathPrefix; // Assign the parameter to the instance variable
+        this.fxmlPathPrefix = fxmlPathPrefix;
 
-        // Use the instance variable fxmlPathPrefix for adding screens
         addScreen(LOGINSCREEN, this.fxmlPathPrefix + "logIn.fxml");
         addScreen("home", this.fxmlPathPrefix + "home.fxml");
         addScreen("list", this.fxmlPathPrefix + "list.fxml");
@@ -53,10 +51,8 @@ public class GraphicControllerGui implements GraphicController {
         addScreen("stats", this.fxmlPathPrefix + "stats.fxml");
     }
 
-    // MODIFIED: getInstance now accepts fxmlPathPrefix
     public static synchronized GraphicControllerGui getInstance(PersistenceModeState persistenceState, String fxmlPathPrefix) {
         if (instance == null) {
-            // Pass the fxmlPathPrefix to the constructor
             instance = new GraphicControllerGui(persistenceState, fxmlPathPrefix);
         }
         return instance;
@@ -79,7 +75,6 @@ public class GraphicControllerGui implements GraphicController {
         }
 
         try {
-            // Use the stored fxmlPathPrefix implicitly via screenPaths.get(name)
             FXMLLoader loader = new FXMLLoader(getClass().getResource(screenPaths.get(name)));
             Parent root = loader.load();
             NavigableController controller = loader.getController();
@@ -136,8 +131,6 @@ public class GraphicControllerGui implements GraphicController {
         return applicationController;
     }
 
-    // --- User Authentication and Registration ---
-
     public boolean processLogin(String username, String password) throws ExceptionApplicationController {
         try {
             boolean success = applicationController.login(username, password);
@@ -171,10 +164,6 @@ public class GraphicControllerGui implements GraphicController {
         }
     }
 
-    // --- Navigation Methods with Data Passing ---
-    // These methods set data in the ApplicationController before navigating.
-    // The target controller will then retrieve this data from ApplicationController in its setUserModel/initialize.
-
     public void performSearchAndNavigate(String category, String searchText) {
         try {
             applicationController.setSelectedSearchCategory(category);
@@ -186,12 +175,10 @@ public class GraphicControllerGui implements GraphicController {
         }
     }
 
-    // CHANGED: This method now accepts ListModel
     public void navigateToListDetail(ListModel listModel, String screenName) {
         try {
-            // Extract the underlying ListBean to pass to the ApplicationController
             applicationController.setSelectedList(listModel.getListBean());
-            setScreen(screenName); // Can be "list" or "stats"
+            setScreen(screenName);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error navigating to list details", e);
             showAlert(Alert.AlertType.ERROR, "Navigation Error", "An unexpected error occurred while navigating to list details. Please try again.");
@@ -209,8 +196,6 @@ public class GraphicControllerGui implements GraphicController {
         }
     }
 
-    // --- Getters for data passed to controllers (retrieve from ApplicationController) ---
-    // These getters now correctly defer to the ApplicationController
     public String getSelectedItemCategory() {
         return applicationController.getSelectedItemCategory();
     }
@@ -227,11 +212,10 @@ public class GraphicControllerGui implements GraphicController {
         return applicationController.getSelectedSearchCategory();
     }
 
-    public ListBean getSelectedList() { // This still returns ListBean as ApplicationController stores ListBean
+    public ListBean getSelectedList() {
         return applicationController.getSelectedList();
     }
 
-    // --- Alert Helper ---
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);

@@ -1,6 +1,6 @@
 package ispw.project.project_ispw.model;
 
-import com.google.gson.annotations.SerializedName; // <<< ADD THIS IMPORT
+import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 public class TvSeriesModel {
@@ -8,30 +8,30 @@ public class TvSeriesModel {
 
     private String name;
 
-    @SerializedName("original_name") // <<< ADDED
+    @SerializedName("original_name")
     private String originalName;
 
-    @SerializedName("original_language") // <<< ADDED
+    @SerializedName("original_language")
     private String originalLanguage;
 
     private String overview;
 
-    @SerializedName("poster_path") // <<< ADDED
+    @SerializedName("poster_path")
     private String posterPath;
 
-    @SerializedName("backdrop_path") // <<< ADDED
+    @SerializedName("backdrop_path")
     private String backdropPath;
 
-    @SerializedName("first_air_date") // <<< ADDED
+    @SerializedName("first_air_date")
     private String firstAirDate;
 
-    @SerializedName("last_air_date") // <<< ADDED
+    @SerializedName("last_air_date")
     private String lastAirDate;
 
-    @SerializedName("vote_average") // <<< ADDED
+    @SerializedName("vote_average")
     private double voteAverage;
 
-    @SerializedName("vote_count") // <<< ADDED
+    @SerializedName("vote_count")
     private int voteCount;
 
     private double popularity;
@@ -40,33 +40,28 @@ public class TvSeriesModel {
 
     private String tagline;
 
-    @SerializedName("number_of_seasons") // <<< ADDED
+    @SerializedName("number_of_seasons")
     private int numberOfSeasons;
 
-    @SerializedName("number_of_episodes") // <<< ADDED
+    @SerializedName("number_of_episodes")
     private int numberOfEpisodes;
 
-    @SerializedName("episode_run_time") // <<< ADDED
-    private List<Integer> episodeRunTime; // This type is correct for TMDB's structure
+    @SerializedName("episode_run_time")
+    private List<Integer> episodeRunTime;
 
-    @SerializedName("origin_country") // <<< ADDED (TMDB uses "origin_country" as a list of strings)
+    @SerializedName("origin_country")
     private List<String> origins;
 
-    // Type is already correct (List<Genre>)
     private List<Genre> genres;
 
-    // Type is already correct (List<Network>)
     private List<Network> networks;
 
-    // <<< CHANGED TYPE FROM List<String> to List<ProductionCompany> AND ADDED @SerializedName
     @SerializedName("production_companies")
     private List<ProductionCompany> productionCompanies;
 
-    // Type is already correct (List<SpokenLanguage>)
     @SerializedName("spoken_languages") // <<< ADDED
     private List<SpokenLanguage> spokenLanguages;
 
-    // <<< CHANGED TYPE FROM List<String> to List<Creator> AND ADDED @SerializedName
     @SerializedName("created_by")
     private List<Creator> createdBy;
 
@@ -79,7 +74,6 @@ public class TvSeriesModel {
         //Empty constructor needed for Gson
     }
 
-    // --- Getters ---
     public int getId() { return id; }
     public String getName() { return name; }
     public String getOriginalName() { return originalName; }
@@ -106,7 +100,6 @@ public class TvSeriesModel {
     public boolean getInProduction() { return inProduction; }
 
 
-    // --- Setters ---
     public void setId(int id) { this.id = id; }
     public void setName(String name) { this.name = name; }
     public void setOriginalName(String originalName) { this.originalName = originalName; }
@@ -146,8 +139,6 @@ public class TvSeriesModel {
                 '}';
     }
 
-    // --- Nested Classes (Must be public static for Gson to work easily) ---
-
     public static class Genre {
         private int id;
         private String name;
@@ -165,10 +156,10 @@ public class TvSeriesModel {
 
     public static class Network {
         private int id;
-        @SerializedName("logo_path") // <<< ADDED
+        @SerializedName("logo_path")
         private String logoPath;
         private String name;
-        @SerializedName("origin_country") // <<< ADDED
+        @SerializedName("origin_country")
         private String originCountry;
 
         public Network() {
@@ -188,10 +179,10 @@ public class TvSeriesModel {
 
     public static class ProductionCompany {
         private int id;
-        @SerializedName("logo_path") // <<< ADDED
+        @SerializedName("logo_path")
         private String logoPath;
         private String name;
-        @SerializedName("origin_country") // <<< ADDED
+        @SerializedName("origin_country")
         private String originCountry;
 
         public ProductionCompany() {
@@ -210,9 +201,9 @@ public class TvSeriesModel {
     }
 
     public static class SpokenLanguage {
-        @SerializedName("english_name") // <<< ADDED
+        @SerializedName("english_name")
         private String englishName;
-        @SerializedName("iso_639_1") // <<< ADDED
+        @SerializedName("iso_639_1")
         private String iso6391;
         private String name;
 
@@ -231,11 +222,11 @@ public class TvSeriesModel {
 
     public static class Creator {
         private int id;
-        @SerializedName("credit_id") // <<< ADDED
+        @SerializedName("credit_id")
         private String creditId;
         private String name;
         private int gender;
-        @SerializedName("profile_path") // <<< ADDED
+        @SerializedName("profile_path")
         private String profilePath;
 
         public Creator() {

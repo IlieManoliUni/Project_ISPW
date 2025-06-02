@@ -28,7 +28,7 @@ public class SearchController implements NavigableController, UserAwareControlle
 
     private static final Logger LOGGER = Logger.getLogger(SearchController.class.getName());
     private static final String SYSTEM_ERROR_TITLE = "System Error";
-    private static final String SCREEN_LOGIN = "logIn"; // This constant is still useful for *other* login-required actions
+    private static final String SCREEN_LOGIN = "logIn";
 
     @FXML
     private ListView<String> listView;
@@ -80,18 +80,13 @@ public class SearchController implements NavigableController, UserAwareControlle
         }
 
         userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal.booleanValue()) { // User just logged out
-                // IMPORTANT: Only clear results or redirect IF the results themselves depend on user login,
-                // or if the user was logged in and explicitly logs out from this screen.
-                // For a public search, you might choose to keep results visible but disable/hide login-required features.
-                // For now, let's keep the current behavior of clearing results on logout for simplicity.
+            if (!newVal.booleanValue()) {
                 items.clear();
                 searchResultModelMap.clear();
                 searchResultsLabel.setText("Search Results (Logged Out)");
                 showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been logged out. Search results cleared.");
-                graphicControllerGui.setScreen(SCREEN_LOGIN); // Redirect to login after logout
-            } else { // User just logged in
-                // If there's a pending search query, re-run it
+                graphicControllerGui.setScreen(SCREEN_LOGIN);
+            } else {
                 if (currentSearchCategory != null && currentSearchQuery != null && !currentSearchQuery.isEmpty()) {
                     searchResultsLabel.setText(String.format("Search Results for '%s' in %s:", currentSearchQuery, currentSearchCategory));
                     performSearch();
@@ -99,8 +94,6 @@ public class SearchController implements NavigableController, UserAwareControlle
             }
         });
 
-        // Initial search execution when the controller is set up with the UserModel
-        // This ensures search results are loaded whether user is logged in or not.
         if (currentSearchCategory != null && currentSearchQuery != null && !currentSearchQuery.isEmpty()) {
             searchResultsLabel.setText(String.format("Search Results for '%s' in %s:", currentSearchQuery, currentSearchCategory));
             performSearch();
@@ -112,7 +105,7 @@ public class SearchController implements NavigableController, UserAwareControlle
 
     @FXML
     private void initialize() {
-        // No elements to initialize beyond FXML's injection.
+        // No elements to initialize
     }
 
     private void performSearch() {
@@ -126,7 +119,6 @@ public class SearchController implements NavigableController, UserAwareControlle
 
         try {
             List<?> results = null;
-            // The search methods in ApplicationController should not require login for public content.
             switch (currentSearchCategory) {
                 case "Movie":
                     results = graphicControllerGui.getApplicationController().searchMovies(currentSearchQuery);
@@ -182,7 +174,6 @@ public class SearchController implements NavigableController, UserAwareControlle
                 }
             }
 
-            // Create a unique key that includes the ID to ensure proper mapping
             String key = itemString + " (ID: " + itemId + ")";
             items.add(key);
             searchResultModelMap.put(key, model);
@@ -238,7 +229,6 @@ public class SearchController implements NavigableController, UserAwareControlle
                 String category;
                 int id;
 
-                // Extract category and ID from the bean to pass to navigateToItemDetails
                 switch (itemModel) {
                     case MovieModel movie -> {
                         category = "Movie";
@@ -258,7 +248,6 @@ public class SearchController implements NavigableController, UserAwareControlle
                     }
                 }
 
-                // Navigate to the 'show' screen
                 graphicControllerGui.navigateToItemDetails(category, id);
 
             } catch (Exception e) {

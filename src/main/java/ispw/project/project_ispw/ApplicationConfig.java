@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 public class ApplicationConfig {
 
     private static final Logger LOGGER = Logger.getLogger(ApplicationConfig.class.getName());
-    private static final String CONFIG_FILE_NAME = "application.properties"; // Default config file name
+    private static final String CONFIG_FILE_NAME = "application.properties";
     private final Properties properties;
 
     public ApplicationConfig() {
@@ -17,7 +17,6 @@ public class ApplicationConfig {
         try (InputStream input = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE_NAME)) {
             if (input == null) {
                 LOGGER.log(Level.WARNING, "Sorry, unable to find {0}", CONFIG_FILE_NAME);
-                // Optionally throw an exception or handle this case more robustly
             } else {
                 properties.load(input);
             }

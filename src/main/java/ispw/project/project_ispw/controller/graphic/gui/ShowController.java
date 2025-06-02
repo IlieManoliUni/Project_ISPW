@@ -56,20 +56,11 @@ public class ShowController implements NavigableController, UserAwareController 
     private int currentId;
     private Object currentItemBean;
 
-    // --- MODIFIED / ADDED LINES START ---
-
-    // 1. This field now correctly holds the root UI element (HBox) from defaultBackHome.fxml.
-    //    It matches fx:id="headerBar" from your FXML.
     @FXML
-    private HBox headerBar; // CHANGE THIS LINE (Type from DefaultBackHomeController to HBox)
+    private HBox headerBar;
 
-    // 2. This new field holds the DefaultBackHomeController instance itself.
-    //    Its name follows the convention: <fx:id_of_include> + "Controller"
-    //    So, since your include has fx:id="headerBar", this field should be "headerBarController"
     @FXML
-    private DefaultBackHomeController headerBarController; // ADD THIS LINE
-
-    // --- MODIFIED / ADDED LINES END ---
+    private DefaultBackHomeController headerBarController;
 
     public ShowController() {
         //empty constructor
@@ -88,9 +79,7 @@ public class ShowController implements NavigableController, UserAwareController 
     public void setGraphicController(GraphicControllerGui graphicController) {
         this.graphicControllerGui = graphicController;
 
-        // Pass graphicController to the included header controller
-        // Use the new headerBarController field here
-        if (headerBarController != null) { // CHANGE THIS LINE
+        if (headerBarController != null) {
             headerBarController.setGraphicController(this.graphicControllerGui);
         } else {
             LOGGER.log(Level.WARNING, "Header bar controller is null. The header might not function correctly.");
@@ -104,9 +93,7 @@ public class ShowController implements NavigableController, UserAwareController 
     public void setUserModel(UserModel userModel) {
         this.userModel = userModel;
 
-        // Pass the UserModel down to the included DefaultBackHomeController
-        // Use the new headerBarController field here
-        if (headerBarController != null) { // CHANGE THIS LINE
+        if (headerBarController != null) {
             headerBarController.setUserModel(this.userModel);
         }
 
@@ -231,7 +218,7 @@ public class ShowController implements NavigableController, UserAwareController 
                 if (anime.getCoverImage() != null) {
                     imageUrl = anime.getCoverImage().getMedium();
                 } else {
-                    imageUrl = null; // Or a placeholder URL if no image is available
+                    imageUrl = null;
                 }
             }
             default -> {
@@ -256,15 +243,14 @@ public class ShowController implements NavigableController, UserAwareController 
         }
     }
 
-    private String formatStringList(List<String> list) { // <<< Renamed from formatList
+    private String formatStringList(List<String> list) {
         if (list == null || list.isEmpty()) {
             return "N/A";
         }
         return String.join(", ", list);
     }
 
-    // Method for formatting MovieModel.Genre objects
-    private String formatMovieGenres(List<MovieModel.Genre> genres) { // <<< Renamed from formatList
+    private String formatMovieGenres(List<MovieModel.Genre> genres) {
         if (genres == null || genres.isEmpty()) {
             return "N/A";
         }
@@ -273,8 +259,7 @@ public class ShowController implements NavigableController, UserAwareController 
                 .collect(Collectors.joining(", "));
     }
 
-    // Method for formatting MovieModel.ProductionCompany objects
-    private String formatMovieProductionCompanies(List<MovieModel.ProductionCompany> companies) { // <<< Renamed
+    private String formatMovieProductionCompanies(List<MovieModel.ProductionCompany> companies) {
         if (companies == null || companies.isEmpty()) {
             return "N/A";
         }
@@ -283,7 +268,7 @@ public class ShowController implements NavigableController, UserAwareController 
                 .collect(Collectors.joining(", "));
     }
 
-    private String formatTvSeriesProductionCompanies(List<TvSeriesModel.ProductionCompany> companies) { // <<< NEW METHOD
+    private String formatTvSeriesProductionCompanies(List<TvSeriesModel.ProductionCompany> companies) {
         if (companies == null || companies.isEmpty()) {
             return "N/A";
         }
@@ -292,8 +277,7 @@ public class ShowController implements NavigableController, UserAwareController 
                 .collect(Collectors.joining(", "));
     }
 
-    // Method for formatting TvSeriesModel.Creator objects
-    private String formatTvSeriesCreators(List<TvSeriesModel.Creator> creators) { // <<< ALREADY SUGGESTED
+    private String formatTvSeriesCreators(List<TvSeriesModel.Creator> creators) {
         if (creators == null || creators.isEmpty()) {
             return "N/A";
         }

@@ -6,6 +6,7 @@ import ispw.project.project_ispw.exception.ExceptionUser;
 import ispw.project.project_ispw.model.AnimeModel;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SeeAnimeDetailsCommand implements CliCommand {
     @Override
@@ -16,10 +17,10 @@ public class SeeAnimeDetailsCommand implements CliCommand {
 
         try {
             int animeId = Integer.parseInt(args.trim());
-            AnimeModel anime = context.getApplicationController().retrieveAnimeById(animeId);
+            AnimeModel anime = (AnimeModel) context.viewContentDetails("anime", animeId);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("--- Anime Details (ID: ").append(nullSafeString(anime.getId())).append(") ---\n");
+            sb.append("--- Anime Details (ID: ").append(anime.getId()).append(") ---\n");
             sb.append("Title: ").append(nullSafeString(anime.getTitle())).append("\n");
             sb.append("Description: ").append(nullSafeDescription(anime.getDescription())).append("\n");
             sb.append("Episodes: ").append(nullSafeString(anime.getEpisodes())).append("\n");
@@ -31,7 +32,7 @@ public class SeeAnimeDetailsCommand implements CliCommand {
             sb.append("Mean Score: ").append(nullSafeString(anime.getMeanScore())).append("\n");
             sb.append("Status: ").append(nullSafeString(anime.getStatus())).append("\n");
             sb.append("Next Airing Episode: ").append(nullSafeString(anime.getNextAiringEpisode(), "No more airing info")).append("\n");
-            sb.append("Genres: ").append(nullSafeGenres(anime.getGenres())).append("\n");
+            sb.append("Genres: ").append(formatAnimeGenres(anime.getGenres())).append("\n");
             sb.append("Cover Image URL: ").append(nullSafeString(anime.getCoverImage())).append("\n");
             sb.append("--------------------------------------");
 
@@ -44,6 +45,16 @@ public class SeeAnimeDetailsCommand implements CliCommand {
         }
     }
 
+    // --- Helper methods for formatting AnimeModel's nested objects ---
+
+    private String formatAnimeGenres(List<String> genres) {
+        if (genres == null || genres.isEmpty()) {
+            return "N/A";
+        }
+        return genres.stream()
+                .collect(Collectors.joining(", "));
+    }
+
     private String nullSafeString(Object value) {
         return value != null ? value.toString() : "N/A";
     }
@@ -54,16 +65,15 @@ public class SeeAnimeDetailsCommand implements CliCommand {
 
     private String nullSafeDescription(String description) {
         if (description != null) {
-            return description.replace("<br>", "\n").replace("<i>", "").replace("</i>", "");
+            return description.replace("<br>", "\n")
+                    .replace("<i>", "")
+                    .replace("</i>", "")
+                    .replaceAll("<[^>]*>", "");
         }
         return "N/A";
     }
 
     private String nullSafeDuration(Integer duration) {
         return duration != null ? duration + " minutes" : "N/A";
-    }
-
-    private String nullSafeGenres(List<String> genres) {
-        return (genres != null && !genres.isEmpty()) ? String.join(", ", genres) : "N/A";
     }
 }
