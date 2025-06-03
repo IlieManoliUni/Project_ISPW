@@ -56,9 +56,7 @@ public class DefaultBackHomeController implements NavigableController {
 
         if (loggedInListener == null) {
             loggedInListener = (observable, oldValue, newValue) -> {
-                // This listener ensures the userButton text is updated automatically
-                // thanks to the binding. No explicit alert or redirection is needed here,
-                // as GraphicControllerGui handles those global logout actions.
+                // This listener ensures the userButton text is updated automatically thanks to the binding.
             };
             this.userModel.loggedInProperty().addListener(loggedInListener);
         }
@@ -93,12 +91,6 @@ public class DefaultBackHomeController implements NavigableController {
     private void handleSearchButtonAction() {
         String searchText = searchBar.getText().trim();
         String selectedCategory = categoryComboBox.getValue();
-
-        if (userModel == null || !userModel.loggedInProperty().get()) {
-            showAlert(Alert.AlertType.ERROR, "Authentication Required", "You must be logged in to perform searches.");
-            graphicControllerGui.setScreen("logIn");
-            return;
-        }
 
         if (selectedCategory != null && !searchText.isEmpty()) {
             graphicControllerGui.performSearchAndNavigate(selectedCategory, searchText);

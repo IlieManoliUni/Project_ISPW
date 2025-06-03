@@ -17,11 +17,17 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/*
+ * UserModel class acts as a data model responsible for managing the application's user session and authentication state.
+ * It provides observable JavaFX properties for UI binding, allowing views to react to changes in login status,
+ * current user information, and authentication-related messages.
+ */
 public class UserModel {
 
     private static final Logger logger = Logger.getLogger(UserModel.class.getName());
 
     private final AuthService authService;
+    //Perform operations on separated threads
     private final ExecutorService executorService;
 
     private final ObjectProperty<UserBean> currentUserProperty = new SimpleObjectProperty<>();

@@ -34,6 +34,7 @@ public class UserBean implements Serializable{
         this.password = password;
     }
 
+    // For the InMemory Operations
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

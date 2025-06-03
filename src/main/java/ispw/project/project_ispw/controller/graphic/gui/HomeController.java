@@ -69,6 +69,7 @@ public class HomeController implements NavigableController, UserAwareController 
             headerIncludeController.setGraphicController(this.graphicControllerGui);
         }
 
+        //list of user
         listView.setItems(items);
         listView.setCellFactory(param -> new CustomListCell());
 

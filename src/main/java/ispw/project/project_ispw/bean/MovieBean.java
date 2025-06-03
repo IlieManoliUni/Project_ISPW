@@ -46,6 +46,7 @@ public class MovieBean implements Serializable {
         this.runtime = runtime;
     }
 
+    // For the InMemory Operations
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

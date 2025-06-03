@@ -4,7 +4,6 @@ import ispw.project.project_ispw.controller.application.ApplicationController;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
 import ispw.project.project_ispw.controller.graphic.GraphicController;
-import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.model.ListModel;
 import ispw.project.project_ispw.model.UserModel;
 import javafx.beans.value.ChangeListener;
@@ -54,6 +53,7 @@ public class GraphicControllerGui implements GraphicController {
         addScreen("stats", this.fxmlPathPrefix + "stats.fxml");
 
         loggedInGlobalListener = (obs, oldVal, newVal) -> {
+            //transition from a logged-in state (oldVal is true) to a logged-out state (newVal is false)
             if (!newVal.booleanValue() && oldVal.booleanValue()) {
                 LOGGER.log(Level.INFO, "GraphicControllerGui: User logged out. Clearing history and showing alert.");
                 showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been successfully logged out. All data cleared.");
@@ -145,36 +145,6 @@ public class GraphicControllerGui implements GraphicController {
         return applicationController;
     }
 
-    public boolean processLogin(String username, String password) throws ExceptionApplication {
-        try {
-            boolean success = applicationController.login(username, password);
-            if (success) {
-                setScreen("home");
-            }
-            return success;
-        } catch (ExceptionApplication e) {
-            LOGGER.log(Level.WARNING, "Login failed: {0}", e.getMessage());
-            showAlert(Alert.AlertType.ERROR, "Navigation login error", "An unexpected error occurred during login.");
-            return false;
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Unexpected error during login process", e);
-            showAlert(Alert.AlertType.ERROR, "Navigation error", "An unexpected error occurred during login.");
-            return false;
-        }
-    }
-
-    public void logout() {
-        try {
-            applicationController.logout();
-            userModel.logout();
-        } catch (ExceptionApplication e) {
-            LOGGER.log(Level.SEVERE, "Error during logout process: {0}", e.getMessage());
-            showAlert(Alert.AlertType.ERROR, "Logout Error", "Failed to logout: " + e.getMessage());
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "An unexpected error occurred during logout", e);
-            showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during logout.");
-        }
-    }
 
     public void performSearchAndNavigate(String category, String searchText) {
         try {

@@ -56,6 +56,7 @@ public class AnimeBean implements Serializable {
         this.duration = duration;
     }
 
+    // For the InMemory Operations
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

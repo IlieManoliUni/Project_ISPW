@@ -54,7 +54,7 @@ public class FullModeState implements PersistenceModeState {
                     this.listTvSeriesDao = new ListTvSeriesDaoJdbc();
                     this.listAnimeDao = new ListAnimeDaoJdbc();
                 } catch (Exception e) {
-                    throw new IllegalStateException("Error initializing JDBC DAOs. Ensure all JDBC DAO classes are implemented and available.", e);
+                    throw new IllegalStateException("Error initializing JDBC DAOs.", e);
                 }
                 break;
 
@@ -69,7 +69,7 @@ public class FullModeState implements PersistenceModeState {
                     this.listTvSeriesDao = new ListTvSeriesDaoCsv();
                     this.listAnimeDao = new ListAnimeDaoCsv();
                 } catch (Exception e) {
-                    throw new IllegalStateException("Error initializing CSV DAOs. Ensure all CSV DAO classes are implemented and available.", e);
+                    throw new IllegalStateException("Error initializing CSV DAOs.", e);
                 }
                 break;
 

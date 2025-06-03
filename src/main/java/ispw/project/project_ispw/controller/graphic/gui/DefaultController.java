@@ -109,12 +109,6 @@ public class DefaultController implements NavigableController {
             return;
         }
 
-        if (userModel == null || !userModel.loggedInProperty().get()) {
-            showAlert(Alert.AlertType.ERROR, "Authentication Required", "You must be logged in to perform searches.");
-            graphicControllerGui.setScreen("logIn");
-            return;
-        }
-
         try {
             graphicControllerGui.performSearchAndNavigate(selectedCategory, searchText);
         } catch (Exception e) {

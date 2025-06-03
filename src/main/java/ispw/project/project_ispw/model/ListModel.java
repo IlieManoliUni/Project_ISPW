@@ -6,6 +6,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
+// Model for displaying and managing a user's list within the UI
 public class ListModel {
 
     private final ListBean listBean;
