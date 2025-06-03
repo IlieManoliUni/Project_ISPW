@@ -2,7 +2,7 @@ package ispw.project.project_ispw.controller.application.util;
 
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.dao.UserDao;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 
 public class AuthService {
 
@@ -17,7 +17,7 @@ public class AuthService {
         return currentUser;
     }
 
-    public boolean login(String username, String password) throws ExceptionApplicationController {
+    public boolean login(String username, String password) throws ExceptionApplication {
         try {
             UserBean user = userDao.retrieveByUsername(username);
             if (user != null && user.getPassword().equals(password)) {
@@ -28,21 +28,21 @@ public class AuthService {
                 return false;
             }
         } catch (Exception e) {
-            throw new ExceptionApplicationController("Failed to login: " + e.getMessage(), e);
+            throw new ExceptionApplication("Failed to login: " + e.getMessage(), e);
         }
     }
 
-    public boolean registerUser(UserBean userBean) throws ExceptionApplicationController {
+    public boolean registerUser(UserBean userBean) throws ExceptionApplication {
         try {
             if (userDao.retrieveByUsername(userBean.getUsername()) != null) {
-                throw new ExceptionApplicationController("Username already exists. Please choose a different one.");
+                throw new ExceptionApplication("Username already exists. Please choose a different one.");
             }
             userDao.saveUser(userBean);
             return true;
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             throw e;
         } catch (Exception e) {
-            throw new ExceptionApplicationController("Failed to register user: " + e.getMessage(), e);
+            throw new ExceptionApplication("Failed to register user: " + e.getMessage(), e);
         }
     }
 

@@ -11,6 +11,7 @@ import javafx.scene.control.TextField;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.StringBinding;
+import javafx.beans.value.ChangeListener;
 
 
 public class DefaultBackHomeController implements NavigableController {
@@ -36,7 +37,13 @@ public class DefaultBackHomeController implements NavigableController {
     private GraphicControllerGui graphicControllerGui;
     private UserModel userModel;
 
+    private ChangeListener<Boolean> loggedInListener;
+
     public void setUserModel(UserModel userModel) {
+        if (this.userModel != null && loggedInListener != null) {
+            this.userModel.loggedInProperty().removeListener(loggedInListener);
+        }
+
         this.userModel = userModel;
 
         BooleanBinding userNotLoggedIn = userModel.usernameDisplayProperty().isEmpty();
@@ -47,13 +54,14 @@ public class DefaultBackHomeController implements NavigableController {
 
         userButton.textProperty().bind(userButtonTextBinding);
 
-
-        userModel.loggedInProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.booleanValue() && oldValue.booleanValue()) {
-                graphicControllerGui.setScreen("logIn");
-                showAlert(Alert.AlertType.INFORMATION, "Logout", "You have been successfully logged out.");
-            }
-        });
+        if (loggedInListener == null) {
+            loggedInListener = (observable, oldValue, newValue) -> {
+                // This listener ensures the userButton text is updated automatically
+                // thanks to the binding. No explicit alert or redirection is needed here,
+                // as GraphicControllerGui handles those global logout actions.
+            };
+            this.userModel.loggedInProperty().addListener(loggedInListener);
+        }
     }
 
     @Override
@@ -85,6 +93,12 @@ public class DefaultBackHomeController implements NavigableController {
     private void handleSearchButtonAction() {
         String searchText = searchBar.getText().trim();
         String selectedCategory = categoryComboBox.getValue();
+
+        if (userModel == null || !userModel.loggedInProperty().get()) {
+            showAlert(Alert.AlertType.ERROR, "Authentication Required", "You must be logged in to perform searches.");
+            graphicControllerGui.setScreen("logIn");
+            return;
+        }
 
         if (selectedCategory != null && !searchText.isEmpty()) {
             graphicControllerGui.performSearchAndNavigate(selectedCategory, searchText);

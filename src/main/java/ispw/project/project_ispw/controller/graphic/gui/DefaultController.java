@@ -1,6 +1,6 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
-import ispw.project.project_ispw.model.UserModel; // <-- NEW: Import UserModel
+import ispw.project.project_ispw.model.UserModel;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -39,7 +39,6 @@ public class DefaultController implements NavigableController {
 
         setupCategoryComboBox();
         setupSearchButton();
-
     }
 
     public void setUserModel(UserModel userModel) {
@@ -57,7 +56,7 @@ public class DefaultController implements NavigableController {
     private void setupUserButtonBindingAndAction() {
         if (userButton == null || userModel == null) {
             if (userButton != null) {
-                userButton.setText("Log In (Loading...)"); // Temporary text
+                userButton.setText("Log In (Loading...)");
             }
             return;
         }
@@ -86,8 +85,6 @@ public class DefaultController implements NavigableController {
             return;
         }
         userModel.logout();
-
-        graphicControllerGui.setScreen("logIn");
     }
 
     private void setupSearchButton() {
@@ -109,6 +106,12 @@ public class DefaultController implements NavigableController {
 
         if (selectedCategory == null || searchText.isEmpty()) {
             showAlert(Alert.AlertType.WARNING, "Search Input", "Please enter search text and select a category.");
+            return;
+        }
+
+        if (userModel == null || !userModel.loggedInProperty().get()) {
+            showAlert(Alert.AlertType.ERROR, "Authentication Required", "You must be logged in to perform searches.");
+            graphicControllerGui.setScreen("logIn");
             return;
         }
 

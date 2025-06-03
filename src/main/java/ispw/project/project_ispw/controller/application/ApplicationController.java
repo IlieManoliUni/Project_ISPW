@@ -8,7 +8,7 @@ import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.controller.application.state.DemoModeState;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
 import ispw.project.project_ispw.controller.application.util.*;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.model.AnimeModel;
 import ispw.project.project_ispw.model.MovieModel;
 import ispw.project.project_ispw.model.TvSeriesModel;
@@ -106,95 +106,95 @@ public class ApplicationController {
         this.selectedList = selectedList;
     }
 
-    public boolean login(String username, String password) throws ExceptionApplicationController {
+    public boolean login(String username, String password) throws ExceptionApplication {
         return authService.login(username, password);
     }
 
-    public boolean registerUser(UserBean userBean) throws ExceptionApplicationController {
+    public boolean registerUser(UserBean userBean) throws ExceptionApplication {
         return authService.registerUser(userBean);
     }
 
-    public List<MovieModel> searchMovies(String query) throws ExceptionApplicationController {
+    public List<MovieModel> searchMovies(String query) throws ExceptionApplication {
         return contentService.searchAndMapMovies(query);
     }
 
-    public List<TvSeriesModel> searchTvSeries(String query) throws ExceptionApplicationController {
+    public List<TvSeriesModel> searchTvSeries(String query) throws ExceptionApplication {
         return contentService.searchAndMapTvSeries(query);
     }
 
-    public List<AnimeModel> searchAnime(String query) throws ExceptionApplicationController {
+    public List<AnimeModel> searchAnime(String query) throws ExceptionApplication {
         return contentService.searchAndMapAnime(query);
     }
 
-    public MovieModel retrieveMovieById(int id) throws ExceptionApplicationController {
+    public MovieModel retrieveMovieById(int id) throws ExceptionApplication {
         return contentService.retrieveMovieById(id);
     }
 
-    public TvSeriesModel retrieveTvSeriesById(int id) throws ExceptionApplicationController {
+    public TvSeriesModel retrieveTvSeriesById(int id) throws ExceptionApplication {
         return contentService.retrieveTvSeriesById(id);
     }
 
-    public AnimeModel retrieveAnimeById(int id) throws ExceptionApplicationController {
+    public AnimeModel retrieveAnimeById(int id) throws ExceptionApplication {
         return contentService.retrieveAnimeById(id);
     }
 
-    public ListBean findListForUserByName(UserBean user, String listName) throws ExceptionApplicationController {
+    public ListBean findListForUserByName(UserBean user, String listName) throws ExceptionApplication {
         return listManagementService.findListForUserByName(user, listName);
     }
 
-    public ListBean getListByIdForCurrentUser(int listId, UserBean userBean) throws ExceptionApplicationController {
+    public ListBean getListByIdForCurrentUser(int listId, UserBean userBean) throws ExceptionApplication {
         return listManagementService.getListByIdForUser(listId, userBean);
     }
 
-    public boolean addMovieToList(ListBean targetList, int movieId) throws ExceptionApplicationController {
+    public boolean addMovieToList(ListBean targetList, int movieId) throws ExceptionApplication {
         return listManagementService.addMovieToList(targetList, movieId);
     }
 
-    public boolean removeMovieFromList(ListBean targetList, int movieId) throws ExceptionApplicationController {
+    public boolean removeMovieFromList(ListBean targetList, int movieId) throws ExceptionApplication {
         return listManagementService.removeMovieFromList(targetList, movieId);
     }
 
-    public boolean addTvSeriesToList(ListBean targetList, int tvSeriesId) throws ExceptionApplicationController {
+    public boolean addTvSeriesToList(ListBean targetList, int tvSeriesId) throws ExceptionApplication {
         return listManagementService.addTvSeriesToList(targetList, tvSeriesId);
     }
 
-    public boolean removeTvSeriesFromList(ListBean targetList, int tvSeriesId) throws ExceptionApplicationController {
+    public boolean removeTvSeriesFromList(ListBean targetList, int tvSeriesId) throws ExceptionApplication {
         return listManagementService.removeTvSeriesFromList(targetList, tvSeriesId);
     }
 
-    public boolean addAnimeToList(ListBean targetList, int animeId) throws ExceptionApplicationController {
+    public boolean addAnimeToList(ListBean targetList, int animeId) throws ExceptionApplication {
         return listManagementService.addAnimeToList(targetList, animeId);
     }
 
-    public boolean removeAnimeFromList(ListBean targetList, int animeId) throws ExceptionApplicationController {
+    public boolean removeAnimeFromList(ListBean targetList, int animeId) throws ExceptionApplication {
         return listManagementService.removeAnimeFromList(targetList, animeId);
     }
 
-    public List<ListBean> getListsForUser(UserBean userBean) throws ExceptionApplicationController {
+    public List<ListBean> getListsForUser(UserBean userBean) throws ExceptionApplication {
         return listManagementService.getListsForUser(userBean);
     }
 
-    public boolean createList(ListBean newListBean, UserBean userBean) throws ExceptionApplicationController {
+    public boolean createList(ListBean newListBean, UserBean userBean) throws ExceptionApplication {
         return listManagementService.createList(newListBean, userBean);
     }
 
-    public boolean deleteList(ListBean listBean) throws ExceptionApplicationController {
+    public boolean deleteList(ListBean listBean) throws ExceptionApplication {
         return listManagementService.deleteList(listBean);
     }
 
-    public List<MovieBean> getMoviesInList(ListBean listBean) throws ExceptionApplicationController {
+    public List<MovieBean> getMoviesInList(ListBean listBean) throws ExceptionApplication {
         return listManagementService.getMoviesInList(listBean);
     }
 
-    public List<TvSeriesBean> getTvSeriesInList(ListBean listBean) throws ExceptionApplicationController {
+    public List<TvSeriesBean> getTvSeriesInList(ListBean listBean) throws ExceptionApplication {
         return listManagementService.getTvSeriesInList(listBean);
     }
 
-    public List<AnimeBean> getAnimeInList(ListBean listBean) throws ExceptionApplicationController {
+    public List<AnimeBean> getAnimeInList(ListBean listBean) throws ExceptionApplication {
         return listManagementService.getAnimeInList(listBean);
     }
 
-    public void logout() throws ExceptionApplicationController {
+    public void logout() throws ExceptionApplication {
         try {
             authService.logout();
 
@@ -204,7 +204,7 @@ public class ApplicationController {
             this.selectedItemCategory = null;
             this.selectedItemId = 0;
         } catch (Exception e) {
-            throw new ExceptionApplicationController("An unexpected error occurred during logout.", e);
+            throw new ExceptionApplication("An unexpected error occurred during logout.", e);
         }
     }
 }

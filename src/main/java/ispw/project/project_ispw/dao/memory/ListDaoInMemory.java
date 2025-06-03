@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,20 +32,27 @@ public class ListDaoInMemory implements ListDao {
 
     @Override
     public void saveList(ListBean list, UserBean user) throws ExceptionDao {
-        if (list == null || user == null) {
-            throw new IllegalArgumentException("List and User cannot be null.");
+        if (list == null || user == null || user.getUsername() == null) {
+            throw new IllegalArgumentException("List, User, or Username cannot be null.");
         }
 
         int id = list.getId();
         String username = user.getUsername();
 
         if (listMap.containsKey(id)) {
-            throw new ExceptionDao("List with ID " + id + " already exists.");
+            throw new ExceptionDao("List with ID " + id + " already exists. Use update if you intend to modify.");
+        }
+
+        if (!Objects.equals(list.getUsername(), username)) {
+            LOGGER.log(Level.WARNING, "ListBean's username ({0}) does not match UserBean's username ({1}). Setting ListBean's username.", new Object[]{list.getUsername(), username});
+            list.setUsername(username);
         }
 
         listMap.put(id, list);
 
         userListsMap.computeIfAbsent(username, k -> new HashSet<>()).add(id);
+
+        LOGGER.log(Level.INFO, "List with ID {0} saved for user {1}.", new Object[]{id, username});
     }
 
     @Override
@@ -54,21 +62,34 @@ public class ListDaoInMemory implements ListDao {
         }
 
         int id = list.getId();
-        String username = list.getUsername();
+        String listOwnerUsername = list.getUsername();
+
+        if (listOwnerUsername == null) {
+            throw new IllegalArgumentException("Cannot delete list: ListBean's username is null. Ensure the ListBean is fully populated.");
+        }
 
         if (!listMap.containsKey(id)) {
             throw new ExceptionDao("List with ID " + id + " not found for deletion.");
         }
 
+        ListBean storedList = listMap.get(id);
+        if (!Objects.equals(storedList.getUsername(), listOwnerUsername)) {
+            LOGGER.log(Level.WARNING, "Attempt to delete list {0} by user {1}, but it's owned by {2}.",
+                    new Object[]{id, listOwnerUsername, storedList.getUsername()});
+            throw new ExceptionDao("User " + listOwnerUsername + " does not own list with ID " + id + ".");
+        }
+
         listMap.remove(id);
 
-        Set<Integer> userLists = userListsMap.get(username);
+        Set<Integer> userLists = userListsMap.get(listOwnerUsername);
         if (userLists != null) {
             userLists.remove(id);
             if (userLists.isEmpty()) {
-                userListsMap.remove(username);
+                userListsMap.remove(listOwnerUsername);
+                LOGGER.log(Level.INFO, "User {0} no longer has any lists mapped, removing user entry.", listOwnerUsername);
             }
         }
+        LOGGER.log(Level.INFO, "List with ID {0} deleted for user {1}.", new Object[]{id, listOwnerUsername});
     }
 
     @Override
@@ -86,7 +107,7 @@ public class ListDaoInMemory implements ListDao {
                 if (list != null) {
                     result.add(list);
                 } else {
-                    LOGGER.log(Level.WARNING, "List ID {0} found for user {1} but not in main list map. Data inconsistency.", new Object[]{id, username});
+                    LOGGER.log(Level.WARNING, "List ID {0} found for user {1} in userListsMap but not in main listMap. Data inconsistency detected.", new Object[]{id, username});
                 }
             }
         }

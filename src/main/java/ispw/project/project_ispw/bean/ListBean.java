@@ -1,6 +1,7 @@
 package ispw.project.project_ispw.bean;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class ListBean implements Serializable{
 
@@ -41,5 +42,27 @@ public class ListBean implements Serializable{
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ListBean listBean = (ListBean) o;
+        return id == listBean.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "ListBean{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", username='" + username + '\'' +
+                '}';
     }
 }

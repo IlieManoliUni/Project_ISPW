@@ -2,9 +2,10 @@ package ispw.project.project_ispw.controller.graphic.gui;
 
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.bean.ListBean;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.model.UserModel;
 
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -29,6 +30,7 @@ public class HomeController implements NavigableController, UserAwareController 
     private static final Logger LOGGER = Logger.getLogger(HomeController.class.getName());
     private static final String SCREEN_LOGIN = "logIn";
     private static final String SYSTEM_ERROR_TITLE = "System Error";
+    private ChangeListener<Boolean> loggedInListener;
 
     @FXML
     private ListView<ListModel> listView;
@@ -51,7 +53,12 @@ public class HomeController implements NavigableController, UserAwareController 
     private DefaultController headerIncludeController;
 
     public HomeController() {
-        // Empty constructor
+        // Default Constructor
+    }
+
+    @FXML
+    private void initialize() {
+        // No elements to initialize
     }
 
     @Override
@@ -70,33 +77,31 @@ public class HomeController implements NavigableController, UserAwareController 
         }
     }
 
-    @FXML
-    private void initialize() {
-        // No elements to initialize
-    }
-
     @Override
     public void setUserModel(UserModel userModel) {
+        if (this.userModel != null && loggedInListener != null) {
+            this.userModel.loggedInProperty().removeListener(loggedInListener);
+        }
+
         this.userModel = userModel;
 
         if (headerIncludeController != null) {
             headerIncludeController.setUserModel(this.userModel);
         }
 
-        userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
-            LOGGER.log(Level.INFO, "HomeController Listener: loggedInProperty changed: old={0}, new={1}", new Object[]{oldVal, newVal});
-            if (newVal.booleanValue()) {
-                LOGGER.log(Level.INFO, "HomeController Listener: User is now logged in, calling loadUserLists.");
-                loadUserLists();
-            } else {
-                LOGGER.log(Level.INFO, "HomeController Listener: User is NOT logged in, clearing lists and showing logout alert.");
-                items.clear();
-
-                if (oldVal.booleanValue()) {
-                    showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been successfully logged out. Your lists have been cleared.");
+        if (loggedInListener == null) {
+            loggedInListener = (obs, oldVal, newVal) -> {
+                LOGGER.log(Level.INFO, "HomeController Listener: loggedInProperty changed: old={0}, new={1}", new Object[]{oldVal, newVal});
+                if (newVal.booleanValue()) {
+                    LOGGER.log(Level.INFO, "HomeController Listener: User is now logged in, calling loadUserLists.");
+                    loadUserLists();
+                } else {
+                    LOGGER.log(Level.INFO, "HomeController Listener: User is NOT logged in, clearing lists.");
+                    items.clear();
                 }
-            }
-        });
+            };
+            this.userModel.loggedInProperty().addListener(loggedInListener);
+        }
 
         if (userModel.loggedInProperty().get()) {
             LOGGER.log(Level.INFO, "HomeController.setUserModel(): Initial check: User IS logged in. Calling loadUserLists.");
@@ -111,9 +116,7 @@ public class HomeController implements NavigableController, UserAwareController 
         items.clear();
 
         if (userModel == null || !userModel.loggedInProperty().get() || userModel.currentUserProperty().get() == null) {
-            LOGGER.log(Level.WARNING, "loadUserLists: User not logged in, showing alert and redirecting.");
-            showAlert(Alert.AlertType.INFORMATION, "Not Logged In", "Please log in to view your lists.");
-            graphicControllerGui.setScreen(SCREEN_LOGIN);
+            LOGGER.log(Level.WARNING, "loadUserLists: User not logged in, clearing lists.");
             return;
         }
 
@@ -125,7 +128,7 @@ public class HomeController implements NavigableController, UserAwareController 
                     .map(ListModel::new)
                     .toList());
             LOGGER.log(Level.INFO, "loadUserLists: Successfully loaded {0} lists.", items.size());
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             LOGGER.log(Level.SEVERE, "Error loading lists: {0}", e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Error Loading Lists", e.getMessage());
         } catch (Exception e) {
@@ -155,7 +158,7 @@ public class HomeController implements NavigableController, UserAwareController 
             textField.clear();
             refreshListView();
             showAlert(Alert.AlertType.INFORMATION, "Success", "List '" + newItemName + "' created.");
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             showAlert(Alert.AlertType.ERROR, "List Creation Failed", e.getMessage());
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred while creating the list: " + e.getMessage());
@@ -166,7 +169,7 @@ public class HomeController implements NavigableController, UserAwareController 
         loadUserLists();
     }
 
-    private class CustomListCell extends ListCell<ListModel> { // ListCell is now parameterized with ListModel
+    private class CustomListCell extends ListCell<ListModel> {
         private final HBox hbox;
         private final Text text;
         private final Button seeButton;
@@ -238,7 +241,7 @@ public class HomeController implements NavigableController, UserAwareController 
                 items.removeIf(model -> model.getListBean().equals(listToDeleteBean));
 
                 showAlert(Alert.AlertType.INFORMATION, "Success", "List '" + listToDeleteBean.getName() + "' deleted.");
-            } catch (ExceptionApplicationController e) {
+            } catch (ExceptionApplication e) {
                 showAlert(Alert.AlertType.ERROR, "Deletion Failed", e.getMessage());
             } catch (Exception e) {
                 showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred while deleting the list: " + e.getMessage());

@@ -1,11 +1,8 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
-import ispw.project.project_ispw.bean.AnimeBean;
 import ispw.project.project_ispw.bean.ListBean;
-import ispw.project.project_ispw.bean.MovieBean;
-import ispw.project.project_ispw.bean.TvSeriesBean;
 import ispw.project.project_ispw.bean.UserBean;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.model.AnimeModel;
 import ispw.project.project_ispw.model.MovieModel;
 import ispw.project.project_ispw.model.TvSeriesModel;
@@ -18,7 +15,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox; // Keep this import for the addToListContainer and the header HBox
+import javafx.scene.layout.HBox;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -32,7 +29,6 @@ public class ShowController implements NavigableController, UserAwareController 
     private static final String MIN = " min\n";
     private static final String TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
     private static final String SYSTEM_ERROR_TITLE = "System Error";
-    private static final String SCREEN_LOGIN = "logIn";
 
     @FXML
     private ImageView photoView;
@@ -63,7 +59,7 @@ public class ShowController implements NavigableController, UserAwareController 
     private DefaultBackHomeController headerBarController;
 
     public ShowController() {
-        //empty constructor
+        // Default Constructor
     }
 
     @FXML
@@ -96,15 +92,6 @@ public class ShowController implements NavigableController, UserAwareController 
         if (headerBarController != null) {
             headerBarController.setUserModel(this.userModel);
         }
-
-        userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal.booleanValue()) {
-                toggleAddToListControls(true);
-            } else {
-                toggleAddToListControls(false);
-                showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been logged out. Cannot add items to list.");
-            }
-        });
 
         toggleAddToListControls(userModel.loggedInProperty().get());
 
@@ -153,7 +140,7 @@ public class ShowController implements NavigableController, UserAwareController 
 
             populateDetailsInUI();
 
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             showAlert(Alert.AlertType.ERROR, "Display Error", e.getMessage());
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred while displaying details: " + e.getMessage());
@@ -286,8 +273,6 @@ public class ShowController implements NavigableController, UserAwareController 
                 .collect(Collectors.joining(", "));
     }
 
-
-
     @FXML
     private void addToUserList() {
         if (graphicControllerGui == null) {
@@ -296,16 +281,12 @@ public class ShowController implements NavigableController, UserAwareController 
         }
 
         if (userModel == null || !userModel.loggedInProperty().get()) {
-            showAlert(Alert.AlertType.INFORMATION, "Not Logged In", "Please log in to add items to a list.");
-            graphicControllerGui.setScreen(SCREEN_LOGIN);
             return;
         }
 
         try {
             UserBean currentUser = userModel.currentUserProperty().get();
             if (currentUser == null) {
-                showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "User data not available. Please log in again.");
-                graphicControllerGui.setScreen(SCREEN_LOGIN);
                 return;
             }
 
@@ -326,12 +307,12 @@ public class ShowController implements NavigableController, UserAwareController 
 
             boolean success = false;
             switch (currentItemBean) {
-                case MovieBean movie ->
-                        success = graphicControllerGui.getApplicationController().addMovieToList(targetList, movie.getIdMovieTmdb());
-                case TvSeriesBean tvSeries ->
-                        success = graphicControllerGui.getApplicationController().addTvSeriesToList(targetList, tvSeries.getIdTvSeriesTmdb());
-                case AnimeBean anime ->
-                        success = graphicControllerGui.getApplicationController().addAnimeToList(targetList, anime.getIdAnimeTmdb());
+                case MovieModel movie ->
+                        success = graphicControllerGui.getApplicationController().addMovieToList(targetList, movie.getId());
+                case TvSeriesModel tvSeries ->
+                        success = graphicControllerGui.getApplicationController().addTvSeriesToList(targetList, tvSeries.getId());
+                case AnimeModel anime ->
+                        success = graphicControllerGui.getApplicationController().addAnimeToList(targetList, anime.getId());
                 default -> {
                     showAlert(Alert.AlertType.ERROR, "Unknown Item Type", "Cannot add this type of item to a list.");
                     return;
@@ -345,7 +326,7 @@ public class ShowController implements NavigableController, UserAwareController 
                 showAlert(Alert.AlertType.WARNING, "Add Failed", "Could not add " + currentCategory + " to list. It might already be there.");
             }
 
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             showAlert(Alert.AlertType.ERROR, "Error Adding to List", e.getMessage());
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred while adding to list: " + e.getMessage());

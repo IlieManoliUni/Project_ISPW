@@ -1,6 +1,6 @@
 package ispw.project.project_ispw.controller.graphic.gui;
 
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.model.AnimeModel;
 import ispw.project.project_ispw.model.MovieModel;
 import ispw.project.project_ispw.model.TvSeriesModel;
@@ -28,7 +28,6 @@ public class SearchController implements NavigableController, UserAwareControlle
 
     private static final Logger LOGGER = Logger.getLogger(SearchController.class.getName());
     private static final String SYSTEM_ERROR_TITLE = "System Error";
-    private static final String SCREEN_LOGIN = "logIn";
 
     @FXML
     private ListView<String> listView;
@@ -84,8 +83,6 @@ public class SearchController implements NavigableController, UserAwareControlle
                 items.clear();
                 searchResultModelMap.clear();
                 searchResultsLabel.setText("Search Results (Logged Out)");
-                showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been logged out. Search results cleared.");
-                graphicControllerGui.setScreen(SCREEN_LOGIN);
             } else {
                 if (currentSearchCategory != null && currentSearchQuery != null && !currentSearchQuery.isEmpty()) {
                     searchResultsLabel.setText(String.format("Search Results for '%s' in %s:", currentSearchQuery, currentSearchCategory));
@@ -98,8 +95,9 @@ public class SearchController implements NavigableController, UserAwareControlle
             searchResultsLabel.setText(String.format("Search Results for '%s' in %s:", currentSearchQuery, currentSearchCategory));
             performSearch();
         } else {
-            showAlert(Alert.AlertType.WARNING, "No Search Performed", "Please provide a search category and query. Redirecting to home.");
-            graphicControllerGui.setScreen("home");
+            items.clear();
+            searchResultModelMap.clear();
+            searchResultsLabel.setText("Please perform a search.");
         }
     }
 
@@ -130,14 +128,14 @@ public class SearchController implements NavigableController, UserAwareControlle
                     results = graphicControllerGui.getApplicationController().searchAnime(currentSearchQuery);
                     break;
                 default:
-                    throw new ExceptionApplicationController("Invalid search category: " + currentSearchCategory);
+                    throw new ExceptionApplication("Invalid search category: " + currentSearchCategory);
             }
             processSearchResults(results);
 
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             showAlert(Alert.AlertType.ERROR, "Search Error", e.getMessage());
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, e, () -> "An unexpected error occurred during search: " + e.getMessage()); // Added 'e' for full stack trace
+            LOGGER.log(Level.SEVERE, e, () -> "An unexpected error occurred during search: " + e.getMessage());
             showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during search: " + e.getMessage());
         }
 

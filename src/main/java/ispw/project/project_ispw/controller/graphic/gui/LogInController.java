@@ -44,7 +44,7 @@ public class LogInController implements NavigableController, UserAwareController
 
 
     public LogInController() {
-        // Empty constructor
+        // Default Constructor
     }
 
     @Override
@@ -87,7 +87,7 @@ public class LogInController implements NavigableController, UserAwareController
 
     @FXML
     private void initialize() {
-        // Initialization logic
+        //No elements to initialize
     }
 
     @FXML

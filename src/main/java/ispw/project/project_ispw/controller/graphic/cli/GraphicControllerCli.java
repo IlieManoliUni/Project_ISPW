@@ -6,7 +6,7 @@ import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.controller.graphic.GraphicController;
 import ispw.project.project_ispw.controller.graphic.cli.command.*;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.exception.ExceptionUser;
 import ispw.project.project_ispw.model.AnimeModel;
 import ispw.project.project_ispw.model.MovieModel;
@@ -72,6 +72,8 @@ public class GraphicControllerCli implements GraphicController {
         commands.put("seeanimedetails", new SeeAnimeDetailsCommand());
         commands.put("seemoviedetails", new SeeMovieDetailsCommand());
         commands.put("seetvseriesdetails", new SeeTvSeriesDetailsCommand());
+        commands.put("seeallelementslist", new SeeAllElementsListCommand());
+        commands.put("liststats", new ListStatsCommand());
     }
 
     @Override
@@ -105,7 +107,7 @@ public class GraphicControllerCli implements GraphicController {
                 return "Error: Invalid number format for ID. Please provide a valid integer ID. Details: " + e.getMessage();
             } catch (ExceptionUser e) {
                 return "User error: " + e.getMessage();
-            } catch (ExceptionApplicationController e) {
+            } catch (ExceptionApplication e) {
                 return "Application error: " + e.getMessage();
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, e, () -> "An unexpected error occurred during command execution: " + e.getMessage());
@@ -166,7 +168,7 @@ public class GraphicControllerCli implements GraphicController {
         }
     }
 
-    public Object viewContentDetails(String category, int id) throws ExceptionApplicationController{
+    public Object viewContentDetails(String category, int id) throws ExceptionApplication {
         return switch (category.toLowerCase()) {
             case "anime" -> applicationController.retrieveAnimeById(id);
             case "movie" -> applicationController.retrieveMovieById(id);
@@ -175,7 +177,7 @@ public class GraphicControllerCli implements GraphicController {
         };
     }
 
-    public void addMovieToList(int listId, int movieId) throws ExceptionApplicationController, ExceptionUser {
+    public void addMovieToList(int listId, int movieId) throws ExceptionApplication, ExceptionUser {
         ListBean listBean = getListByIdForCurrentUser(listId);
         if (listBean == null) {
             throw new ExceptionUser("List with ID " + listId + " not found or does not belong to you.");
@@ -183,7 +185,7 @@ public class GraphicControllerCli implements GraphicController {
         applicationController.addMovieToList(listBean, movieId);
     }
 
-    public void deleteMovieFromList(int listId, int movieId) throws ExceptionApplicationController, ExceptionUser {
+    public void deleteMovieFromList(int listId, int movieId) throws ExceptionApplication, ExceptionUser {
         ListBean listBean = getListByIdForCurrentUser(listId);
         if (listBean == null) {
             throw new ExceptionUser("List with ID " + listId + " not found or does not belong to you.");
@@ -191,7 +193,7 @@ public class GraphicControllerCli implements GraphicController {
         applicationController.removeMovieFromList(listBean, movieId);
     }
 
-    public void addAnimeToList(int listId, int animeId) throws ExceptionApplicationController, ExceptionUser {
+    public void addAnimeToList(int listId, int animeId) throws ExceptionApplication, ExceptionUser {
         ListBean listBean = getListByIdForCurrentUser(listId);
         if (listBean == null) {
             throw new ExceptionUser("List with ID " + listId + " not found or does not belong to you.");
@@ -199,7 +201,7 @@ public class GraphicControllerCli implements GraphicController {
         applicationController.addAnimeToList(listBean, animeId);
     }
 
-    public void deleteAnimeFromList(int listId, int animeId) throws ExceptionApplicationController, ExceptionUser {
+    public void deleteAnimeFromList(int listId, int animeId) throws ExceptionApplication, ExceptionUser {
         ListBean listBean = getListByIdForCurrentUser(listId);
         if (listBean == null) {
             throw new ExceptionUser("List with ID " + listId + " not found or does not belong to you.");
@@ -207,7 +209,7 @@ public class GraphicControllerCli implements GraphicController {
         applicationController.removeAnimeFromList(listBean, animeId);
     }
 
-    public void addTvSeriesToList(int listId, int tvSeriesId) throws ExceptionApplicationController, ExceptionUser {
+    public void addTvSeriesToList(int listId, int tvSeriesId) throws ExceptionApplication, ExceptionUser {
         ListBean listBean = getListByIdForCurrentUser(listId);
         if (listBean == null) {
             throw new ExceptionUser("List with ID " + listId + " not found or does not belong to you.");
@@ -215,7 +217,7 @@ public class GraphicControllerCli implements GraphicController {
         applicationController.addTvSeriesToList(listBean, tvSeriesId);
     }
 
-    public void deleteTvSeriesFromList(int listId, int tvSeriesId) throws ExceptionApplicationController, ExceptionUser {
+    public void deleteTvSeriesFromList(int listId, int tvSeriesId) throws ExceptionApplication, ExceptionUser {
         ListBean listBean = getListByIdForCurrentUser(listId);
         if (listBean == null) {
             throw new ExceptionUser("List with ID " + listId + " not found or does not belong to you.");
@@ -223,7 +225,7 @@ public class GraphicControllerCli implements GraphicController {
         applicationController.removeTvSeriesFromList(listBean, tvSeriesId);
     }
 
-    public void createList(String listName) throws ExceptionApplicationController, ExceptionUser {
+    public void createList(String listName) throws ExceptionApplication, ExceptionUser {
         if (!isUserLoggedIn()) {
             throw new ExceptionUser("You must be logged in to create a list.");
         }
@@ -235,7 +237,7 @@ public class GraphicControllerCli implements GraphicController {
         applicationController.createList(newListBean, getCurrentUserBean());
     }
 
-    public void deleteList(int listId) throws ExceptionApplicationController, ExceptionUser {
+    public void deleteList(int listId) throws ExceptionApplication, ExceptionUser {
         if (!isUserLoggedIn()) {
             throw new ExceptionUser("You must be logged in to delete a list.");
         }
@@ -247,14 +249,14 @@ public class GraphicControllerCli implements GraphicController {
         }
     }
 
-    public List<ListBean> getListsForUser() throws ExceptionApplicationController, ExceptionUser {
+    public List<ListBean> getListsForUser() throws ExceptionApplication, ExceptionUser {
         if (!isUserLoggedIn()) {
             throw new ExceptionUser("You must be logged in to view your lists.");
         }
         return applicationController.getListsForUser(getCurrentUserBean());
     }
 
-    public ListBean getListByIdForCurrentUser(int listId) throws ExceptionApplicationController, ExceptionUser {
+    public ListBean getListByIdForCurrentUser(int listId) throws ExceptionApplication, ExceptionUser {
         if (!isUserLoggedIn()) {
             throw new ExceptionUser("You must be logged in to access lists.");
         }

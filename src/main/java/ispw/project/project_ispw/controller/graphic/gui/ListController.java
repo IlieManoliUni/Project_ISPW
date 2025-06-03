@@ -4,7 +4,7 @@ import ispw.project.project_ispw.bean.AnimeBean;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.bean.MovieBean;
 import ispw.project.project_ispw.bean.TvSeriesBean;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.model.ListModel;
 import ispw.project.project_ispw.model.UserModel;
 import javafx.collections.FXCollections;
@@ -19,6 +19,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
+import javafx.beans.value.ChangeListener;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,8 +53,10 @@ public class ListController implements NavigableController, UserAwareController 
     @FXML
     private DefaultBackHomeController headerBarController;
 
+    private ChangeListener<Boolean> loggedInListener;
+
     public ListController() {
-        // Empty constructor
+        //Default Constructor
     }
 
     @FXML
@@ -75,20 +78,27 @@ public class ListController implements NavigableController, UserAwareController 
 
     @Override
     public void setUserModel(UserModel userModel) {
+        if (this.userModel != null && loggedInListener != null) {
+            this.userModel.loggedInProperty().removeListener(loggedInListener);
+        }
+
         this.userModel = userModel;
 
         if (headerBarController != null) {
             headerBarController.setUserModel(this.userModel);
         }
 
-        userModel.loggedInProperty().addListener((obs, oldVal, newVal) -> {
-            LOGGER.log(Level.INFO, "ListController Listener: loggedInProperty changed: old={0}, new={1}", new Object[]{oldVal, newVal});
-            if (newVal.booleanValue()) {
-                handleUserLoggedIn();
-            } else {
-                handleUserLoggedOut();
-            }
-        });
+        if (loggedInListener == null) {
+            loggedInListener = (obs, oldVal, newVal) -> {
+                LOGGER.log(Level.INFO, "ListController Listener: loggedInProperty changed: old={0}, new={1}", new Object[]{oldVal, newVal});
+                if (newVal.booleanValue()) {
+                    handleUserLoggedIn();
+                } else {
+                    handleUserLoggedOut();
+                }
+            };
+            this.userModel.loggedInProperty().addListener(loggedInListener);
+        }
 
         if (userModel.loggedInProperty().get()) {
             LOGGER.log(Level.INFO, "ListController.setUserModel(): Initial check: User IS logged in.");
@@ -116,12 +126,15 @@ public class ListController implements NavigableController, UserAwareController 
     }
 
     private void handleUserLoggedOut() {
-        LOGGER.log(Level.INFO, "ListController Listener: User logged out. Clearing items and showing logout alert.");
+        LOGGER.log(Level.INFO, "ListController Listener: User logged out. Clearing items.");
         items.clear();
         itemBeanMap.clear();
+
+        if (listNameLabel.textProperty().isBound()) {
+            listNameLabel.textProperty().unbind();
+            LOGGER.log(Level.INFO, "ListController: Unbound listNameLabel textProperty.");
+        }
         listNameLabel.setText("List Name (Logged Out)");
-        showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been logged out. Your list content has been cleared.");
-        graphicControllerGui.setScreen(SCREEN_LOGIN);
         selectedListModel = null;
     }
 
@@ -143,7 +156,7 @@ public class ListController implements NavigableController, UserAwareController 
     }
 
     private void initializeSelectedListModel(ListBean listBean) {
-        if (selectedListModel != null) {
+        if (selectedListModel != null && listNameLabel.textProperty().isBound()) {
             listNameLabel.textProperty().unbind();
         }
         this.selectedListModel = new ListModel(listBean);
@@ -157,15 +170,11 @@ public class ListController implements NavigableController, UserAwareController 
         itemBeanMap.clear();
 
         if (userModel == null || !userModel.loggedInProperty().get()) {
-            LOGGER.log(Level.WARNING, "loadListItems: User not logged in, showing alert and redirecting.");
-            showAlert(Alert.AlertType.ERROR, "Authentication required", "You must be logged in to load list items.");
-            graphicControllerGui.setScreen(SCREEN_LOGIN);
+            LOGGER.log(Level.WARNING, "loadListItems: User not logged in, cannot load items.");
             return;
         }
         if (selectedListModel == null) {
-            LOGGER.log(Level.WARNING, "loadListItems: No list model selected, showing alert and redirecting to home.");
-            showAlert(Alert.AlertType.WARNING, "No List Selected", "Cannot load items: No list is currently selected.");
-            graphicControllerGui.setScreen("home");
+            LOGGER.log(Level.WARNING, "loadListItems: No list model selected, cannot load items.");
             return;
         }
 
@@ -196,7 +205,7 @@ public class ListController implements NavigableController, UserAwareController 
 
             LOGGER.log(Level.INFO, "loadListItems: Successfully loaded {0} items for list ''{1}''.", new Object[]{items.size(), selectedListModel.getName()});
 
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             LOGGER.log(Level.SEVERE, "Error loading list items for list ''{0}'': {1}", new Object[]{selectedListModel.getName(), e.getMessage()});
             showAlert(Alert.AlertType.ERROR, "Error Loading List Items", e.getMessage());
         } catch (Exception e) {
@@ -248,7 +257,7 @@ public class ListController implements NavigableController, UserAwareController 
             }
 
             if (userModel == null || !userModel.loggedInProperty().get()) {
-                LOGGER.log(Level.WARNING, "handleSeeAction: User not logged in, redirecting.");
+                LOGGER.log(Level.WARNING, "handleSeeAction: User not logged in, blocking action.");
                 showAlert(Alert.AlertType.ERROR, "Authentication Required", "You must be logged in to see item details.");
                 graphicControllerGui.setScreen(SCREEN_LOGIN);
                 return;
@@ -301,7 +310,7 @@ public class ListController implements NavigableController, UserAwareController 
             }
 
             if (userModel == null || !userModel.loggedInProperty().get()) {
-                LOGGER.log(Level.WARNING, "handleDeleteAction: User not logged in, redirecting.");
+                LOGGER.log(Level.WARNING, "handleDeleteAction: User not logged in, blocking action.");
                 showAlert(Alert.AlertType.ERROR, "Authentication Required", "You must be logged in to remove items.");
                 graphicControllerGui.setScreen(SCREEN_LOGIN);
                 return;
@@ -341,7 +350,7 @@ public class ListController implements NavigableController, UserAwareController 
                 itemBeanMap.remove(itemString);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Item removed from list.");
 
-            } catch (ExceptionApplicationController e) {
+            } catch (ExceptionApplication e) {
                 LOGGER.log(Level.SEVERE, "Removal failed for item {0} from list ''{1}'': {2}", new Object[]{itemString, selectedListModel.getName(), e.getMessage()});
                 showAlert(Alert.AlertType.ERROR, "Removal Failed", e.getMessage());
             } catch (Exception e) {

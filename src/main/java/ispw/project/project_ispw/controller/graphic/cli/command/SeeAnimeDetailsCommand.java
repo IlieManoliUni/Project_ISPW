@@ -1,7 +1,7 @@
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.controller.graphic.cli.GraphicControllerCli;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.exception.ExceptionUser;
 import ispw.project.project_ispw.model.AnimeModel;
 
@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public class SeeAnimeDetailsCommand implements CliCommand {
     @Override
-    public String execute(GraphicControllerCli context, String args) throws ExceptionApplicationController, ExceptionUser, NumberFormatException {
+    public String execute(GraphicControllerCli context, String args) throws ExceptionApplication, ExceptionUser, NumberFormatException {
         if (args.isEmpty()) {
             return "Usage: seeanimedetails <anime_id>";
         }
@@ -40,7 +40,7 @@ public class SeeAnimeDetailsCommand implements CliCommand {
 
         } catch (NumberFormatException _) {
             throw new NumberFormatException("Invalid Anime ID. Please provide a valid integer ID.");
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             throw e;
         }
     }

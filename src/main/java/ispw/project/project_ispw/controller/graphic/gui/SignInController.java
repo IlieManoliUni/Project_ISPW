@@ -41,7 +41,7 @@ public class SignInController implements NavigableController, UserAwareControlle
     private DefaultBackHomeController headerBarController;
 
     public SignInController() {
-        // Empty constructor
+        // Default Constructor
     }
 
     @Override
@@ -80,7 +80,7 @@ public class SignInController implements NavigableController, UserAwareControlle
 
     @FXML
     private void initialize() {
-        // Initialization logic
+        // No elements to initialize
     }
 
     @FXML
@@ -90,10 +90,6 @@ public class SignInController implements NavigableController, UserAwareControlle
         clearErrorMessage();
 
         if (!validateInput(username, password)) {
-            return;
-        }
-
-        if (checkAlreadyLoggedIn()) {
             return;
         }
 
@@ -115,15 +111,6 @@ public class SignInController implements NavigableController, UserAwareControlle
             return false;
         }
         return true;
-    }
-
-    private boolean checkAlreadyLoggedIn() {
-        if (userModel != null && userModel.loggedInProperty().get()) {
-            showAlert(Alert.AlertType.INFORMATION, "Already Logged In", "You are already logged in. Redirecting to home.");
-            graphicControllerGui.setScreen(SCREEN_HOME);
-            return true;
-        }
-        return false;
     }
 
     private void registerUser(String username, String password) {

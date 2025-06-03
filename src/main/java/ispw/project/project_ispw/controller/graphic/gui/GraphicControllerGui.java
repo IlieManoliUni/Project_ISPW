@@ -4,9 +4,10 @@ import ispw.project.project_ispw.controller.application.ApplicationController;
 import ispw.project.project_ispw.bean.ListBean;
 import ispw.project.project_ispw.controller.application.state.PersistenceModeState;
 import ispw.project.project_ispw.controller.graphic.GraphicController;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.model.ListModel;
 import ispw.project.project_ispw.model.UserModel;
+import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -37,6 +38,8 @@ public class GraphicControllerGui implements GraphicController {
     private final UserModel userModel;
     private final String fxmlPathPrefix;
 
+    private final ChangeListener<Boolean> loggedInGlobalListener;
+
     private GraphicControllerGui(PersistenceModeState persistenceState, String fxmlPathPrefix) {
         this.applicationController = new ApplicationController(persistenceState);
         this.userModel = new UserModel(this.applicationController.getAuthService());
@@ -49,6 +52,17 @@ public class GraphicControllerGui implements GraphicController {
         addScreen("show", this.fxmlPathPrefix + "show.fxml");
         addScreen("signIn", this.fxmlPathPrefix + "signIn.fxml");
         addScreen("stats", this.fxmlPathPrefix + "stats.fxml");
+
+        loggedInGlobalListener = (obs, oldVal, newVal) -> {
+            if (!newVal.booleanValue() && oldVal.booleanValue()) {
+                LOGGER.log(Level.INFO, "GraphicControllerGui: User logged out. Clearing history and showing alert.");
+                showAlert(Alert.AlertType.INFORMATION, "Logged Out", "You have been successfully logged out. All data cleared.");
+                screenHistory.clear();
+                setScreen(LOGINSCREEN);
+            }
+        };
+
+        this.userModel.loggedInProperty().addListener(loggedInGlobalListener);
     }
 
     public static synchronized GraphicControllerGui getInstance(PersistenceModeState persistenceState, String fxmlPathPrefix) {
@@ -105,10 +119,10 @@ public class GraphicControllerGui implements GraphicController {
 
         } catch (IOException e) {
             showAlert(Alert.AlertType.ERROR, "Navigation screen error", "Could not load screen: " + name + ".\n" + e.getMessage());
-            LOGGER.log(Level.SEVERE, e, () -> "Failed to load FXML for screen: " + name); // Using supplier for deferred concatenation
+            LOGGER.log(Level.SEVERE, e, () -> "Failed to load FXML for screen: " + name);
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, SYSTEM_ERROR_TITLE, "An unexpected error occurred during screen transition: " + e.getMessage());
-            LOGGER.log(Level.SEVERE, e, () -> "An unexpected error occurred during screen transition to " + name); // Using supplier for deferred concatenation
+            LOGGER.log(Level.SEVERE, e, () -> "An unexpected error occurred during screen transition to " + name);
         }
     }
 
@@ -131,14 +145,14 @@ public class GraphicControllerGui implements GraphicController {
         return applicationController;
     }
 
-    public boolean processLogin(String username, String password) throws ExceptionApplicationController {
+    public boolean processLogin(String username, String password) throws ExceptionApplication {
         try {
             boolean success = applicationController.login(username, password);
             if (success) {
                 setScreen("home");
             }
             return success;
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             LOGGER.log(Level.WARNING, "Login failed: {0}", e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Navigation login error", "An unexpected error occurred during login.");
             return false;
@@ -153,9 +167,7 @@ public class GraphicControllerGui implements GraphicController {
         try {
             applicationController.logout();
             userModel.logout();
-            screenHistory.clear();
-            setScreen(LOGINSCREEN);
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             LOGGER.log(Level.SEVERE, "Error during logout process: {0}", e.getMessage());
             showAlert(Alert.AlertType.ERROR, "Logout Error", "Failed to logout: " + e.getMessage());
         } catch (Exception e) {

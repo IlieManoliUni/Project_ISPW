@@ -1,6 +1,7 @@
 package ispw.project.project_ispw.bean;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class TvSeriesBean implements Serializable {
 
@@ -52,5 +53,28 @@ public class TvSeriesBean implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TvSeriesBean that = (TvSeriesBean) o;
+        return idTvSeriesTmdb == that.idTvSeriesTmdb;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idTvSeriesTmdb);
+    }
+
+    @Override
+    public String toString() {
+        return "TvSeriesBean{" +
+                "idTvSeriesTmdb=" + idTvSeriesTmdb +
+                ", episodeRuntime=" + episodeRuntime +
+                ", numberOfEpisodes=" + numberOfEpisodes +
+                ", name='" + name + '\'' +
+                '}';
     }
 }

@@ -1,7 +1,7 @@
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.controller.graphic.cli.GraphicControllerCli;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.exception.ExceptionUser;
 import ispw.project.project_ispw.model.MovieModel;
 
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public class SeeMovieDetailsCommand implements CliCommand {
 
     @Override
-    public String execute(GraphicControllerCli context, String args) throws ExceptionApplicationController, ExceptionUser, NumberFormatException {
+    public String execute(GraphicControllerCli context, String args) throws ExceptionApplication, ExceptionUser, NumberFormatException {
         if (args.isEmpty()) {
             return "Usage: seemoviedetails <movie_id>";
         }
@@ -38,7 +38,7 @@ public class SeeMovieDetailsCommand implements CliCommand {
 
         } catch (NumberFormatException _) {
             throw new NumberFormatException("Invalid Movie ID. Please provide a valid integer ID.");
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             throw e;
         }
     }

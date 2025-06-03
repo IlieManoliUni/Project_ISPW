@@ -1,7 +1,7 @@
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.controller.graphic.cli.GraphicControllerCli;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.exception.ExceptionUser;
 import ispw.project.project_ispw.model.TvSeriesModel;
 
@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public class SeeTvSeriesDetailsCommand implements CliCommand {
     @Override
-    public String execute(GraphicControllerCli context, String args) throws ExceptionApplicationController, ExceptionUser, NumberFormatException {
+    public String execute(GraphicControllerCli context, String args) throws ExceptionApplication, ExceptionUser, NumberFormatException {
         if (args.isEmpty()) {
             return "Usage: seetvseriesdetails <tv_series_id>";
         }
@@ -41,7 +41,7 @@ public class SeeTvSeriesDetailsCommand implements CliCommand {
 
         } catch (NumberFormatException _) {
             throw new NumberFormatException("Invalid TV Series ID. Please provide a valid integer ID.");
-        } catch (ExceptionApplicationController e) {
+        } catch (ExceptionApplication e) {
             throw e;
         }
     }

@@ -1,12 +1,12 @@
 package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.controller.graphic.cli.GraphicControllerCli;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.exception.ExceptionUser;
 
 public class LoginCommand implements CliCommand {
     @Override
-    public String execute(GraphicControllerCli context, String args) throws ExceptionUser, ExceptionApplicationController {
+    public String execute(GraphicControllerCli context, String args) throws ExceptionUser, ExceptionApplication {
         String[] loginArgs = args.split(" ", 2);
         if (loginArgs.length < 2) {
             return "Usage: login <username> <password>";

@@ -2,12 +2,12 @@ package ispw.project.project_ispw.controller.graphic.cli.command;
 
 import ispw.project.project_ispw.bean.UserBean;
 import ispw.project.project_ispw.controller.graphic.cli.GraphicControllerCli;
-import ispw.project.project_ispw.exception.ExceptionApplicationController;
+import ispw.project.project_ispw.exception.ExceptionApplication;
 import ispw.project.project_ispw.exception.ExceptionUser;
 
 public class SignUpCommand implements CliCommand {
     @Override
-    public String execute(GraphicControllerCli context, String args) throws ExceptionUser, ExceptionApplicationController {
+    public String execute(GraphicControllerCli context, String args) throws ExceptionUser, ExceptionApplication {
         String[] signupArgs = args.split(" ", 2);
         if (signupArgs.length < 2) {
             return "Usage: signup <username> <password>";

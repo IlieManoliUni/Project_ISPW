@@ -1,6 +1,7 @@
 package ispw.project.project_ispw.bean;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class UserBean implements Serializable{
 
@@ -31,5 +32,27 @@ public class UserBean implements Serializable{
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UserBean userBean = (UserBean) o;
+        return Objects.equals(username, userBean.username);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(username);
+    }
+
+    @Override
+    public String toString() {
+        return "UserBean{" +
+                "username='" + username + '\'' +
+                // It's generally not recommended to include sensitive information like passwords in toString()
+                // ", password='" + password + '\'' +
+                '}';
     }
 }
