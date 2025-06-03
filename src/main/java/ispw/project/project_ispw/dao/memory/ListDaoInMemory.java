@@ -44,7 +44,7 @@ public class ListDaoInMemory implements ListDao {
         }
 
         if (!Objects.equals(list.getUsername(), username)) {
-            LOGGER.log(Level.WARNING, "ListBean's username ({0}) does not match UserBean's username ({1}). Setting ListBean's username.", new Object[]{list.getUsername(), username});
+            LOGGER.log(Level.WARNING, "ListBean''s username ({0}) does not match UserBean''s username ({1}). Setting ListBean''s username.", new Object[]{list.getUsername(), username});
             list.setUsername(username);
         }
 
@@ -74,7 +74,7 @@ public class ListDaoInMemory implements ListDao {
 
         ListBean storedList = listMap.get(id);
         if (!Objects.equals(storedList.getUsername(), listOwnerUsername)) {
-            LOGGER.log(Level.WARNING, "Attempt to delete list {0} by user {1}, but it's owned by {2}.",
+            LOGGER.log(Level.WARNING, "Attempt to delete list {0} by user {1}, but it''s owned by {2}.",
                     new Object[]{id, listOwnerUsername, storedList.getUsername()});
             throw new ExceptionDao("User " + listOwnerUsername + " does not own list with ID " + id + ".");
         }
